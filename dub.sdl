@@ -1,0 +1,44 @@
+
+name "blockie"
+platforms "windows"
+	
+buildType "debug" {
+	buildOptions "debugMode" "debugInfo" "alwaysStackFrame" "stackStomping" "warningsAsErrors"
+}
+buildType "release" {
+    dflags "-O5" platform="ldc"
+    dflags "-mcpu=haswell" platform="ldc"
+    dflags "-mattr=+fma,+avx2" platform="ldc"
+    dflags "-expensive-combines" platform="ldc"
+    dflags "-enable-cross-module-inlining" platform="ldc"
+    dflags "-cache=.dub/cache" platform="ldc"
+    dflags "-ffast-math" platform="ldc"
+
+	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
+}
+
+configuration "blockie" {
+	#mainSourceFile "src/main.d"
+	excludedSourceFiles "src/gen.d"
+	targetType "executable"
+	targetName "bin-blockie"
+	versions "GC_STATS"
+}
+configuration "generate" {
+	#mainSourceFile "src/gen.d"
+	excludedSourceFiles "src/main.d"
+	targetType "executable"
+	targetName "bin-generate"
+}
+
+# local
+dependency "logging" version="~master"
+dependency "common" version="~master"
+dependency "maths" version="~master"
+dependency "opengl3" version="~master"
+dependency "fonts" version="~master"
+dependency "events" version="~master"
+dependency "resources" version="~master"
+
+# external
+dependency "resusage" version="~master"

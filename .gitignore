@@ -1,0 +1,17 @@
+
+bin/
+.out/
+.idea/
+*.iml
+
+.dub/
+.logs/
+.target/
+
+*.exe
+*.lib
+*.lnk
+*.xml
+
+
+data/

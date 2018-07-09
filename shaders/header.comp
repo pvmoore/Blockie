@@ -1,0 +1,65 @@
+/*
+http://docs.gl/sl4/
+https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)
+https://www.khronos.org/opengl/wiki/Built-in_Variable_(GLSL)
+https://khronos.org/registry/OpenGL/index_gl.php
+ */
+#line 1 2
+
+// For 64 bit ints:
+//#extension GL_AMD_gpu_shader_int64: require
+//#extension GL_ARB_gpu_shader_int64: enable
+//#extension ARB_gpu_shader5: enable
+//int64_t i; uint64_t i2; i64vec2 i3; u64vec3 i4;
+
+// For 16 bit ints:
+// Note: Not supported on RX 470
+//#extension GL_AMD_gpu_shader_int16 : enable
+
+// For half floats:
+//#extension GL_AMD_gpu_shader_half_float: enable
+//#extension GL_AMD_gpu_shader_half_float2: enable
+//SPV_AMD_gpu_shader_half_float
+//#ifdef NV_half_float
+//#extension NV_half_float: enable
+//#endif
+//float16_t h; f16vec3 h2; f16mat4x4 h3;
+
+// For doubles:
+//#extension GL_ARB_gpu_shader_fp64: enable
+//double d;
+
+/*
+    Set by program:
+
+    CHUNK_SIZE
+    CHUNK_SIZE_SHR
+    OCTREE_ROOT_BITS
+    OctreeRootSize
+    OctreeBranchSize
+    OctreeTwigSize
+    OctreeLeafSize
+    DFIELD_OFFSET
+*/
+
+#define NIBBLE_SIZE (CHUNK_SIZE>>OCTREE_ROOT_BITS)
+#define MAX_DISTANCE (15000)
+
+struct Ray {
+    vec3 start;
+    vec3 direction;
+    vec3 invDirection;
+};
+
+struct Position {
+    // current position relative to BB min (truncated uint)
+    uvec3 upos;
+    vec3 fpos;  // actual current position (float)
+    int chunk;
+};
+
+struct Voxel {
+    uint size;
+    uint value;
+    uint oct;
+};

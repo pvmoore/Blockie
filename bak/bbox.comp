@@ -1,0 +1,52 @@
+
+#line 1 1
+
+// does ray intersect with the world at all?
+	float minT, maxT;
+	if(!intersect(WORLD_BB[0],
+	              WORLD_BB[1],
+	              ray.start,
+	              ray.invDirection,
+	              minT,
+	              maxT))
+    {
+		//voxelsOut[g_index] = 0;
+		imageStore(imageOut, g_pos, vec4(0));
+		return;
+	}
+    // minT 			 = distance to world entry (negative if camera is inside world box)
+    // maxT - fabs(minT) = distance to world exit
+
+// if camera is outside the world box, move the camera to the entry point
+	vec3 rayToWorld   = ray.start - WORLD_BB[0];
+	bool outsideWorld = (minT>=0);
+	vec3 rayPos = outsideWorld ?
+	    (rayToWorld + ray.direction * minT)
+	    : ray.start;
+
+    Position pos = Position(uvec3(0), rayPos, -1);
+    //updatePosition(pos, vec3(0));
+
+    // ensure we are inside a chunk
+    while(pos.chunk==-1 && maxT > 0) {
+        updatePosition(pos, ray.direction*0.1f);
+        maxT -= 0.5f; // this is weird
+    }
+
+bool intersect(const vec3 bb0,
+               const vec3 bb1,
+               const vec3 rayPos,
+               const vec3 rayInvDir,
+               out float minT,
+               out float maxT)
+{
+	vec3 tNearV = (bb0-rayPos) * rayInvDir;
+    vec3 tFarV  = (bb1-rayPos) * rayInvDir;
+    vec3 tNear  = min(tNearV, tFarV);
+    vec3 tFar   = max(tNearV, tFarV);
+
+    minT = max(tNear.x, max(tNear.y, tNear.z));
+    maxT = min(tFar.x, min(tFar.y, tFar.z));
+
+	return maxT >= max(minT, 0);
+}

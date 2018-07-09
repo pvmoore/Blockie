@@ -1,0 +1,112 @@
+//---------------------------------------------------------------------------
+//VERTEXSHADER
+//---------------------------------------------------------------------------
+#version 330 core
+layout(location = 0) in vec2 screenPos;
+
+uniform vec2 ORIGIN;
+uniform mat4 VP;
+
+out VS_OUT {
+	vec2 pos;
+} vs_out;
+
+void main() {
+    gl_Position = VP * vec4(screenPos,0,1);
+	vs_out.pos  = screenPos-ORIGIN;
+}
+//---------------------------------------------------------------------------
+//FRAGMENTSHADER
+//---------------------------------------------------------------------------
+#version 330 core
+
+//#extension GL_ARB_shader_image_load_store : enable
+//layout(early_fragment_tests) in;
+
+uniform vec2 SIZE;
+uniform vec3 SUN_POS;
+uniform sampler2D texData0;
+
+in VS_OUT {
+    vec2 pos;
+} fs_in;
+
+out vec4 color;
+
+vec2 g_pos = fs_in.pos+0.5;
+
+vec4 data0(vec2 pos) {
+    vec2 uv = pos / SIZE;
+    return texture2D(texData0, uv);
+}
+
+const vec4 uint_to_pixel[] = vec4[](
+    // volumetric
+	vec4(0,0, 0.25, 1),	    // [0] V_AIR (space)
+	vec4(0,0,1, 1),         // [1] water
+    vec4(0.7,0.7,0.7, 1),   // [2] smoke
+    // reserved
+    vec4(0,0,0, 1),         // [3] reserved
+    vec4(0,0,0, 1),         // [4] reserved
+    vec4(0,0,0, 1),         // [5] RESERVED
+    vec4(0,0,0, 1),         // [6] reserved
+    vec4(0,0,0, 1),         // [7] reserved
+    vec4(0,0,0, 1),         // [8] reserved
+    vec4(0,0,0, 1),         // [9] reserved
+
+    // single voxels
+    vec4(0.3, 0.15, 0.15, 1),	// [10] V_EARTH1
+    vec4(0.5, 0.5,  0.5, 1),    // [11] V_ROCK1
+    vec4(0.2, 0.7,  0.2, 1),	// [12] V_GRASS1
+    vec4(1.0, 1.0,  1.0, 1)		// [13] V_SNOW
+);
+vec4 getDiffuse(uint voxel) {
+    return uint_to_pixel[voxel];
+}
+/**
+ *   0
+ * 3 . 1
+ *   2
+ */
+vec3 calculateNormal() {
+    vec2 i = g_pos;
+    vec2 U  = i+vec2(0,-1);
+    vec2 L  = i+vec2(-1,0);
+    vec2 P  = i;
+    vec2 R  = i+vec2(1,0);
+    vec2 D  = i+vec2(0,1);
+
+    vec3 up    = data0(U).xyz;
+    vec3 left  = data0(L).xyz;
+    vec3 pos   = data0(P).xyz;
+    vec3 right = data0(R).xyz;
+    vec3 down  = data0(D).xyz;
+
+    vec3 n1 = cross(up-pos, left-pos);
+    vec3 n2 = cross(down-pos, right-pos);
+
+    return normalize(n1+n2);
+}
+vec4 getDiffuseColour(const vec3 hitPos, const uint voxel) {
+    vec3 lightPos = SUN_POS;
+    vec3 normal   = calculateNormal();
+    vec3 toLight  = normalize(lightPos-hitPos);
+
+    float NdotL      = dot(normal, toLight);
+    float brightness = max(NdotL, 0);
+
+    vec4 pixel = getDiffuse(voxel);
+
+    return (pixel*0.70f) + (pixel*0.30f * brightness);
+}
+
+void main() {
+    vec4 data   = data0(g_pos);
+    vec3 hitPos = data.xyz;
+    uint voxel  = uint(data.w);
+
+    color = voxel == 0
+            ? vec4(0,0,0,1)
+            : getDiffuseColour(hitPos, voxel);
+}
+

@@ -1,0 +1,24 @@
+module blockie.generate.all;
+
+public:
+
+import blockie.generate.diamondsquare;
+import blockie.generate.landscapeworld;
+import blockie.generate.distance_fields;
+import blockie.generate.shapes;
+import blockie.generate.testscene1;
+import blockie.generate.testscene2;
+import blockie.generate.testscene3;
+import blockie.generate.testscene4;
+import blockie.generate.testscene4b;
+import blockie.generate.testscene4c;
+import blockie.generate.testscene5;
+import blockie.generate.testscene6_bunny;
+import blockie.generate.testscene7_hgt;
+import blockie.generate.worldbuilder;
+
+interface WorldGen {
+    import blockie.all : World;
+    World getWorld();
+    void build(WorldBuilder b);
+}
