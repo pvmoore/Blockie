@@ -1,6 +1,6 @@
 # Blockie
 
-Voxel terrain generator and renderer using Opengl3 compute shaders
+Voxel renderer using Opengl3 compute shaders
 
 ![Chess](screenshots/scene4.png)
 ![Chess](screenshots/scene4b.png)
@@ -10,6 +10,14 @@ Voxel terrain generator and renderer using Opengl3 compute shaders
 ## Requirements
 - Dlang https://dlang.org/
 - OpenGL3 
-- Dlang-common https://github.com/pvmoore/dlang-common
+
+## Features
+- Sparse voxel octrees 
+- 1024³ voxel chunks
+- Asynchronous chunk loading
+- Opengl compute shader 2-pass renderer
+    - 1st pass ... Ray caster that computes hit distances
+    - 2nd pass ... Shader that calculates colour/texture/lighting
+- Currently no secondary shadow rays are used    
 
 
