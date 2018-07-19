@@ -526,14 +526,14 @@ static if(OCTREE_TRUNK_BITS==1) {
 }
 */
 
-void dumpNodes(Stack!(OctreeBranch*) st)  {
-    writefln("nodes (bottom to top) (%s nodes):", st.length);
-
-    for(auto i=0; i<st.length; i++) {
-        auto index = st.peek(i);
-        writefln("  [%s] %s", i, index);
-    }
-}
+//void dumpNodes(Stack!(OctreeBranch*) st)  {
+//    writefln("nodes (bottom to top) (%s nodes):", st.length);
+//
+//    for(auto i=0; i<st.length; i++) {
+//        auto index = st.peek(i);
+//        writefln("  [%s] %s", i, index);
+//    }
+//}
 
 void dump(OctreeLeaf* l) {
     writef("LEAF %s", l.voxels);

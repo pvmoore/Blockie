@@ -4,7 +4,7 @@ import blockie.all;
 
 final class TopBar {
 private:
-    const int FONT_SIZE = 22;
+    const int FONT_SIZE = 16;
     World world;
     Font font;
     SDFFontRenderer textRenderer;

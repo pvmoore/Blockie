@@ -37,15 +37,15 @@ public:
 
         log("screen = %s", gl.windowSize);
 
-        getCPUMonitor().init(gl);
-        getMEMMonitor().init(gl);
-        getDiskMonitor().init(gl);
-        getGPUIOMonitor().init(gl);
-        getChunksMonitor().init(gl);
-        getFPSMonitor().init(gl);
-        getUpdateTimeMonitor().init(gl);
-        getFrameTimeMonitor().init(gl);
-        getComputeMonitor().init(gl);
+        getCPUMonitor().initialise(gl);
+        getMEMMonitor().initialise(gl);
+        getDiskMonitor().initialise(gl);
+        getGPUIOMonitor().initialise(gl);
+        getChunksMonitor().initialise(gl);
+        getFPSMonitor().initialise(gl);
+        getUpdateTimeMonitor().initialise(gl);
+        getFrameTimeMonitor().initialise(gl);
+        getComputeMonitor().initialise(gl);
 
         initView   = new InitView(gl);
         renderView = new RenderView(gl);

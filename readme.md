@@ -3,7 +3,7 @@
 Voxel renderer using Opengl3 compute shaders
 
 ![Chess](screenshots/scene4.png)
-![Chess](screenshots/scene4b.png)
+![Chess](screenshots/scene4c.png)
 ![Chess](screenshots/scene6.png)
 ![Chess](screenshots/scene7.png)
 

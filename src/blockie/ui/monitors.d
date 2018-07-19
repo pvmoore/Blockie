@@ -82,7 +82,7 @@ auto getComputeMonitor() { return computeMonitor; }
 //=======================================================
 final class CPUMonitor {
 private:
-    const float FONT_SIZE = 28;
+    const float FONT_SIZE = 16;
     OpenGL gl;
     Camera2D camera;
     SDFFontRenderer textRenderer;
@@ -90,7 +90,7 @@ private:
     ivec2 pos;
     int numCPUs;
 public:
-    auto init(OpenGL gl) {
+    auto initialise(OpenGL gl) {
         import std.parallelism : totalCPUs;
         this.gl  = gl;
         this.pos = pos;
@@ -130,15 +130,15 @@ public:
 
         textRenderer.replaceText(1,
             "Average ... %4.1f".format(total),
-            pos.x, pos.y+35);
+            pos.x, pos.y+20);
 
-        int y = pos.y+35+25;
+        int y = pos.y+20+20;
         foreach(i, d; cores) {
             textRenderer.replaceText(
                 cast(int)i+2,
                 "Core %s ...... %4.1f".format(i, d),
                 pos.x, y);
-            y += 25;
+            y += 20;
         }
         textRenderer.render();
     }
@@ -146,7 +146,7 @@ public:
 //========================================================
 final class MEMMonitor {
 private:
-    const float FONT_SIZE = 28;
+    const float FONT_SIZE = 16;
     const double MB = 1024*1024;
     OpenGL gl;
     Camera2D camera;
@@ -154,7 +154,7 @@ private:
     SDFFontRenderer textRenderer;
 ivec2 pos;
 public:
-    auto init(OpenGL gl) {
+    auto initialise(OpenGL gl) {
         this.gl  = gl;
         this.pos = pos;
 
@@ -191,11 +191,11 @@ public:
 
         textRenderer.replaceText(1, "Used ......... %6.1f".format(
          procMemInfo.usedRAM()/MB
-        ), pos.x, pos.y+35);
+        ), pos.x, pos.y+20);
 
         textRenderer.replaceText(2, "Reserved .. %6.1f".format(
          procMemInfo.usedVirtMem()/MB
-        ), pos.x, pos.y+35+25);
+        ), pos.x, pos.y+20+20);
 
         textRenderer.render();
     }
@@ -203,7 +203,7 @@ public:
 //========================================================
 final class MultiValueMonitor(T) {
 private:
-    const float FONT_SIZE = 28;
+    const float FONT_SIZE = 16;
     OpenGL gl;
     Camera2D camera;
     SDFFontRenderer textRenderer;
@@ -222,9 +222,8 @@ public:
         this.suffixes.length = numValues;
         values[] = 0;
     }
-    auto init(OpenGL gl) {
-        this.gl  = gl;
-        this.pos = pos;
+    auto initialise(OpenGL gl) {
+        this.gl   = gl;
         auto font = gl.getFont("segoe-ui-black");
         this.textRenderer = new SDFFontRenderer(gl, font, true);
         this.camera = new Camera2D(gl.windowSize());
@@ -288,7 +287,7 @@ public:
 
         if(label) {
             n++;
-            y += 35;
+            y += 20;
         }
 
         foreach(i, v; values) {
@@ -298,7 +297,7 @@ public:
                 pos.x,
                 y
             );
-            y += 25;
+            y += 20;
         }
 
         textRenderer.render();

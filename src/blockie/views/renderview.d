@@ -29,7 +29,7 @@ public:
         calculateRenderRect();
 
         this.console   = new Console(gl, renderRect.y);
-        this.topBar    = new TopBar(gl, renderRect.y);
+        this.topBar    = new TopBar(gl, renderRect.y+1);
         this.bottomBar = new BottomBar(gl);
         this.minimap   = new MiniMap(gl);
         this.fpsTiming = new Timing(10,3);
@@ -41,31 +41,32 @@ public:
         this.skybox = new SkyBox(gl, "/pvmoore/_assets/images/skyboxes/skybox1");
 
         getFPSMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,30)
+            ivec2(cast(int)gl.windowSize.width-170,20)
         );
         getFrameTimeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,60)
+            ivec2(cast(int)gl.windowSize.width-170,40)
         );
         getUpdateTimeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,90)
+            ivec2(cast(int)gl.windowSize.width-170,60)
         );
         getComputeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,130)
+            ivec2(cast(int)gl.windowSize.width-170,80)
         );
         getCPUMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,230)
+            ivec2(cast(int)gl.windowSize.width-170,140)
         );
         getMEMMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,500)
+            ivec2(cast(int)gl.windowSize.width-170,340)
         );
         getDiskMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,600)
+            ivec2(cast(int)gl.windowSize.width-170,400)
         );
+
         getGPUIOMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,700)
+            ivec2(cast(int)gl.windowSize.width-170,460)
         );
         getChunksMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-280,870)
+            ivec2(cast(int)gl.windowSize.width-170,580)
         );
 
     }
@@ -79,7 +80,7 @@ public:
     }
     void calculateRenderRect() {
         auto dim = gl.windowSize;
-        renderRect = IntRect(0, 26, cast(int)dim.width, (cast(int)dim.height-26)-26);
+        renderRect = IntRect(0, 20, cast(int)dim.width, (cast(int)dim.height-20)-20);
         uint rem = renderRect.height&7;
         if(rem!=0) {
             // ensure height is a multiple of 8

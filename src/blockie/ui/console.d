@@ -4,7 +4,7 @@ import blockie.all;
 
 final class Console {
 private:
-    const float FONT_SIZE = 30;
+    const float FONT_SIZE = 16;
     Camera2D camera;
     SDFFontRenderer textRenderer;
     string[] buffer;

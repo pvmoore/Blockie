@@ -4,7 +4,7 @@ import blockie.all;
 
 final class BottomBar {
 private:
-    const float FONT_SIZE = 22;
+    const float FONT_SIZE = 16;
     Camera2D camera;
     SDFFontRenderer textRenderer;
     FilledRectangleRenderer rectRenderer;
@@ -18,11 +18,11 @@ public:
         textRenderer.setSize(FONT_SIZE);
         textRenderer.setVP(camera.VP);
         textRenderer.setColour(WHITE*0.9);
-        textRenderer.appendText("Bottom bar", 2, cast(int)dim.height-28);
+        textRenderer.appendText("Bottom bar", 2, cast(int)dim.height-20);
 
         rectRenderer.setVP(camera.VP);
         rectRenderer.addRectangle(
-            vec2(0, dim.height-26),
+            vec2(0, dim.height-20),
             vec2(dim.width, dim.height),
             RGBA(0.1, 0.1, 0.3, 1)
         );
