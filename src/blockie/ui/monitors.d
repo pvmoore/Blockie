@@ -34,10 +34,10 @@ shared static this() {
     chunksMonitor = new MultiValueMonitor!ulong(4, "Chunks")
         .colour(WHITE*0.9)
         .formatting("u")
-        .setValue(0, 0, "Total ......")
-        .setValue(1, 0, "On GPU ..")
-        .setValue(2, 0, "Ready .....")
-        .setValue(3, 0, "Flywt ......");
+        .setValue(0, 0, "Total .........")
+        .setValue(1, 0, "On GPU .....")
+        .setValue(2, 0, "Ready .......")
+        .setValue(3, 0, "Flyweight ..");
     fpsMonitor = new MultiValueMonitor!double(1, null)
         .colour(WHITE*0.9)
         .formatting("4.2f")
