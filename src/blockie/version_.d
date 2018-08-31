@@ -35,5 +35,9 @@ const string version_ = "0.0.12";
     this up with 1 ray per pixel for areas that have hit something. This might not work
     well if the initial ray misses some smaller voxel. Need to try it to know for sure.
 
+-   Add distance at branch levels 5,4,2 and 2
+
+-   ChunkStorage shutdown needs to block until all messages have been processed
+
 =================================================================*/
 
