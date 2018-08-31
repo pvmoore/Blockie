@@ -90,7 +90,7 @@ public:
             // 6:   780     564     53      - 711   (41MB)
             // 7:   415     375     32      - 460   (28MB)
 
-            string w = "4";
+            string w = "1";
 
             World world;
             switch(w) {

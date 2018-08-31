@@ -132,22 +132,24 @@ uint getEstimatedNormal(vec3 hitPos, float voxelSize) {
                                     (4 + (dir.z<0 ? 1 : 0));
     return b;
 }
-//void clampPositionToVoxelEntryPoint(Ray ray, inout Position pos, float voxelSize) {
-//
-//    vec3 dir    = -ray.direction;
-//    vec3 invDir = -ray.invDirection;
-//
-//    vec3 p    = pos.fpos-WORLD_BB[0];
-//    vec3 rem  = mod(p, voxelSize);
-//    vec3 size = vec3(greaterThanEqual(dir, vec3(0))) * voxelSize;
-//    vec3 dist = size-rem;
-//
-//    vec3 m    = dist * invDir;
-//    float res = min(m.x, min(m.y, m.z));
-//    float f   = max(res, 0);
-//
-//    updatePosition(pos, dir*f);
-//}
+void clampPositionToVoxelEntryPoint(Ray ray, Position pos, uint voxelSize, inout float distance) {
+
+    vec3 dir    = -ray.direction;
+    vec3 invDir = -ray.invDirection;
+
+    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 rem  = mod(p, voxelSize);
+    vec3 size = vec3(greaterThanEqual(dir, vec3(0))) * voxelSize;
+    vec3 dist = size-rem;
+
+    vec3 m    = dist * invDir;
+    float res = min(m.x, min(m.y, m.z));
+    float f   = max(res, 0);
+
+    distance -= f;
+
+    //updatePosition(pos, dir*f);
+}
 ///
 /// Skip dist a little bit depending on how near to the camera
 /// the ray is. This is necessary in the pathological case
@@ -189,6 +191,10 @@ Voxel march(Ray ray, inout Position pos) {
 
             if(!getAirVoxel(pos, voxel, distance, voxels)) {
                 /// We have hit something
+
+                if(RENDER_OPTS[0]) {
+                    clampPositionToVoxelEntryPoint(ray, pos, voxel.size, distance);
+                }
 
                 //voxel.normal = getEstimatedNormal(pos.fpos, voxel.size);
                 break;
