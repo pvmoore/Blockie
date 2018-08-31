@@ -2,9 +2,12 @@ module blockie.views.renderview;
 
 import blockie.all;
 
-public enum SceneRenderer {
-    SOFTWARE, OPENCL, GL_COMPUTE
-};
+public:
+
+enum RenderOption {
+    DISPLAY_VOXEL_SIZES,
+    ACCURATE_VOXEL_BOXES
+}
 
 final class RenderView : IView {
 private:
@@ -19,24 +22,27 @@ private:
     MiniMap minimap;
     StopWatch renderWatch;
     StopWatch updateWatch;
-    IntRect renderRect;
+    int4 renderRect;
     Timing fpsTiming, frameTiming, updateTiming;
-    SceneRenderer renderer = SceneRenderer.GL_COMPUTE;
+    bool[RenderOption] renderOptions;
 public:
     this(OpenGL gl) {
-        this.gl  = gl;
+        this.gl = gl;
 
         calculateRenderRect();
 
-        this.console   = new Console(gl, renderRect.y);
-        this.topBar    = new TopBar(gl, renderRect.y+1);
-        this.bottomBar = new BottomBar(gl);
-        this.minimap   = new MiniMap(gl);
-        this.fpsTiming = new Timing(10,3);
-        this.frameTiming = new Timing(10,3);
+        setRenderOption(RenderOption.DISPLAY_VOXEL_SIZES, false);
+        setRenderOption(RenderOption.ACCURATE_VOXEL_BOXES, false);
+
+        this.console      = new Console(gl, renderRect.y);
+        this.topBar       = new TopBar(gl, this, renderRect.y+1);
+        this.bottomBar    = new BottomBar(gl, this, );
+        this.minimap      = new MiniMap(gl);
+        this.fpsTiming    = new Timing(10,3);
+        this.frameTiming  = new Timing(10,3);
         this.updateTiming = new Timing(10,1);
 
-        this.glComputeSceneRenderer = new GLComputeRenderer(gl, renderRect);
+        this.glComputeSceneRenderer = new GLComputeRenderer(gl, this, renderRect);
 
         this.skybox = new SkyBox(gl, "/pvmoore/_assets/images/skyboxes/skybox1");
 
@@ -78,16 +84,11 @@ public:
         skybox.destroy();
         glComputeSceneRenderer.destroy();
     }
-    void calculateRenderRect() {
-        auto dim = gl.windowSize;
-        renderRect = IntRect(0, 20, cast(int)dim.width, (cast(int)dim.height-20)-20);
-        uint rem = renderRect.height&7;
-        if(rem!=0) {
-            // ensure height is a multiple of 8
-            renderRect.y      += rem;
-            renderRect.height -= rem;
-        }
-        log("renderRect = %s", renderRect);
+    bool getRenderOption(RenderOption opt) {
+        return renderOptions[opt];
+    }
+    void setRenderOption(RenderOption opt, bool value) {
+        renderOptions[opt] = value;
     }
     void enteringView() {
         glClearColor(0.1, 0, 0, 0);
@@ -109,6 +110,28 @@ public:
     void setWorld(World world) {
         this.world           = world;
         this.needToInitWorld = true;
+
+        world.camera.resize(renderRect.dimension);
+    }
+    void keyPress(uint keyCode, bool down, uint mods) {
+        if(!down) return;
+
+        switch(keyCode) {
+            case GLFW_KEY_1:
+                setRenderOption(RenderOption.DISPLAY_VOXEL_SIZES,
+                    !getRenderOption(RenderOption.DISPLAY_VOXEL_SIZES));
+                topBar.renderOptionsChanged();
+                glComputeSceneRenderer.renderOptionsChanged();
+                break;
+            case GLFW_KEY_2:
+                setRenderOption(RenderOption.ACCURATE_VOXEL_BOXES,
+                    !getRenderOption(RenderOption.ACCURATE_VOXEL_BOXES));
+                topBar.renderOptionsChanged();
+                glComputeSceneRenderer.renderOptionsChanged();
+                break;
+            default:
+                break;
+        }
     }
     void update(float timeDelta) {
         updateWatch.reset();
@@ -126,8 +149,8 @@ public:
         }
 
         bool moved;
-        float rotateRatio  = 0.01 * timeDelta;
-        float fwdBackRatio = 0.25*20 * timeDelta;
+        float rotateRatio  = 0.02 * timeDelta;
+        float fwdBackRatio = 0.4*20 * timeDelta;
 
         if(gl.isMouseButtonPressed(0)) {
             auto pos = gl.mousePos;
@@ -163,6 +186,9 @@ public:
             GC.minimize();
             writefln("Collecting garbage");
         }
+
+
+
         if(moved) {
             writefln("camera = %s", world.camera);
             skybox.setVP(world.camera);
@@ -205,6 +231,17 @@ public:
         getDiskMonitor().render();
         getGPUIOMonitor().render();
         getChunksMonitor().render();
+    }
+private:
+    void calculateRenderRect() {
+        auto dim = gl.windowSize;
+        renderRect = IntRect(0, 20, cast(int)dim.width, (cast(int)dim.height-20)-20);
+        uint rem = renderRect.height&7;
+        if(rem!=0) {
+            /// ensure height is a multiple of 8
+            renderRect.y      += rem;
+            renderRect.height -= rem;
+        }
     }
 }
 

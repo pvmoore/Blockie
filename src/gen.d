@@ -1,94 +1,108 @@
 module gen;
-/**
- *
- */
+
 import blockie.all;
 import blockie.generate.all;
+import std.file : remove, dirEntries, SpanMode;
 
-import core.sys.windows.windows;
-import core.runtime : Runtime;
+void main(string[] args) {
 
-extern(Windows)
-int WinMain(HINSTANCE theHInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	int result = 0;
 	Generator app;
-	Throwable exception;
-	try{
-		Runtime.initialize();
 
-		app = new Generator();
-		app.run();
-	}catch(Throwable e) {
-	    exception = e;
-		log("exception: %s", e.msg);
-	}finally{
-		flushLog();
-		flushStdErrOut();
-		app.destroy();
-		if(exception) {
-		    MessageBoxA(null, exception.toString().toStringz, "Error", MB_OK | MB_ICONEXCLAMATION);
-        	result = -1;
-		}
-		Runtime.terminate();
-	}
-	return result;
+    try{
+        app = new Generator();
+        scope(exit) app.destroy();
+        app.run();
+    }catch(Throwable t) {
+        writefln("Error: %s", t.msg);
+    }finally {
+        flushConsole();
+    }
 }
 
 final class Generator {
-    this() {
-
-    }
-    void destroy() {
-
-    }
     void run() {
-//        Chunk ch  = Chunk.airChunk(ivec3(0,0,0));
-//        auto view = ch.beginEdit();
-//        setOctreeVoxel(view, 1, 0,0,0);
-//        writefln("---------------------------");
-//        setOctreeVoxel(view, 0, 0,0,0);
+        initEvents(1*MB);
 
-//        generateWorld(new TestScene1());
-//        generateWorld(new TestScene2());
-//        generateWorld(new TestScene3());
-//        generateWorld(new TestScene4());
-//        //generateWorld(new TestScene4b());
-//        //generateWorld(new TestScene4c());
-//        generateWorld(new TestScene5());
-//        generateWorld(new TestScene6());
-        generateWorld(new TestScene7());
+        const auto num = "1";
+
+        mixin("auto scene = new TestScene%s;".format(num));
+
+        auto world = scene.getWorld();
+
+        world.save();
+
+        string dirName  = "data/" ~ world.name ~ "/";
+
+        version(MODEL1) {
+            foreach(string name; dirEntries(dirName, "M1*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel1(scene, world);
+        } else {
+            foreach(string name; dirEntries(dirName, "M2*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel2(scene, world);
+        }
+    }
+    void generateModel1(SceneGenerator sceneGenerator, World world) {
+        writefln("\nGenerating Model1 %s", world);
+
+        auto storage = new ChunkStorage(world, new Model1);
+        scope(exit) storage.destroy();
+
+        auto builder = new WorldBuilder();
+        sceneGenerator.build(builder);
+        auto chunks = cast(Chunk[])builder.getChunks();
+
+        writefln("Generating air cells"); flushConsole();
+        StopWatch w; w.start();
+        calculateCellDistances(chunks, new Model1);
+        writefln("Cell distances took %.2f seconds", w.peek().total!"nsecs"*1e-09);
+
+        writefln("Generating air chunks"); flushConsole();
+        w.reset(); w.start();
+        calculateChunkDistances(chunks, storage);
+        writefln("Chunk distances took %.2f seconds", w.peek().total!"nsecs"*1e-09);
+
+        foreach(c; chunks) {
+            getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
+        }
+        Thread.sleep(dur!"seconds"(1));
 
         writefln("maxBranches        = %s", maxBranches);
         writefln("maxLeaves          = %s (%s bits)", maxLeaves, bitsRequiredToEncode(maxLeaves));
         writefln("maxVoxelsLength    = %s", maxVoxelsLength);
         writefln("numChunksOptimised = %s", numChunksOptimised);
+        writefln("Finished");
     }
-    void generateWorld(WorldGen gen) {
-        auto w = gen.getWorld();
-        writefln("Generating %s", w);
-        flushStdErrOut();
-        auto builder = new WorldBuilder();
-        gen.build(builder);
-        auto chunks = builder.getChunks();
-        calculateAirNibbles(chunks);
-        auto airChunks = generateAirChunks(chunks);
-        saveScene(w, chunks, airChunks);
-    }
-    void saveScene(World w, Chunk[] chunks, Chunk[] airChunks) {
-        saveWorld(w);
+    void generateModel2(SceneGenerator sceneGenerator, World world) {
+        writefln("\nGenerating Model2 %s", world);
 
-        foreach(c; chunks) {
-            saveChunk(w, c);
-        }
+        auto editor = new M2WorldEditor(world, new Model2);
+        scope(exit) editor.destroy();
 
-        saveAirChunks(w,
-            airChunks.map!(it=>AirChunk(it.pos,
-                                        it.root.flags.distX,
-                                        it.root.flags.distY,
-                                        it.root.flags.distZ)
-                                        )
-                     .array
-        );
+        sceneGenerator.build(editor);
+
+        //editor.startTransaction();
+        //editor.setVoxel(worldcoords(0,0,0), 1);
+        //editor.setVoxel(worldcoords(1,0,0), 1);
+        //editor.setVoxel(worldcoords(0,1,0), 1);
+        //editor.setVoxel(worldcoords(1,1,0), 1);
+        //
+        //editor.setVoxel(worldcoords(0,0,1), 1);
+        //editor.setVoxel(worldcoords(1,0,1), 1);
+        //editor.setVoxel(worldcoords(0,1,1), 1);
+        //editor.setVoxel(worldcoords(1,1,1), 1);
+        //
+        //editor.setVoxel(worldcoords(2,0,0), 1);
+        //editor.setVoxel(worldcoords(2,2,0), 1);
+        //
+        //editor.setVoxel(worldcoords(64,0,0), 1);
+
+        //editor.setVoxelBlock(worldcoords(0,0,0), 2, 1);
+        //editor.commitTransaction();
+
+        writefln("Finished");
     }
 }
-

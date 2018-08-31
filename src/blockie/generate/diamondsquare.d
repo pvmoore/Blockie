@@ -20,9 +20,9 @@ private:
 public:
     this(uint size, float scale=1, uint featureSize=0) {
         if(popcnt(size-1)!=1) throw new Error("Invalid size");
-        this.size  = size;
-        this.scale = scale;
-        this.featureSize = featureSize==0 ? size-1 : featureSize;
+        this.size           = size;
+        this.scale          = scale;
+        this.featureSize    = featureSize==0 ? size-1 : featureSize;
         this.heights.length = size*size;
         heights[] = 0;
         gen.seed(0);

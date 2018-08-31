@@ -1,4 +1,4 @@
-module blockie.domain.chunk.chunk_view;
+module blockie.model1.M1ChunkEditView;
 /**
  *  An editable view of a Chunk. Start editing by calling
  *      chunk.beginEdit()
@@ -9,8 +9,8 @@ module blockie.domain.chunk.chunk_view;
  */
 import blockie.all;
 
-final class ChunkEditView {
-    Chunk chunk;
+final class M1ChunkEditView {
+    M1Chunk chunk;
     OctreeRoot root;
     OctreeBranch[] branches;
     OctreeBranch[] l2Branches;
@@ -18,7 +18,7 @@ final class ChunkEditView {
     Stack!uint freeLeaves;
     Stack!uint freeBranches;
 
-    this(Chunk chunk) {
+    this(M1Chunk chunk) {
         this.chunk        = chunk;
         this.freeLeaves   = new Stack!uint(8);
         this.freeBranches = new Stack!uint(8);
@@ -46,7 +46,6 @@ final class ChunkEditView {
     uint toIndex(OctreeLeaf* lf) const {
         return cast(uint)(cast(ptrdiff_t)lf - cast(ptrdiff_t)leaves.ptr) / OctreeLeaf.sizeof;
     }
-    //bool isAir() const { return root.flags.flag == OctreeFlag.AIR; }
     override string toString() {
         return "EditView for " ~ (chunk ? chunk.toString() : "[NULL chunk]");
     }

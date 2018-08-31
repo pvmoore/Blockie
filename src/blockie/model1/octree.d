@@ -1,4 +1,4 @@
-module blockie.domain.chunk.octree;
+module blockie.model1.octree;
 
 import blockie.all;
 import core.bitop : popcnt;
@@ -25,25 +25,26 @@ align(1) final struct OctreeFlags { align(1):
 }
 static assert(OctreeFlags.sizeof==4);
 
-static if(OCTREE_ROOT_BITS==1) {
-    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+1+OctreeIndex.sizeof*8);
-} else static if(OCTREE_ROOT_BITS==2) {
-    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+8+OctreeIndex.sizeof*64);
-} else static if(OCTREE_ROOT_BITS==3) {
-    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+64+OctreeIndex.sizeof*512);
-} else static if(OCTREE_ROOT_BITS==4) {
-    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+512+OctreeIndex.sizeof*4096);
-} else static if(OCTREE_ROOT_BITS==5) {
-    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+4096+OctreeIndex.sizeof*32768);
-} else static assert(false);
+//static if(OCTREE_ROOT_BITS==1) {
+//    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+1+OctreeIndex.sizeof*8);
+//} else static if(OCTREE_ROOT_BITS==2) {
+//    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+8+OctreeIndex.sizeof*64);
+//} else static if(OCTREE_ROOT_BITS==3) {
+//    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+64+OctreeIndex.sizeof*512);
+//} else static if(OCTREE_ROOT_BITS==4) {
+    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+512+OctreeIndex.sizeof*4096); // 12804
+//} else static if(OCTREE_ROOT_BITS==5) {
+//    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+4096+OctreeIndex.sizeof*32768);
+//} else static assert(false);
 
-const uint OCTREE_ROOT_BITS_LENGTH    = 8^^(OCTREE_ROOT_BITS-1);
-const uint OCTREE_ROOT_INDEXES_LENGTH = 8^^OCTREE_ROOT_BITS;
+const uint OCTREE_ROOT_BITS_LENGTH    = 8^^(OCTREE_ROOT_BITS-1);    /// 512
+const uint OCTREE_ROOT_INDEXES_LENGTH = 8^^OCTREE_ROOT_BITS;        /// 4096
+
 final struct OctreeRoot {
     OctreeFlags flags;
     ubyte[OCTREE_ROOT_BITS_LENGTH] bits;
     OctreeIndex[OCTREE_ROOT_INDEXES_LENGTH] indexes;
-pragma(inline,true):
+
     uint numOffsets() {
         uint count = 0;
         foreach(b; bits) count += popcnt(b);
@@ -129,7 +130,7 @@ final struct OctreeTwig {
     ubyte bits;
     ubyte[3] baseIndex;
     ubyte[8] voxels;
-pragma(inline,true):
+
     uint getBaseIndex() {
         return (baseIndex[2]<<16) | (baseIndex[1]<<8) | baseIndex[0];
     }
@@ -144,7 +145,7 @@ static assert(OctreeBranch.sizeof==25);
 final struct OctreeBranch {
     ubyte bits;
     OctreeIndex[8] indexes;
-pragma(inline,true):
+
     uint numOffsets() {
         return popcnt(bits);
     }
@@ -183,7 +184,7 @@ pragma(inline,true):
 static assert(OctreeLeaf.sizeof==8);
 final struct OctreeLeaf {
     ubyte[8] voxels;
-pragma(inline,true):
+
     ubyte getVoxel(uint oct) {
         return voxels[oct];
     }
@@ -205,7 +206,7 @@ pragma(inline,true):
 static assert(OctreeIndex.sizeof==3);
 final struct OctreeIndex {
     ubyte[3] v;
-pragma(inline,true):
+
     ubyte voxel() {
         return v[0];
     }
@@ -563,7 +564,7 @@ void dump(OctreeRoot* b) {
     writefln("}");
 }
 
-void setOctreeVoxel(ChunkEditView view, ubyte v, uint x, uint y, uint z) {
+void setOctreeVoxel(M1ChunkEditView view, ubyte v, uint x, uint y, uint z) {
     //writefln("setOctreeVoxel(%s, %s,%s,%s)", v, x,y,z);
 
     // ensure branches and leaves have enough capacity for this update
@@ -587,84 +588,82 @@ void setOctreeVoxel(ChunkEditView view, ubyte v, uint x, uint y, uint z) {
         octs.clear();
     }
 
-    pragma(inline,true) {
-        OctreeBranch* getFreeBranch() {
-            if(!view.freeBranches.empty) {
-                return view.toBranchPtr(view.freeBranches.pop());
-            }
-            uint i = cast(uint)view.branches.length;
-            view.branches.length += 1;
-            if(view.branches.length >= 2^^24) throw new Error("Max num branches reached");
-            return view.toBranchPtr(i);
+    OctreeBranch* getFreeBranch() {
+        if(!view.freeBranches.empty) {
+            return view.toBranchPtr(view.freeBranches.pop());
         }
-        OctreeLeaf* getFreeLeaf() {
-            if(!view.freeLeaves.empty) {
-                return view.toLeafPtr(view.freeLeaves.pop());
-            }
-            uint i = cast(uint)view.leaves.length;
-            view.leaves.length += 1;
-            if(view.leaves.length >= 2^^24) throw new Error("Max num leaves reached");
-            return view.toLeafPtr(i);
+        uint i = cast(uint)view.branches.length;
+        view.branches.length += 1;
+        if(view.branches.length >= 2^^24) throw new Error("Max num branches reached");
+        return view.toBranchPtr(i);
+    }
+    OctreeLeaf* getFreeLeaf() {
+        if(!view.freeLeaves.empty) {
+            return view.toLeafPtr(view.freeLeaves.pop());
         }
-        void expandRoot(OctreeRoot* rt, uint oct, ubyte oldValue)  {
-            //writefln("expandRoot(%s,%s)",oct,oldValue);
+        uint i = cast(uint)view.leaves.length;
+        view.leaves.length += 1;
+        if(view.leaves.length >= 2^^24) throw new Error("Max num leaves reached");
+        return view.toLeafPtr(i);
+    }
+    void expandRoot(OctreeRoot* rt, uint oct, ubyte oldValue)  {
+        //writefln("expandRoot(%s,%s)",oct,oldValue);
+        // add branch node
+        auto branch = getFreeBranch();
+        rt.setOffset(oct, view.toIndex(branch));
+        branch.setToSolid(oldValue);
+    }
+    void expandBranch(OctreeBranch* br, uint oct, ubyte oldValue)  {
+        //writefln("expandBranch(%s,%s,%s)",branchToIndex(br), oct,oldValue);
+
+        bool isParentOfLeaf() { return and==2; }
+
+        if(isParentOfLeaf()) {
+            // add leaf node
+            auto leaf = getFreeLeaf();
+            br.setOffset(oct, view.toIndex(leaf));
+
+            leaf.setAllVoxels(oldValue);
+        } else {
             // add branch node
-            auto branch = getFreeBranch();
-            rt.setOffset(oct, view.toIndex(branch));
-            branch.setToSolid(oldValue);
+            auto newBranch = getFreeBranch();
+            br.setOffset(oct, view.toIndex(newBranch));
+
+            newBranch.setToSolid(oldValue);
         }
-        void expandBranch(OctreeBranch* br, uint oct, ubyte oldValue)  {
-            //writefln("expandBranch(%s,%s,%s)",branchToIndex(br), oct,oldValue);
+    }
+    void collapse(OctreeBranch* br, uint oct)  {
+        //writefln("collapse(%s,%s) nodes.length=%s", toUint(br),oct, nodes.length);
 
-            bool isParentOfLeaf() { return and==2; }
+        bool isRoot = cast(OctreeRoot*)br is &view.root;
 
-            if(isParentOfLeaf()) {
-                // add leaf node
-                auto leaf = getFreeLeaf();
-                br.setOffset(oct, view.toIndex(leaf));
+        if(isRoot) {
+            //writefln("  this is a root");
+            auto root = cast(OctreeRoot*)br;
+            root.setVoxel(oct, v);
+        } else {
+            // branch
+            br.setVoxel(oct, v);
 
-                leaf.setAllVoxels(oldValue);
-            } else {
-                // add branch node
-                auto newBranch = getFreeBranch();
-                br.setOffset(oct, view.toIndex(newBranch));
-
-                newBranch.setToSolid(oldValue);
-            }
-        }
-        void collapse(OctreeBranch* br, uint oct)  {
-            //writefln("collapse(%s,%s) nodes.length=%s", toUint(br),oct, nodes.length);
-
-            bool isRoot = cast(OctreeRoot*)br is &view.root;
-
-            if(isRoot) {
-                //writefln("  this is a root");
-                auto root = cast(OctreeRoot*)br;
-                root.setVoxel(oct, v);
-            } else {
-                // branch
-                br.setVoxel(oct, v);
-
-                if(br.isSolid) {
-                    view.freeBranches.push(view.toIndex(br));
-                    collapse(nodes.pop(), octs.pop());
-                }
+            if(br.isSolid) {
+                view.freeBranches.push(view.toIndex(br));
+                collapse(nodes.pop(), octs.pop());
             }
         }
     }
 
     // octree root
-    static if(OCTREE_ROOT_BITS==1) {
-        uint oct = getOctet_1(x,y,z, and);
-    } else static if(OCTREE_ROOT_BITS==2) {
-        uint oct = getOctetRoot_11(x,y,z, CHUNK_SIZE_SHR);
-    } else static if(OCTREE_ROOT_BITS==3) {
-        uint oct = getOctetRoot_111(x,y,z, CHUNK_SIZE_SHR);
-    } else static if(OCTREE_ROOT_BITS==4) {
+    //static if(OCTREE_ROOT_BITS==1) {
+    //    uint oct = getOctet_1(x,y,z, and);
+    //} else static if(OCTREE_ROOT_BITS==2) {
+    //    uint oct = getOctetRoot_11(x,y,z, CHUNK_SIZE_SHR);
+    //} else static if(OCTREE_ROOT_BITS==3) {
+    //    uint oct = getOctetRoot_111(x,y,z, CHUNK_SIZE_SHR);
+    //} else static if(OCTREE_ROOT_BITS==4) {
         uint oct = getOctetRoot_1111(x,y,z, CHUNK_SIZE_SHR);
-    } else static if(OCTREE_ROOT_BITS==5) {
-        uint oct = getOctetRoot_11111(x,y,z, CHUNK_SIZE_SHR);
-    } else static assert(false);
+    //} else static if(OCTREE_ROOT_BITS==5) {
+    //    uint oct = getOctetRoot_11111(x,y,z, CHUNK_SIZE_SHR);
+    //} else static assert(false);
 
     auto root  = &view.root;
     auto index = &root.indexes[oct];

@@ -1,0 +1,22 @@
+module blockie.model;
+
+import blockie.all;
+
+public:
+
+import blockie.model.event;
+import blockie.model.getoctet;
+import blockie.model.voxel;
+import blockie.model.world;
+import blockie.model.Chunk;
+import blockie.model.ChunkEditView;
+import blockie.model.ChunkManager;
+import blockie.model.ChunkSerialiser;
+import blockie.model.ChunkStorage;
+import blockie.model.DistanceFields;
+import blockie.model.WorldEditor;
+
+interface Model {
+    Chunk           makeChunk(chunkcoords coords);
+    ChunkSerialiser makeChunkSerialiser(World w);
+}

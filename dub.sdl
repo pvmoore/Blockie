@@ -17,18 +17,19 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
 }
 
+versions "GC_STATS" "MODEL2"
+
 configuration "blockie" {
 	#mainSourceFile "src/main.d"
 	excludedSourceFiles "src/gen.d"
 	targetType "executable"
-	targetName "bin-blockie"
-	versions "GC_STATS"
+	targetName "blockie"
 }
 configuration "generate" {
 	#mainSourceFile "src/gen.d"
 	excludedSourceFiles "src/main.d"
 	targetType "executable"
-	targetName "bin-generate"
+	targetName "generate"
 }
 
 # local

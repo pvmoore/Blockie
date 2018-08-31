@@ -35,7 +35,7 @@ import blockie.generate.all;
  *          61,364,692      4.56ms  (8464750,133701,319339)
  *          62,026,092      5.93ms  (8546750,133397,319339)
  */
-final class TestScene4b : WorldGen {
+final class TestScene4b : SceneGenerator {
     ImprovedPerlin noise;
     const uint width   = 1024*8;    // x
     const uint height  = 1024*2;    // y
@@ -59,7 +59,9 @@ final class TestScene4b : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
 
         for(auto x=0; x<width; x++) {
             for(auto z=0; z<breadth; z++) {
@@ -105,13 +107,13 @@ final class TestScene4b : WorldGen {
 //                            v = V_ROCK1;
 //                        }
                     }
-                    edit.setVoxel(v, x,h,z);
+                    edit.setVoxel(worldcoords(x,h,z), v);
                     h--;
                 }
             }
         }
 
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);

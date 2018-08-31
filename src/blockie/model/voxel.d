@@ -1,4 +1,4 @@
-module blockie.domain.voxel;
+module blockie.model.voxel;
 
 import blockie.all;
 

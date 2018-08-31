@@ -5,11 +5,13 @@ import blockie.all;
 final class BottomBar {
 private:
     const float FONT_SIZE = 16;
+    RenderView renderView;
     Camera2D camera;
     SDFFontRenderer textRenderer;
     FilledRectangleRenderer rectRenderer;
 public:
-    this(OpenGL gl) {
+    this(OpenGL gl, RenderView renderView) {
+        this.renderView   = renderView;
         auto font         = gl.getFont("dejavusans-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);
         this.rectRenderer = new FilledRectangleRenderer(gl);

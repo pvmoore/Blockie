@@ -5,7 +5,7 @@ import blockie.generate.all;
 /**
  *
  */
-final class TestScene6 : WorldGen {
+final class TestScene6_bunny : SceneGenerator {
     const uint xsize   = 1024*3;
     const uint ysize   = 1024*2;
     const uint zsize   = 1024*3;
@@ -24,7 +24,9 @@ final class TestScene6 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
 
         // floor
         edit.rectangle(ivec3(0,       0, 0),
@@ -34,7 +36,7 @@ final class TestScene6 : WorldGen {
 
         loadBunny(edit);
 
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);
@@ -45,7 +47,7 @@ private:
      *  Bunny slices are in files "1" to "361".
      *  They are each 512 x 512 x ushort (little-endian).
      */
-    void loadBunny(WorldBuilder edit) {
+    void loadBunny(WorldEditor edit) {
         string directory = "/temp/bunny/";
 
         int y = 1;

@@ -1,7 +1,23 @@
 #version 430 core
+
+/*
+    Set by program:
+
+    CHUNK_SIZE          1024
+    CHUNK_SIZE_SHR      10
+    OCTREE_ROOT_BITS    4
+    OctreeRootSize      12804
+    OctreeBranchSize    25
+    OctreeTwigSize      12
+    OctreeLeafSize      8
+    DFIELD_OFFSET       5148
+*/
+
 #define GROUP_SIZE_X 8
 #define GROUP_SIZE_Y 8
 layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
+
+#include "header.inc"
 
 layout(binding = 0, std430) readonly buffer I0 {
     // voxel data in ubytes
@@ -11,34 +27,44 @@ layout(binding = 1, std430) readonly buffer I1 {
     // chunk data in uints
 	uint chunkDataIn[];
 };
-layout(binding = 2, rgba32f)
-uniform writeonly image2D imageOut;
+layout(binding = 2, std430) writeonly buffer O0 {
+	MarchOut dataOut[];
+};
+//layout(binding = 2, rgba32f)
+//uniform writeonly image2D imageOut;
 
 //layout(binding = 3, std430) writeonly buffer O0 {
 //	float debugOut[];
 //};
 
-uniform ivec2 SIZE;
-uniform uvec3 WORLD_CHUNKS_XYZ;
-uniform vec3  WORLD_BB[2];
-uniform vec3  CAMERA_ORIGIN;
-uniform vec3  SCREEN_MIDDLE;
-uniform vec3  SCREEN_XDELTA;
-uniform vec3  SCREEN_YDELTA;
+uniform ivec2 SIZE;             // Render window size
+uniform uvec3 WORLD_CHUNKS_XYZ; // (25, 8, 25)
+uniform vec3  WORLD_BB[2];      // world bounding box in worldcoords
 
-ivec2 g_pos  = ivec2(gl_GlobalInvocationID.xy);
-ivec2 l_pos  = ivec2(gl_LocalInvocationID.xy);
-uint g_index = gl_GlobalInvocationID.x +
-               gl_GlobalInvocationID.y*SIZE.x;
-uint l_index = gl_LocalInvocationIndex;
+uniform vec3  CAMERA_POS;       // in worldcoords
+uniform vec3  SCREEN_MIDDLE;    // for calculating Ray
+uniform vec3  SCREEN_XDELTA;    // for calculating Ray
+uniform vec3  SCREEN_YDELTA;    // for calculating Ray
+
+//uniform mat4 VIEW;
+//uniform mat4 INVVIEW;
+//uniform float TANFOV2;
+//
+//vec2 ASPECT_RATIO = SIZE / SIZE.y;
+
+ivec2 pixel     = ivec2(gl_GlobalInvocationID.xy);
+uint g_index    = gl_GlobalInvocationID.x +
+                  gl_GlobalInvocationID.y*SIZE.x;
+vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
 
 #include "useful_functions.comp"
-#include "header.comp"
-#include "getoctet.comp"
-#include "chunk.comp"
+#include "getoctet.inc"
+#include "marchM1.inc"
+#include "camera.inc"
 
 #line 1
 
+/// Return true if chunk changes
 bool updatePosition(inout Position pos, vec3 add) {
     pos.fpos += add;
     pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
@@ -47,15 +73,8 @@ bool updatePosition(inout Position pos, vec3 add) {
 
 	bool outOfBounds = any(greaterThanEqual(xyz, WORLD_CHUNKS_XYZ));
 
-    const uint chunksX  = WORLD_CHUNKS_XYZ.x;
-	const uint chunksXY = WORLD_CHUNKS_XYZ.x*
-	                      WORLD_CHUNKS_XYZ.y;
-
     const int prevChunk = pos.chunk;
-    pos.chunk = outOfBounds ? -1
-                : int(xyz.x +
-                      xyz.y*chunksX +
-                      xyz.z*chunksXY);
+    pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
     return pos.chunk != prevChunk;
 }
 bool isAirChunk(const uint flags) {
@@ -107,31 +126,29 @@ float getMinDistToEdgeOfDistanceField(
  *  the ray is. This is necessary in the pathological case
  *  where the ray is parallel to and on the edge of a voxel box.
  *  Also, a small bump greatly improves speed without compromising
- *  quality. Adjust these values appropriately depending on scene.
+ *  quality (much). Adjust these values appropriately depending on the scene.
  */
 void skipLOD(const float distance, inout float dist) {
-    const float bump = (distance+0.0001)/1000;
+    const float bump = (distance+0.00001)/1500;
 
     // handle pathological case
     if(dist<0.0001) {
-        dist += clamp(bump, 0.005, 0.5);
+        //dist += clamp(bump, 0.005, 0.5);
+        dist += clamp(bump, 0.001, 2.0); // 0.001, 2.0
+    } else {
+        // skip a bit based on distance to camera
+        //dist += clamp(bump, 0.0001, 15);
+        /// The higher this value, the less accurate the results
+        //dist += clamp(bump, 0.0001, 0.5);
+
+        dist += smoothstep(0.00001, 1.5, bump); // 0.0001, 0.5
     }
-    // skip a bit based on distance to camera
-    dist += clamp(bump, 0.0001, 15);
 }
-Voxel march(const Ray ray,
-            inout Position pos,
-            const float maxDistance)
-{
+Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
     Voxel voxel;
     float distance   = 0;
     uint voxelsRoot  = chunkDataIn[pos.chunk];
-    uint offsets     = voxelsRoot/4;
-    uint flags       = voxelsIn[offsets];
-    uint cache[2]    = uint[](
-        voxelsRoot,
-        offsets
-    );
+    uint flags       = voxelsIn[voxelsRoot/4];
 
     // Assume:
     //      1) pos.chunk will always start with a valid chunk
@@ -144,7 +161,7 @@ Voxel march(const Ray ray,
             dist = getMinDistToEdgeOfDistanceField(ray, pos, airChunkDistanceField(flags), CHUNK_SIZE);
         } else {
 
-            if(!getAirVoxel(pos, voxel, distance, cache)) break;
+            if(!getAirVoxel(pos, voxel, distance, voxelsRoot)) break;
 
             const bool isRoot = (voxel.size == NIBBLE_SIZE);
 
@@ -165,26 +182,12 @@ Voxel march(const Ray ray,
         if(chunkChanged) {
             if(pos.chunk==-1) break;
             voxelsRoot  = chunkDataIn[pos.chunk];
-            offsets     = voxelsRoot/4;
-            flags       = voxelsIn[offsets];
-            cache[0] = voxelsRoot;
-            cache[1] = offsets;
+            flags       = voxelsIn[voxelsRoot/4];
         }
 	}while(distance<maxDistance);
+
+	voxel.distance = distance;
 	return voxel;
-}
-
-Ray generateRay() {
-    vec3 middle = SCREEN_MIDDLE;
-    vec3 xDelta = SCREEN_XDELTA;
-    vec3 yDelta = SCREEN_YDELTA;
-    vec2 mid    = vec2(g_pos) - vec2(SIZE)/2.0f;
-
-    Ray ray;
-    ray.start        = CAMERA_ORIGIN;
-    ray.direction    = normalize((middle + mid.x*xDelta) + mid.y*yDelta);
-    ray.invDirection = 1.0f/ray.direction;
-    return ray;
 }
 
 void main() {
@@ -195,5 +198,5 @@ void main() {
 
     Voxel voxel = march(ray, pos, MAX_DISTANCE);
 
-    imageStore(imageOut, g_pos, vec4(pos.fpos, voxel.value));
+    dataOut[g_index] = MarchOut(voxel.distance, (voxel.size<<8) + voxel.value);
 }

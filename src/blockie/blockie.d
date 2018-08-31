@@ -2,12 +2,6 @@ module blockie.blockie;
 
 import blockie.all;
 
-version(GC_STATS) {
-extern(C) __gshared string[] rt_options = [
-    "gcopt=profile:1"
-];
-}
-
 final class Blockie : ApplicationListenerAdapter {
 private:
     const string title = "Blockie " ~ version_;
@@ -15,13 +9,13 @@ private:
     World world;
     IView view;
     IView nextView;
-    InitView initView;
     RenderView renderView;
 public:
     void initialise() {
         log("Starting %s", title);
+        writefln("\n%s", title);
 
-        initEvents(1024*1024);
+        initEvents(1*MB);
 
         this.gl = new OpenGL(this, (h) {
             h.width        = 1200;
@@ -35,7 +29,7 @@ public:
             h.fontDirectory = "/pvmoore/_assets/fonts/hiero/";
         });
 
-        log("screen = %s", gl.windowSize);
+        log("screen = %s", gl.windowSize.to!int);
 
         getCPUMonitor().initialise(gl);
         getMEMMonitor().initialise(gl);
@@ -47,11 +41,7 @@ public:
         getFrameTimeMonitor().initialise(gl);
         getComputeMonitor().initialise(gl);
 
-        initView   = new InitView(gl);
         renderView = new RenderView(gl);
-
-        view = initView;
-        view.enteringView();
 
         //auto t = task(&initWorld);
         //t.executeInNewThread();
@@ -60,7 +50,7 @@ public:
         gl.showWindow(true);
     }
     void destroy() {
-        if(initView) initView.destroy();
+        writefln("");
         if(renderView) renderView.destroy();
         destroyMonitors();
         if(gl) gl.destroy();
@@ -69,43 +59,50 @@ public:
     void run() {
         if(gl) gl.enterMainLoop();
     }
-    void doSomething(void delegate(int a) call) {
-        // doSomething(it => writefln("%s", it));
-        // doSomething((it) {writefln("%s", it);});
-        call(10);
-    }
+    //void doSomething(void delegate(int a) call) {
+    //    // doSomething(it => writefln("%s", it));
+    //    // doSomething((it) {writefln("%s", it);});
+    //    call(10);
+    //}
     void initWorld() {
+
+
+        //float3 dir = float3(1,1,0.5).normalised;
+        //writefln("dir=%s invDir=%s", dir, float3(1)/dir);
+        //dir = -dir;
+        //writefln("dir=%s invDir=%s", dir, float3(1)/dir);
+
+
+
         try{
-            //Thread.getThis().isDaemon = true;
+            // (A) - Aggressive skipLOD producing artifacts in some scenes
+            // (B) - Better looking skipLOD
 
-            vec3 hex  = vec3(0x28,0x4a, 0x57);
-            vec3 rgb  = hex/255.0f;
-            writefln("hex=%s", hex);
-            writefln("rgb=(%s)", rgb);
+            //      FPS(A)  (B)   GPU(MB
+            // 1:   605     742      2      - 830   (0MB)
+            // 2:   1340   1140      5      - 1300  (0MB)
+            // 3:   455     352      8      - 460   (1MB)
+            // 4:   425     308    242      - 425   (247MB)
 
-            // When VIEW_WINDOW==(25,8,25) 1024^^3 chunks
-            // air dradius=6
-            // 1:   2.10
-            // 2:   1.02
-            // 3:   5.75
-            // 4:   5.00
-            // 5:   1.90
-            // 6:   2.30
-            // 7:   4.30
+            // 4b:  360     290     54      - 383   (46MB)
+            // 4c:  345     290     79      - 376   (59MB)
+            // 5:   1025    956      2      - 1070  (1MB)
+            // 6:   780     564     53      - 711   (41MB)
+            // 7:   415     375     32      - 460   (28MB)
 
             string w = "4";
 
             World world;
             switch(w) {
-                case "1" : world = loadWorld("Test Scene 1"); break;
-                case "2" : world = loadWorld("Test Scene 2"); break;
-                case "3" : world = loadWorld("Test Scene 3"); break;
-                case "4" : world = loadWorld("Test Scene 4"); break;
-                case "4b": world = loadWorld("Test Scene 4b"); break;
-                case "4c": world = loadWorld("Test Scene 4c"); break;
-                case "5" : world = loadWorld("Test Scene 5"); break;
-                case "6" : world = loadWorld("Test Scene 6 - Bunny"); break;
-                case "7" : world = loadWorld("Test Scene 7 - HGT"); break;
+                case "1" : world = World.load("Test Scene 1"); break;
+                case "2" : world = World.load("Test Scene 2"); break;
+                case "3" : world = World.load("Test Scene 3"); break;
+                case "4" : world = World.load("Test Scene 4"); break;
+                case "4b": world = World.load("Test Scene 4b"); break;
+                case "4c": world = World.load("Test Scene 4c"); break;
+                case "5" : world = World.load("Test Scene 5"); break;
+                case "6" : world = World.load("Test Scene 6 - Bunny"); break;
+                case "7" : world = World.load("Test Scene 7 - HGT"); break;
                 default: break;
             }
 
@@ -117,18 +114,26 @@ public:
             writefln("Error: %s",e);
         }
     }
+    @Implements("ApplicationListener")
+    override void keyPress(uint keyCode, uint scanCode, bool down, uint mods) nothrow {
+        try{
+            renderView.keyPress(keyCode, down, mods);
+        }catch(Exception e) {}
+    }
     /// always called on the main thread
+    @Implements("ApplicationListener")
     override void render(long frameNumber,
                          long normalisedFrameNumber,
                          float timeDelta)
     {
         if(!gl) return;
         if(nextView) {
-            view.exitingView();
+            if(view) view.exitingView();
             view = nextView;
             view.enteringView();
             nextView = null;
         }
+        if(!view) return;
         view.render(frameNumber, normalisedFrameNumber, timeDelta);
         view.update(timeDelta);
 

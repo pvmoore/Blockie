@@ -3,7 +3,7 @@ module blockie.generate.testscene4;
 import blockie.all;
 import blockie.generate.all;
 
-final class TestScene4 : WorldGen {
+final class TestScene4 : SceneGenerator {
     ImprovedPerlin noise;
     const uint width   = 1024*15;   // x
     const uint height  = 1024*2;    // y
@@ -27,7 +27,9 @@ final class TestScene4 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
 
         for(auto x=0; x<width; x++) {
             for(auto z=0; z<breadth; z++) {
@@ -72,13 +74,13 @@ final class TestScene4 : WorldGen {
 //                            v = V_ROCK1;
 //                        }
                     }
-                    edit.setVoxel(v, x,h,z);
+                    edit.setVoxel(worldcoords(x,h,z), v);
                     h--;
                 }
             }
         }
 
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);

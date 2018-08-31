@@ -1,6 +1,6 @@
-module blockie.domain.chunk.optimise;
+module blockie.model1.optimise;
 /**
- * Optimised read-only voxels layout (assumes 9-bit chunk 3-bit root):
+ * Optimised read-only voxels layout (assumes 10-bit chunk 4-bit root):
  *
  * Root:
  *      uint    flags
@@ -11,10 +11,10 @@ module blockie.domain.chunk.optimise;
  *      uint    leafIndexOffset
  *      uint    (leafEncodeBits | (l2EncodeBits<<8))
  *
- *      uint[32] root bits and popcounts interleaved
+ *      uint[256] root bits and popcounts interleaved (4096/16)
  *
- *      ubyte[512]  root voxels (solid or LOD estimated)
- *      ushort[512] root air distance fields (3*5 bits + 1 spare)
+ *      ubyte[4096]  root voxels (solid or LOD estimated)
+ *      ushort[4096] root air distance fields (3*5 bits + 1 spare)
  *
  * Twigs: (12 bytes each)
  *      ubyte bits
@@ -30,7 +30,6 @@ module blockie.domain.chunk.optimise;
  *      Indexes into leavesOffset
  */
 import blockie.all;
-import core.bitop : popcnt;
 
 __gshared ulong maxBranches;
 __gshared ulong maxLeaves;
@@ -49,7 +48,7 @@ align(1) struct OptimisedRoot { align(1):
     uint[OCTREE_ROOT_INDEXES_LENGTH/16] bitsAndPopcnts;
     ubyte[OCTREE_ROOT_INDEXES_LENGTH] voxels;
     ushort[OCTREE_ROOT_INDEXES_LENGTH] dfields;
-pragma(inline,true):
+
     bool isSolid(uint oct) {
         auto uintIndex = oct>>4;
         auto bitIndex  = oct&15;
@@ -72,19 +71,19 @@ pragma(inline,true):
         dfields[oct] = cast(ushort)(x | (y<<5) | (z<<10));
     }
 }
-static if(OCTREE_ROOT_BITS==3) {
-    static assert(OptimisedRoot.sizeof==1692);
-} else static if(OCTREE_ROOT_BITS==4) {
+//static if(OCTREE_ROOT_BITS==3) {
+//    static assert(OptimisedRoot.sizeof==1692);
+//} else static if(OCTREE_ROOT_BITS==4) {
     static assert(OptimisedRoot.sizeof==13340);
-}
+//}
 static assert(OptimisedRoot.bitsAndPopcnts.offsetof%4==0);
 static assert(OptimisedRoot.voxels.offsetof%4==0);
 static assert(OptimisedRoot.dfields.offsetof%4==0);
 
-/**
- *  Optimise an edited chunk to a more efficient read-only representation.
- */
-ubyte[] getOptimisedVoxels(ChunkEditView view) {
+///
+/// Optimise an edited chunk to a more efficient read-only representation.
+///
+ubyte[] getOptimisedVoxels(M1ChunkEditView view) {
     numChunksOptimised++;
 
     view.root.recalculateFlags();
@@ -94,10 +93,11 @@ ubyte[] getOptimisedVoxels(ChunkEditView view) {
 
     return convertToReadOptimised(view);
 }
-/**
- *  Search for and merge any duplicate leaves together.
- */
-private void mergeDuplicateLeaves(ChunkEditView view) {
+private:
+///
+/// Search for and merge any duplicate leaves together.
+///
+void mergeDuplicateLeaves(M1ChunkEditView view) {
 
     auto tup     = getUniqueLeaves(view);
     auto leafMap = tup[1];  // old to new index
@@ -106,14 +106,14 @@ private void mergeDuplicateLeaves(ChunkEditView view) {
     view.leaves = tup[0];
     view.freeLeaves.clear();
 
-    // Assuming CHUNK_SIZE_SHR=9 and OCTREE_ROOT_BITS=3:
-    // 1_1100_0000  toLevel=6
-    //     10_0000  5
-    //      1_0000  4
-    //        1000  3
-    //         100  2
-    //          10  toLevel=1
-    //           1  leaf
+    // Assuming CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
+    // 11_1100_0000  toLevel=6
+    //      10_0000  6
+    //       1_0000  5
+    //         1000  4
+    //          100  3
+    //           10  2
+    //            1  1 leaf
     void recurse(ref OctreeIndex idx, uint toLevel) {
         const pointingToLeaf = toLevel==1;
         const index = idx.offset;
@@ -137,10 +137,10 @@ private void mergeDuplicateLeaves(ChunkEditView view) {
     }
     //writefln("Chunk %s unique leaves = %s", view.chunk.pos, view.leaves.length);
 }
-/**
- *  Search for and merge any duplicate branches together.
- */
-private void mergeDuplicateBranches(ChunkEditView view) {
+///
+/// Search for and merge any duplicate branches together.
+///
+void mergeDuplicateBranches(M1ChunkEditView view) {
     // May need equals and hashCode for OctreeBranch and OctreeLeaf.
     // Work from leaf back towards root.
 
@@ -148,14 +148,14 @@ private void mergeDuplicateBranches(ChunkEditView view) {
     uint lvl;
     uint[OctreeBranch] map; // value is uint index of branch
 
-    // Assuming CHUNK_SIZE_SHR=9 and OCTREE_ROOT_BITS=3:
-    // 1_1100_0000  toLevel=6
-    //     10_0000  6
-    //      1_0000  5
-    //        1000  4
-    //         100  3
-    //          10  2
-    //           1  1 leaf
+    // Assuming CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
+    // 11_1100_0000  toLevel=6
+    //      10_0000  6
+    //       1_0000  5
+    //         1000  4
+    //          100  3
+    //           10  2
+    //            1  1 leaf
     void recurseBranch(ref OctreeIndex parentIdx, OctreeBranch* branch, uint level) {
         const pointingToLeaf = level==2;
 
@@ -202,12 +202,12 @@ private void mergeDuplicateBranches(ChunkEditView view) {
     }
     //writefln("Written %s unique level2 branches", view.l2Branches.length);
 }
-/**
- *  Finds all unique leaves and sorts them in order of popularity.
- *  (most used at the start of the list).
- *  Returns list of unique leaves in order, map of old index to new index.
- */
-private Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(ChunkEditView view) {
+///
+/// Finds all unique leaves and sorts them in order of popularity.
+/// (most used at the start of the list).
+/// Returns list of unique leaves in order, map of old index to new index.
+///
+Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(M1ChunkEditView view) {
     static struct Unique {
         OctreeLeaf leaf;
         uint count;
@@ -220,20 +220,18 @@ private Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(ChunkEditView view) {
     }
     Unique[ulong] map;
 
-    pragma(inline,true) {
     ulong getKey(OctreeLeaf* l) {
         ulong* p = cast(ulong*)l;
         return *p;
     }
-    }
-    // Assuming CHUNK_SIZE_SHR=9 and OCTREE_ROOT_BITS=3:
-    // 1_1100_0000  toLevel=6
-    //     10_0000  5
-    //      1_0000  4
-    //        1000  3
-    //         100  2
-    //          10  toLevel=1
-    //           1  leaf
+    // Assuming CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
+    // 11_1100_0000  toLevel=6
+    //      10_0000  6
+    //       1_0000  5
+    //         1000  4
+    //          100  3
+    //           10  2
+    //            1  1 leaf
     void recurse(ref OctreeIndex idx, uint toLevel) {
         const pointingToLeaf = toLevel==1;
         const index = idx.offset;
@@ -276,14 +274,14 @@ private Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(ChunkEditView view) {
     }
     return tuple(uniqueLeaves,oldIndexToNew);
 }
-/**
- *  Convert to compact root.
- *  Convert all 25 byte branches to 12 byte twigs.
- */
-private ubyte[] convertToReadOptimised(ChunkEditView view) {
+///
+/// Convert to compact root.
+/// Convert all 25 byte branches to 12 byte twigs.
+///
+ubyte[] convertToReadOptimised(M1ChunkEditView view) {
     // assume view.leaves has been de-duped
 
-    OctreeTwig[] twigs = new OctreeTwig[view.branches.length+8^^OCTREE_ROOT_BITS];
+    OctreeTwig[] twigs = new OctreeTwig[view.branches.length+(8^^OCTREE_ROOT_BITS)];
     uint twigIndex;
 
     OctreeTwig[] l2twigs = new OctreeTwig[view.l2Branches.length];
@@ -346,7 +344,8 @@ private ubyte[] convertToReadOptimised(ChunkEditView view) {
         }
         return getAverageVoxel(twigs[ti].voxels);
     }
-    // Assuming CHUNK_SIZE_SHR=9 and OCTREE_ROOT_BITS=3:
+    // Assuming CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
+    //    100_0000  7
     //     10_0000  6
     //      1_0000  5
     //        1000  4

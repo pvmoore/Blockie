@@ -35,14 +35,14 @@ import blockie.generate.all;
  *          137,238,600     7.19ms  (6621551,92158,263450)
  */
 
-final class TestScene3 : WorldGen {
+final class TestScene3 : SceneGenerator {
     Mt19937 gen;
     const uint width   = 1024*2;    // x
     const uint height  = 1024*2;    // y
-    const uint breadth = 1024*10;    // z
+    const uint depth   = 1024*10;   // z
     const uint xx = width/CHUNK_SIZE;
     const uint yy = height/CHUNK_SIZE;
-    const uint zz = breadth/CHUNK_SIZE;
+    const uint zz = depth/CHUNK_SIZE;
 
     this() {
         this.gen.seed(0);
@@ -61,26 +61,28 @@ final class TestScene3 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
 
         edit.rectangle(
             ivec3(0,       0, 0),
-            ivec3(width-1, 0, breadth-1),
+            ivec3(width-1, 0, depth-1),
             1,
             V_ROCK1
         );
 
         for(auto i=0; i<50_000; i++) {
             edit.setVoxel(
-                V_ROCK1,
-                uniform(0, width, gen),
-                uniform(0, height, gen),
-                uniform(0, breadth, gen)
+                worldcoords(
+                    uniform(0, width, gen),
+                    uniform(0, height, gen),
+                    uniform(0, depth, gen)
+                ), V_ROCK1
             );
         }
 
-
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);

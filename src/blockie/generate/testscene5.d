@@ -30,7 +30,7 @@ import blockie.generate.all;
  *          21,150,183      2.64ms    (3494598,53309,128807)
  *  10      too big!!
  */
-final class TestScene5 : WorldGen {
+final class TestScene5 : SceneGenerator {
     const uint width   = 1024;    // x
     const uint height  = 1024;    // y
     const uint breadth = 1024;   // z
@@ -52,17 +52,23 @@ final class TestScene5 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
 
         for(auto y=0; y<1; y++)
         for(auto z=0; z<breadth; z++)
         for(auto x=0; x<width; x++) {
-            edit.setVoxel(V_GRASS1, x,y,z);
+            edit.setVoxel(worldcoords(x,y,z), V_GRASS1);
         }
+
+        writefln("Sphere"); flushConsole();
 
         // main sphere
         edit.sphere(
             ivec3(512,512,512), 290,300, V_EARTH1);
+
+        writefln("left"); flushConsole();
         // left
         edit.sphere(
             ivec3(512+300,512,512), 50,75, V_ROCK1);
@@ -79,7 +85,7 @@ final class TestScene5 : WorldGen {
         edit.sphere(
             ivec3(512,512-300,512), 50,75, V_ROCK1);
 
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);

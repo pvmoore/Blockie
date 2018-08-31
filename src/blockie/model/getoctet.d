@@ -1,10 +1,8 @@
-module blockie.domain.chunk.getoctet;
+module blockie.model.getoctet;
 
 import blockie.all;
-import core.bitop : bsf;
 
 /// get 1 bit octet index (0-7)
-pragma(inline,true)
 uint getOctet_1(const uint X,
                 const uint Y,
                 const uint Z,
@@ -18,8 +16,12 @@ uint getOctet_1(const uint X,
     const uint z = (Z & and) == and;
     return x | (y << 1) | (z << 2);
 }
+
+
+
+
+
 /// get 1 bit octet index (0-7)
-//pragma(inline,true)
 //uint getOctet_11(const uint X,
 //                 const uint Y,
 //                 const uint Z,
@@ -35,7 +37,7 @@ uint getOctet_1(const uint X,
 //    return x | (y << 2) | (z << 4);
 //}
 //------------------------------------------------------------------
-
+/+
 /// get 2 bit octet index (0-63)
 uint getOctetRoot_11(const uint X,
                      const uint Y,
@@ -100,10 +102,10 @@ uint getOctetRoot_111(const uint X,
         assert(false);
     }
 }
++/
 //------------------------------------------------------------------
 
 /// get 4 bit octet index (0-4095)
-pragma(inline,true)
 uint getOctetRoot_1111(const uint X,
                        const uint Y,
                        const uint Z,
@@ -135,9 +137,8 @@ uint getOctetRoot_1111(const uint X,
     }
 }
 //------------------------------------------------------------------
-
+/+
 /// get 5 bit octet index (0-32767)
-pragma(inline,true)
 uint getOctetRoot_11111(const uint X,
                         const uint Y,
                         const uint Z,
@@ -168,3 +169,4 @@ uint getOctetRoot_11111(const uint X,
         assert(false);
     }
 }
++/

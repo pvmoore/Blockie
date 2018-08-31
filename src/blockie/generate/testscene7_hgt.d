@@ -5,7 +5,7 @@ import blockie.generate.all;
 /**
  *
  */
-final class TestScene7 : WorldGen {
+final class TestScene7_hgt : SceneGenerator {
     const uint xsize   = 1024*3;
     const uint ysize   = 1024*2;
     const uint zsize   = 1024*3;
@@ -26,11 +26,13 @@ final class TestScene7 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
 
         loadHGT(edit);
 
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);
@@ -41,7 +43,7 @@ private:
      *  3601*3601 cells (1 inch)
      *  Each cell is ushort (big-endian)
      */
-    void loadHGT(WorldBuilder edit) {
+    void loadHGT(WorldEditor edit) {
         auto hgt = HGT.read("/temp/heightmaps/N47E006.hgt");
         expect(hgt.inches==3);
         expect(hgt.data.length==3601*3601);
@@ -52,7 +54,7 @@ private:
             //int height = cast(int)((hgt[x,z]*30000) / 65535.0);
             //writefln("%s", height);
             for(auto y=0; y<height; y++) {
-                edit.setVoxel(V_ROCK1, x, y, z);
+                edit.setVoxel(worldcoords(x, y, z), V_ROCK1);
             }
         }
     }

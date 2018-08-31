@@ -2,49 +2,47 @@ module blockie.render.gl_compute_renderer;
 
 import blockie.all;
 
-final class GLComputeRenderer : IRenderer, ChunkUpdateListener {
+final class GLComputeRenderer : IRenderer, ChunkManager.SceneChangeListener {
 private:
-    const bool DEBUG = false;
+    const bool DEBUG               = false;
+    const uint DEBUG_BUFFER_LENGTH = 100;
+
+    RenderView renderView;
     OpenGL gl;
     World world;
-    uint textureID;
+    uint renderTextureID;
     uint marchOutTextureID;
     int width, height;
-    IntRect renderRect;
-    SceneManager sceneManager;
+    int4 renderRect;
+    ChunkManager chunkManager;
     SpriteRenderer quadRenderer;
     SphereRenderer3D sphereRenderer;
     Timing renderTiming;
     Timing computeTiming;
+
     Program marchProgram, shadeProgram;
     VBO marchVoxelsInVBO, marchChunksInVBO;
-    VBO marchDebugOutVBO;
+    VBO marchOutVBO, marchDebugOutVBO;
+
     uint[2] timerQueries;
     uint flipFlop;
 
     uint[] materialTextures;
 
-    static assert(ChunkData_GL.sizeof==4);
     final static struct ChunkData_GL {
         uint voxelsOffset;
+        static assert(ChunkData_GL.sizeof==4);
     }
-//    static assert(MarchOut_GL.sizeof==16);
-//    align(1) final struct MarchOut_GL { align(1):
-//        float[3] pos;    // in world coords
-//        ubyte voxel;
-//        ubyte[3] padding;
-//    }
 public:
-    this(OpenGL gl, IntRect renderRect) {
+    this(OpenGL gl, RenderView renderView, int4 renderRect) {
         this.gl           = gl;
         this.renderRect   = renderRect;
+        this.renderView   = renderView;
         this.width        = renderRect.width;
         this.height       = renderRect.height;
 
         expect((width&7)==0, "Width must be multiple of 8. It is %s".format(width));
         expect((height&7)==0, "Height must be multiple of 8. It is %s".format(height));
-        //if((width&7)!=0) throw new Error("Width must be multiple of 8. It is %s".format(width));
-        //if((height&7)!=0) throw new Error("Height must be multiple of 8. It is %s".format(height));
 
         this.renderTiming   = new Timing(10,3);
         this.computeTiming  = new Timing(10,3);
@@ -57,36 +55,40 @@ public:
         loadMaterialTextures();
         setupSpriteRenderer();
         setupCompute();
+        renderOptionsChanged();
     }
     @Implements("IRenderer")
     void destroy() {
         if(timerQueries[0]) glDeleteQueries(timerQueries.length, timerQueries.ptr);
         if(quadRenderer) quadRenderer.destroy();
         if(sphereRenderer) sphereRenderer.destroy();
-        if(textureID) glDeleteTextures(1, &textureID);
+        if(renderTextureID) glDeleteTextures(1, &renderTextureID);
         if(materialTextures.length>0) {
             glDeleteTextures(cast(int)materialTextures.length, materialTextures.ptr);
         }
         if(marchOutTextureID) glDeleteTextures(1, &marchOutTextureID);
         if(marchVoxelsInVBO) marchVoxelsInVBO.destroy();
         if(marchChunksInVBO) marchChunksInVBO.destroy();
+        if(marchOutVBO) marchOutVBO.destroy();
         if(marchDebugOutVBO) marchDebugOutVBO.destroy();
+        if(chunkManager) chunkManager.destroy();
     }
     @Implements("IRenderer")
     void setWorld(World world) {
         this.world = world;
-        sceneManager = new SceneManager(
+        chunkManager = new ChunkManager(
             this,
             world,
-            marchVoxelsInVBO,
-            marchChunksInVBO);
+            marchVoxelsInVBO.getMemoryManager(),
+            marchChunksInVBO.getMemoryManager()
+        );
         sphereRenderer.addSphere(world.sunPos, 100, YELLOW);
         cameraMoved();
     }
     @Implements("IRenderer")
     void afterUpdate(bool camMoved) {
         if(camMoved) cameraMoved();
-        sceneManager.afterUpdate();
+        chunkManager.afterUpdate();
     }
     @Implements("IRenderer")
     void render() {
@@ -96,17 +98,19 @@ public:
         flipFlop ^= 1;
 
         executeMarchShader();
-        glMemoryBarrier(
-            GL_SHADER_STORAGE_BARRIER_BIT |
-            GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);// | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         executeShadeShader();
+
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-//        float[] buf = readBuffer!float(marchDebugOutVBO,0, 13);
-//        if(buf[0]) {
-//            writefln("debugOut=%s", buf);
-//        }
+        if(DEBUG) {
+            float[] buf = readBuffer!float(marchDebugOutVBO, 0, 8);
+            if(buf[0]) {
+                writefln("debugOut=%s", buf);
+            }
+        }
 
         glFlush();
         glEndQuery(GL_TIME_ELAPSED);
@@ -128,15 +132,29 @@ public:
             computeTiming.average(2)
         );
     }
-    @Implements("ChunkUpdateListener")
-    void setBounds(uvec3 chunksDim, ivec3 minBB, ivec3 maxBB) {
-        marchProgram.use();
-        marchProgram.setUniform("WORLD_CHUNKS_XYZ",
-            chunksDim
-        );
-        marchProgram.setUniform("WORLD_BB",
-            [minBB.to!float, maxBB.to!float]
-        );
+    @Implements("SceneChangeListener")
+    void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {
+        marchProgram
+            .use()
+            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
+            .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
+
+        shadeProgram
+            .use()
+            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
+            .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
+    }
+    void renderOptionsChanged() {
+        assert(marchProgram);
+        assert(shadeProgram);
+
+        auto opts = [
+            renderView.getRenderOption(RenderOption.DISPLAY_VOXEL_SIZES),
+            renderView.getRenderOption(RenderOption.ACCURATE_VOXEL_BOXES)
+        ];
+
+        marchProgram.use().setUniform("RENDER_OPTS", opts);
+        shadeProgram.use().setUniform("RENDER_OPTS", opts);
     }
  private:
     ulong getElapsedTime(uint query) {
@@ -153,17 +171,20 @@ public:
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, marchVoxelsInVBO.id);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, marchChunksInVBO.id);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, marchOutVBO.id);
 
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, marchDebugOutVBO.id);
+        if(DEBUG) {
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, marchDebugOutVBO.id);
+        }
 
-        glBindImageTexture(
-            2,              // binding
-            marchOutTextureID,
-            0,              // level
-            GL_FALSE,       // layered
-            0,              //layer
-            GL_WRITE_ONLY,
-            GL_RGBA32F);
+        //glBindImageTexture(
+        //    2,              // binding
+        //    marchOutTextureID,
+        //    0,              // level
+        //    GL_FALSE,       // layered
+        //    0,              //layer
+        //    GL_WRITE_ONLY,
+        //    GL_RGBA32F);
 
         glDispatchCompute(
             width/8,
@@ -173,21 +194,27 @@ public:
     void executeShadeShader() {
         shadeProgram.use();
 
-        glBindImageTexture(
-            0,              // binding
-            marchOutTextureID,
-            0,              // level
-            GL_FALSE,       // layered
-            0,              //layer
-            GL_READ_ONLY,
-            GL_RGBA32F);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, marchOutVBO.id);
+
+        if(DEBUG) {
+            //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, marchDebugOutVBO.id);
+        }
+
+        //glBindImageTexture(
+        //    0,              // binding
+        //    marchOutTextureID,
+        //    0,              // level
+        //    GL_FALSE,       // layered
+        //    0,              // layer
+        //    GL_READ_ONLY,
+        //    GL_RGBA32F);
 
         glBindImageTexture(
             1,              // binding
-            textureID,
+            renderTextureID,
             0,              // level
             GL_FALSE,       // layered
-            0,              //layer
+            0,              // layer
             GL_WRITE_ONLY,
             GL_RGBA8);
 
@@ -196,7 +223,7 @@ public:
 //            materialTextures[0],
 //            0,              // level
 //            GL_FALSE,       // layered
-//            0,              //layer
+//            0,              // layer
 //            GL_READ_ONLY,
 //            GL_RGBA8);
         shadeProgram.setUniform("SAMPLER0", 0);
@@ -204,8 +231,8 @@ public:
         glBindTexture(GL_TEXTURE_2D, materialTextures[0]);
 
         glDispatchCompute(
-            width >> 3,
-            height >> 3,
+            width/8,
+            height/8,
             1);
     }
     void setupCompute() {
@@ -220,29 +247,54 @@ public:
             "#define DFIELD_OFFSET %s".format(OptimisedRoot.dfields.offsetof)
         ];
 
-        marchProgram.loadCompute(
-            "march.comp",
-            ["shaders/",
-             "C:/pvmoore/_assets/shaders/"],
-            defines
-        ).use()
-         .setUniform("SIZE", ivec2(width,height));
+        version(MODEL1) {
+            marchProgram.loadCompute(
+                "pass1_march.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
 
-        // create 500MB buffer
+            shadeProgram.loadCompute(
+                "pass3_shade.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+        } else {
+
+            marchProgram.loadCompute(
+                "pass1_marchM2.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+
+            shadeProgram.loadCompute(
+                "pass3_shadeM2.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+        }
+
+        marchProgram.use()
+                    .setUniform("SIZE", int2(width,height));
+
+        shadeProgram.use()
+                    .setUniform("SIZE", ivec2(width,height));
+
+        /// create 750MB voxels buffer
         marchVoxelsInVBO = VBO.shaderStorage(1024*1024*750, GL_DYNAMIC_DRAW);
 
-        // create space for 1 million offsets
+        /// create space for 1 million offsets
         marchChunksInVBO = VBO.shaderStorage(1024*1024*uint.sizeof, GL_DYNAMIC_DRAW);
 
-        marchDebugOutVBO = VBO.shaderStorage(width*height*vec4.sizeof, GL_DYNAMIC_DRAW);
+        marchOutVBO = VBO.shaderStorage(width*height*8, GL_DYNAMIC_DRAW);
 
-        shadeProgram.loadCompute(
-            "shade.comp",
-            ["shaders/",
-             "C:/pvmoore/_assets/shaders/"],
-            defines
-        ).use()
-         .setUniform("SIZE", ivec2(width,height));
+        if(DEBUG) {
+            marchDebugOutVBO = VBO.shaderStorage(DEBUG_BUFFER_LENGTH*float.sizeof, GL_DYNAMIC_DRAW);
+        }
 
         glGenQueries(timerQueries.length, timerQueries.ptr);
 
@@ -268,9 +320,9 @@ public:
                      GL_FLOAT, null);
     }
     void setupShadeOutputTexture() {
-        glGenTextures(1, &textureID);
+        glGenTextures(1, &renderTextureID);
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        glBindTexture(GL_TEXTURE_2D, renderTextureID);
         glActiveTexture(GL_TEXTURE0 + 0);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -309,7 +361,7 @@ public:
         quadRenderer
             .setVP(new Camera2D(gl.windowSize).VP);
         quadRenderer
-            .withTexture(new Texture2D(textureID, Dimension(width, height)))
+            .withTexture(new Texture2D(renderTextureID, Dimension(width, height)))
             .addSprites([
                 cast(BitmapSprite)new BitmapSprite()
                     .move(vec2(renderRect.x,renderRect.y))
@@ -317,6 +369,7 @@ public:
             ]);
     }
     T[] readBuffer(T)(VBO buf, uint start, uint end) {
+        assert(start<end && end<DEBUG_BUFFER_LENGTH);
         buf.bind();
         auto numBytes = (end-start)*T.sizeof;
         T[] dest = new T[end-start];
@@ -339,29 +392,25 @@ public:
         vec3 top    = camera.screenToWorld(w2, Y,   z) - cameraPos;
         vec3 bottom = camera.screenToWorld(w2, Y+h, z) - cameraPos;
 
-        marchProgram.use();
-        marchProgram.setUniform("SCREEN_MIDDLE",
-            camera.screenToWorld(w2, Y+h2, z) - cameraPos
-        );
-        marchProgram.setUniform("SCREEN_XDELTA",
-            (right-left) / w
-        );
-        marchProgram.setUniform("SCREEN_YDELTA",
-            (bottom-top) / h
-        );
-        marchProgram.setUniform("CAMERA_ORIGIN",
-            world.camera.position
-        );
+        marchProgram
+            .use()
+            .setUniform("SCREEN_MIDDLE", camera.screenToWorld(w2, Y+h2, z) - cameraPos)
+            .setUniform("SCREEN_XDELTA", (right-left) / w)
+            .setUniform("SCREEN_YDELTA", (bottom-top) / h)
+            .setUniform("CAMERA_POS", world.camera.position);
 
-        shadeProgram.use();
-        shadeProgram.setUniform("SUN_POS",
-            world.sunPos
-        );
-        shadeProgram.setUniform("CAMERA_ORIGIN",
-            world.camera.position
-        );
+        //import std.math : tan;
+        //marchProgram.setUniform("VIEW",    camera.V);
+        //marchProgram.setUniform("INVVIEW", camera.V.inversed());
+        //marchProgram.setUniform("TANFOV2", tan(camera.fov.radians/2));
 
-        //auto worldMinMax = sceneManager.worldMinMax();
+        shadeProgram
+            .use()
+            .setUniform("SUN_POS", world.sunPos)
+            .setUniform("CAMERA_POS", cameraPos)
+            .setUniform("SCREEN_MIDDLE", camera.screenToWorld(w2, Y+h2, z) - cameraPos)
+            .setUniform("SCREEN_XDELTA", (right-left) / w)
+            .setUniform("SCREEN_YDELTA", (bottom-top) / h);
 
         sphereRenderer.cameraUpdate(camera);
     }

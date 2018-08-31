@@ -36,7 +36,7 @@ import blockie.generate.all;
  *          131,502,120     3.71ms  (6472705,87040,262144)
  */
 
-final class TestScene2 : WorldGen {
+final class TestScene2 : SceneGenerator {
     uint width   = 1024*2;    // x
     uint height  = 1024*2;    // y
     uint breadth = 1024*10;   // z
@@ -55,7 +55,10 @@ final class TestScene2 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
+
+        edit.startTransaction();
+
         edit.rectangle(
             ivec3(0,       0, 0),
             ivec3(width-1, 0, breadth-1),
@@ -63,7 +66,7 @@ final class TestScene2 : WorldGen {
             V_ROCK1
         );
 
-        edit.commit();
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);

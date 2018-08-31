@@ -32,13 +32,10 @@ import blockie.generate.all;
  *
  *  10 r=1  too big!!
  */
-final class TestScene1 : WorldGen {
+final class TestScene1 : SceneGenerator {
     const uint xsize   = 1024;
     const uint ysize   = 1024;
     const uint zsize   = 1024*2;
-//    const uint xchunks = xsize/CHUNK_SIZE;
-//    const uint ychunks = ysize/CHUNK_SIZE;
-//    const uint zchunks = zsize/CHUNK_SIZE;
 
     @Implements("WorldGen")
     World getWorld() {
@@ -54,32 +51,47 @@ final class TestScene1 : WorldGen {
         return w;
     }
     @Implements("WorldGen")
-    void build(WorldBuilder edit) {
+    void build(WorldEditor edit) {
 
-        edit.rectangle(ivec3(0,       0, zsize/2-1),
-                       ivec3(xsize-1, 8, zsize-1),
-                       4, V_ROCK1);
-        edit.rectangle(ivec3(0,       9, zsize/2-1),
-                       ivec3(xsize-1, 9, zsize-1),
-                       1, V_GRASS1);
+        edit.startTransaction();
+
+        edit.rectangle(
+            ivec3(0,       0, zsize/2-1),
+            ivec3(xsize-1, 8, zsize-1),
+            4,
+            V_ROCK1);
+
+        edit.rectangle(
+            ivec3(0,       9, zsize/2-1),
+            ivec3(xsize-1, 9, zsize-1),
+            1,
+            V_GRASS1);
 
         edit.rectangle(
             ivec3(0, 0,       zsize/2-1),
             ivec3(1, ysize-1, zsize-1),
-            1, V_ROCK1
+            1,
+            V_ROCK1
         );
 
         edit.rectangle(
             ivec3(xsize-2, 0,       zsize/2-1),
             ivec3(xsize-1, ysize-1, zsize-1),
-            1, V_ROCK1
+            1,
+            V_ROCK1
         );
 
-        edit.rectangle(ivec3(0,0,0),
-                       ivec3(xsize-1,ysize-1,zsize/2-1),
-                       1, V_EARTH1);
+        edit.rectangle(
+            ivec3(0,0,0),
+            ivec3(xsize-1,ysize-1,zsize/2-1),
+            1,
+            V_EARTH1);
 
-        edit.commit();
+        //edit.setVoxel(worldcoords(10,10, 2048-2), 1);
+        //edit.setVoxel(worldcoords(20,20, 2048-2), 1);
+        //edit.setVoxel(worldcoords(30,30, 2048-2), 1);
+
+        edit.commitTransaction();
 
         log("maxVoxelsLength = %s", maxVoxelsLength);
         log("maxBranches = %s", maxBranches);
