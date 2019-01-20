@@ -20,7 +20,8 @@ private:
     Timing renderTiming;
     Timing computeTiming;
 
-    Program marchProgram, shadeProgram;
+    Program marchProgram, shadeProgram, dummyProgram;
+
     VBO marchVoxelsInVBO, marchChunksInVBO;
     VBO marchOutVBO, marchDebugOutVBO;
 
@@ -47,8 +48,9 @@ public:
         this.renderTiming   = new Timing(10,3);
         this.computeTiming  = new Timing(10,3);
         this.sphereRenderer = new SphereRenderer3D(gl);
-        this.marchProgram   = new Program();
-        this.shadeProgram   = new Program();
+        this.marchProgram   = new Program;
+        this.shadeProgram   = new Program;
+        this.dummyProgram   = new Program;
 
         setupMarchOutputTexture();
         setupShadeOutputTexture();
@@ -72,6 +74,10 @@ public:
         if(marchOutVBO) marchOutVBO.destroy();
         if(marchDebugOutVBO) marchDebugOutVBO.destroy();
         if(chunkManager) chunkManager.destroy();
+
+        if(marchProgram) marchProgram.destroy();
+        if(shadeProgram) shadeProgram.destroy();
+        if(dummyProgram) dummyProgram.destroy();
     }
     @Implements("IRenderer")
     void setWorld(World world) {
@@ -101,6 +107,10 @@ public:
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);// | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+        executeDummyShader();
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);// | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
         executeShadeShader();
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -112,7 +122,7 @@ public:
             }
         }
 
-        glFlush();
+        //glFlush();
         glEndQuery(GL_TIME_ELAPSED);
 
         quadRenderer.render();
@@ -235,6 +245,17 @@ public:
             height/8,
             1);
     }
+    void executeDummyShader() {
+        dummyProgram.use();
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, marchOutVBO.id);
+
+        glDispatchCompute(
+            width/8,
+            height/8,
+            1
+        );
+    }
     void setupCompute() {
         string[] defines = [
             "#define CHUNK_SIZE %s".format(CHUNK_SIZE),
@@ -277,11 +298,17 @@ public:
                 defines
             );
         }
+        dummyProgram.loadCompute(
+            "pass2.comp",
+            ["shaders/", "C:/pvmoore/_assets/shaders/"],
+            defines
+        );
 
         marchProgram.use()
                     .setUniform("SIZE", int2(width,height));
-
         shadeProgram.use()
+                    .setUniform("SIZE", ivec2(width,height));
+        dummyProgram.use()
                     .setUniform("SIZE", ivec2(width,height));
 
         /// create 750MB voxels buffer

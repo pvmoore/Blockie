@@ -1,0 +1,23 @@
+#version 430 core
+
+#define GROUP_SIZE_X 8
+#define GROUP_SIZE_Y 8
+layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
+
+#include "header.inc"
+
+layout(binding = 0, std430) readonly buffer I0 {
+	MarchOut dataIn[];
+};
+
+uniform ivec2 SIZE;
+
+ivec2 pixel  = ivec2(gl_GlobalInvocationID.xy);
+uint g_index = gl_GlobalInvocationID.x +
+               gl_GlobalInvocationID.y*SIZE.x;
+
+void main() {
+
+    uint value = dataIn[g_index].voxel;
+    //dataIn[g_index].voxel = value;
+}

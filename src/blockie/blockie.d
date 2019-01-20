@@ -78,7 +78,7 @@ public:
             // (A) - Aggressive skipLOD producing artifacts in some scenes
             // (B) - Better looking skipLOD
 
-            //      FPS(A)  (B)   GPU(MB
+            //      FPS(A)  (B)   GPU(MB)     Model2
             // 1:   605     742      2      - 830   (0MB)
             // 2:   1340   1140      5      - 1300  (0MB)
             // 3:   455     352      8      - 460   (1MB)
@@ -90,7 +90,7 @@ public:
             // 6:   780     564     53      - 711   (41MB)
             // 7:   415     375     32      - 460   (28MB)
 
-            string w = "1";
+            string w = "4";
 
             World world;
             switch(w) {

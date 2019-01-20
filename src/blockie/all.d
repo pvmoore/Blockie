@@ -61,6 +61,9 @@ import blockie.views.iview;
 import gl;
 import gl.geom : BitmapSprite;
 
+import derelict.opengl;
+import derelict.glfw3;
+
 import fonts.sdf;
 import resources : PNG, HGT;
 import logging : flushLog, log;
