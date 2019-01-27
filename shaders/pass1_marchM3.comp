@@ -10,7 +10,7 @@ layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
 
 #include "header.inc"
 
-#define NIBBLE_SIZE (CHUNK_SIZE>>4)  // 64
+#define NIBBLE_SIZE (CHUNK_SIZE>>5)  // 32
 
 layout(binding = 0, std430) readonly buffer I0 {
     // voxel data in ubytes
@@ -55,7 +55,7 @@ uint g_index    = gl_GlobalInvocationID.x +
 vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
 
 #include "useful_functions.comp"
-#include "marchM2.inc"
+#include "marchM3.inc"
 #include "camera.inc"
 
 #line 1

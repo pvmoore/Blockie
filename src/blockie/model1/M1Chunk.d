@@ -29,6 +29,7 @@ public:
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
         assert(cell<4096);
+
         auto r = optimisedRoot();
         assert(isAirCell(cell), "%s %s".format(pos, cell));
         r.setDField(cell, x,y,z);

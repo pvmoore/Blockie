@@ -14,8 +14,6 @@ public:
  * size 1024 (10) = 1,073,741,824 voxels (1GB)
  */
 const CHUNK_SIZE_SHR     = 10;   // 6 to 10
-const OCTREE_ROOT_BITS   = 4;    // 1 to 5
-
 const CHUNK_SIZE         = 2^^CHUNK_SIZE_SHR;
 const CHUNK_SIZE_SQUARED = CHUNK_SIZE*CHUNK_SIZE;
 

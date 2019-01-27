@@ -1,17 +1,17 @@
-module blockie.model2.M2WorldEditor;
+module blockie.model3.M3WorldEditor;
 
 import blockie.all;
 
-final class M2WorldEditor : WorldEditor {
-private:
+final class M3WorldEditor : WorldEditor {
+    private:
     World world;
     Model model;
     ChunkStorage storage;
     Chunk[] chunks;
-    M2ChunkEditView[chunkcoords] chunkViews;
+    M3ChunkEditView[chunkcoords] chunkViews;
     StopWatch watch;
     uint numVoxelsEdited;
-public:
+    public:
     this(World world, Model model) {
         this.world   = world;
         this.model   = model;
@@ -37,14 +37,12 @@ public:
         auto cdc = new CellDistanceFields(chunks, model)
             .generate();
 
-        writefln("WorldEditor: Chunk air cell distances took (%.2f seconds)", watch.peek().total!"nsecs"*1e-09);
-
-        writefln("WorldEditor: Saving chunks");
+        writefln("WorldEditor: Saving chunks"); flushConsole();
         foreach(c; chunks) {
             getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
         }
 
-        writefln("WorldEditor: Finished");
+        writefln("WorldEditor: Finished"); flushConsole();
     }
     /// Sets a single voxel
     void setVoxel(worldcoords wpos, ubyte value) {
@@ -61,17 +59,18 @@ public:
         //if(numVoxelsEdited==2232) { writefln("2"); flushConsole(); }
 
         //if((numVoxelsEdited&0xf)==0) {
-            //writefln("[%s] VPS = %.2f (%s edits)",
-            //    watch.peek().total!"seconds",
-            //    view.megaEditsPerSecond(), view.getNumEdits());
+        //writefln("[%s] VPS = %.2f (%s edits)",
+        //    watch.peek().total!"seconds",
+        //    view.megaEditsPerSecond(), view.getNumEdits());
 
-            //writefln("edit %s %s", view.getChunk.pos, numVoxelsEdited);
-            //flushConsole();
+        //writefln("edit %s %s", view.getChunk.pos, numVoxelsEdited);
+        //flushConsole();
         //}
     }
     /// Sets N voxel block
     void setVoxelBlock(worldcoords wpos, uint size, ubyte value) {
         assert(size <= 1024);
+
         for(uint z=0; z<size; z++) {
             for(uint y=0; y<size; y++) {
                 for(uint x=0; x<size; x++) {
@@ -95,19 +94,19 @@ public:
         int t = thickness-1;
         /// x
         rectangle(worldcoords(min.x,   min.y, min.z),
-                  worldcoords(min.x+t, max.y, max.z), value);
+        worldcoords(min.x+t, max.y, max.z), value);
         rectangle(worldcoords(max.x-t, min.y, min.z),
-                  worldcoords(max.x,   max.y, max.z), value);
+        worldcoords(max.x,   max.y, max.z), value);
         /// y
         rectangle(worldcoords(min.x, min.y,   min.z),
-                  worldcoords(max.x, min.y+t, max.z), value);
+        worldcoords(max.x, min.y+t, max.z), value);
         rectangle(worldcoords(min.x, max.y-t, min.z),
-                  worldcoords(max.x, max.y,   max.z), value);
+        worldcoords(max.x, max.y,   max.z), value);
         /// z
         rectangle(worldcoords(min.x, min.y, min.z),
-                  worldcoords(max.x, max.y, min.z+t), value);
+        worldcoords(max.x, max.y, min.z+t), value);
         rectangle(worldcoords(min.x, min.y, max.z-t),
-                  worldcoords(max.x, max.y, max.z), value);
+        worldcoords(max.x, max.y, max.z), value);
     }
     /// Solid sphere
     void sphere(worldcoords centre, uint minRadius, uint maxRadius, ubyte value) {
@@ -126,13 +125,13 @@ public:
     void cylinder(worldcoords start, worldcoords end, uint radius, ubyte value) {
         assert(false, "implement me");
     }
-private:
-    M2ChunkEditView getChunkView(chunkcoords coords) {
-        M2ChunkEditView* ptr = coords in chunkViews;
+    private:
+    M3ChunkEditView getChunkView(chunkcoords coords) {
+        M3ChunkEditView* ptr = coords in chunkViews;
         if(ptr) return *ptr;
 
-        M2Chunk chunk        = cast(M2Chunk)storage.blockingGet(coords);
-        M2ChunkEditView view = new M2ChunkEditView;
+        M3Chunk chunk        = cast(M3Chunk)storage.blockingGet(coords);
+        M3ChunkEditView view = new M3ChunkEditView;
         view.beginTransaction(chunk);
 
         chunks ~= chunk;

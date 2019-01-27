@@ -4,11 +4,11 @@ uint getImpliedIndex(uint bits, uint oct) {
     uint and = 0x7f >> (7-oct);
     return bitCount(bits & and);
 }
-/// Get 4 bit cell octet index (0-4095)
-// 11_1100_0000 -> zzzz_yyyyxxxx
+/// Get 5 bit cell octet index (0-32767)
+// 11_1110_0000 -> 0zzz_zzyy_yyyx_xxxx
 uint getCellOctet(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 6, 4);
-    uvec3 c = a << uvec3(0,4,8);
+    uvec3 a = bitfieldExtract(upos, 5, 5);
+    uvec3 c = a << uvec3(0,5,10);
     return c.x + c.y + c.z;
 }
 /// Get 1 bit octet index (0-7)
@@ -22,27 +22,27 @@ uint getOctet(uvec3 upos, int shr) {
     return c.x + c.y + c.z;
 }
 
-bool isSolidCell(uvec3 upos, uint voxels, inout uint outL5Branch, inout Voxel v) {
+bool isSolidCell(uvec3 upos, uint voxels, inout uint outL4Branch, inout Voxel v) {
     uint cellOct = getCellOctet(upos);
     uint cell    = voxelsIn[voxels+1+cellOct];
 
     uint bits  = cell & 0xffu;
-    uint l5oct = getOctet(upos, 5);
+    uint l4oct = getOctet(upos, 4);
 
-    bool air   = (bitfieldExtract(bits, int(l5oct), 1)==0);
+    bool air   = (bitfieldExtract(bits, int(l4oct), 1)==0);
     bool solid = air || (cell == 0xffffffff);
 
     if(solid) {
         // Solid air or solid stuff
-        v.size  = bits==0 ? 64 : 32;
+        v.size  = bits==0 ? 32 : 16;
         v.value = uint(!air);
         v.oct   = cellOct;
     } else {
         // Drill down
 
-        // Read L5 branch
-        uint offset = (cell >> 8) + getImpliedIndex(bits, l5oct);
-        outL5Branch = voxelsIn[voxels+offset];
+        // Read L4 branch
+        uint offset = (cell >> 8) + getImpliedIndex(bits, l4oct);
+        outL4Branch = voxelsIn[voxels+offset];
     }
     return solid;
 }
@@ -115,12 +115,8 @@ bool getAirVoxel(Position pos, inout Voxel voxel, float distance, uint voxels) {
 
     uint branch;
 
-    // Out: L5branch
-    if(isSolidCell(upos, voxels, branch, voxel)) return voxel.value==0;
-
-    // In:  L5branch, octLevel=4, size=32, and=0b00_0001_0000
     // Out: L4branch
-    if(isSolidBranch(distance, upos, voxels, branch, voxel, 4, 32)) return voxel.value==0;
+    if(isSolidCell(upos, voxels, branch, voxel)) return voxel.value==0;
 
     // In:  L4branch, octLevel=3, size=16, and=0b00_0000_1000
     // Out: L3branch

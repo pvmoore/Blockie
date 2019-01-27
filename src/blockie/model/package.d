@@ -13,10 +13,12 @@ import blockie.model.ChunkEditView;
 import blockie.model.ChunkManager;
 import blockie.model.ChunkSerialiser;
 import blockie.model.ChunkStorage;
-import blockie.model.DistanceFields;
+import blockie.model.CellDistanceFields;
+import blockie.model.ChunkDistanceFields;
 import blockie.model.WorldEditor;
 
 interface Model {
     Chunk           makeChunk(chunkcoords coords);
     ChunkSerialiser makeChunkSerialiser(World w);
+    int numRootBits();
 }

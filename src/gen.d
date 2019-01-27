@@ -10,11 +10,12 @@ void main(string[] args) {
 
     try{
         app = new Generator();
-        scope(exit) app.destroy();
+        //scope(exit) app.destroy();
         app.run();
     }catch(Throwable t) {
         writefln("Error: %s", t.msg);
-    }finally {
+    }finally{
+        writefln("end");
         flushConsole();
     }
 }
@@ -38,12 +39,17 @@ final class Generator {
                 remove(name);
             }
             generateModel1(scene, world);
-        } else {
+        } else version(MODEL2) {
             foreach(string name; dirEntries(dirName, "M2*", SpanMode.shallow)) {
                 remove(name);
             }
             generateModel2(scene, world);
-        }
+        } else version(MODEL3) {
+            foreach(string name; dirEntries(dirName, "M3*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel3(scene, world);
+        } else assert(false);
     }
     void generateModel1(SceneGenerator sceneGenerator, World world) {
         writefln("\nGenerating Model1 %s", world);
@@ -57,13 +63,14 @@ final class Generator {
 
         writefln("Generating air cells"); flushConsole();
         StopWatch w; w.start();
-        calculateCellDistances(chunks, new Model1);
+
+        auto cdc = new CellDistanceFields(chunks, new Model1());
+        cdc.generate();
+
         writefln("Cell distances took %.2f seconds", w.peek().total!"nsecs"*1e-09);
 
-        writefln("Generating air chunks"); flushConsole();
-        w.reset(); w.start();
-        calculateChunkDistances(chunks, storage);
-        writefln("Chunk distances took %.2f seconds", w.peek().total!"nsecs"*1e-09);
+        new ChunkDistanceFields(storage, chunks)
+            .generate();
 
         foreach(c; chunks) {
             getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
@@ -102,6 +109,16 @@ final class Generator {
 
         //editor.setVoxelBlock(worldcoords(0,0,0), 2, 1);
         //editor.commitTransaction();
+
+        writefln("Finished");
+    }
+    void generateModel3(SceneGenerator sceneGenerator, World world) {
+        writefln("\nGenerating Model3 %s", world);
+
+        auto editor = new M3WorldEditor(world, new Model3);
+        scope(exit) editor.destroy();
+
+        sceneGenerator.build(editor);
 
         writefln("Finished");
     }

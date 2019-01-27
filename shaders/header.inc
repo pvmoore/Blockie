@@ -6,7 +6,6 @@
 
     CHUNK_SIZE
     CHUNK_SIZE_SHR
-    OCTREE_ROOT_BITS
     OctreeRootSize
     OctreeBranchSize
     OctreeTwigSize
@@ -14,7 +13,6 @@
     DFIELD_OFFSET
 */
 
-#define NIBBLE_SIZE (CHUNK_SIZE>>OCTREE_ROOT_BITS)  // 64
 #define MAX_DISTANCE (15000)
 
 struct Ray {
@@ -33,7 +31,7 @@ struct Voxel {
     uint size;      // 0,1,2,4,8,16,32,64,128,256,512,1024
     uint value;     // 0 or 1 (Model2)
     uint oct;       // only required for cells
-    uint normal;    // 0 to 5 axis-aligned normal estimate
+    //uint normal;    // 0 to 5 axis-aligned normal estimate
     float distance; // Hit distance from camera
 };
 

@@ -260,9 +260,6 @@ public:
         string[] defines = [
             "#define CHUNK_SIZE %s".format(CHUNK_SIZE),
             "#define CHUNK_SIZE_SHR %s".format(CHUNK_SIZE_SHR),
-            "#define OCTREE_ROOT_BITS %s".format(OCTREE_ROOT_BITS),
-            "#define OctreeRootSize %s".format(OctreeRoot.sizeof),
-            "#define OctreeBranchSize %s".format(OctreeBranch.sizeof),
             "#define OctreeTwigSize %s".format(OctreeTwig.sizeof),
             "#define OctreeLeafSize %s".format(OctreeLeaf.sizeof),
             "#define DFIELD_OFFSET %s".format(OptimisedRoot.dfields.offsetof)
@@ -282,7 +279,7 @@ public:
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
-        } else {
+        } else version(MODEL2) {
 
             marchProgram.loadCompute(
                 "pass1_marchM2.comp",
@@ -293,6 +290,20 @@ public:
 
             shadeProgram.loadCompute(
                 "pass3_shadeM2.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+        } else version(MODEL3) {
+            marchProgram.loadCompute(
+                "pass1_marchM3.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+
+            shadeProgram.loadCompute(
+                "pass3_shadeM3.comp",
                 ["shaders/",
                 "C:/pvmoore/_assets/shaders/"],
                 defines

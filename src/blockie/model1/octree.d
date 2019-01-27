@@ -37,8 +37,8 @@ static assert(OctreeFlags.sizeof==4);
 //    static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+4096+OctreeIndex.sizeof*32768);
 //} else static assert(false);
 
-const uint OCTREE_ROOT_BITS_LENGTH    = 8^^(OCTREE_ROOT_BITS-1);    /// 512
-const uint OCTREE_ROOT_INDEXES_LENGTH = 8^^OCTREE_ROOT_BITS;        /// 4096
+const uint OCTREE_ROOT_BITS_LENGTH    = 8^^(M1_OCTREE_ROOT_BITS-1);    /// 512
+const uint OCTREE_ROOT_INDEXES_LENGTH = 8^^M1_OCTREE_ROOT_BITS;        /// 4096
 
 final struct OctreeRoot {
     OctreeFlags flags;
@@ -681,7 +681,7 @@ void setOctreeVoxel(M1ChunkEditView view, ubyte v, uint x, uint y, uint z) {
 
     // octree branches
     auto branch = view.toBranchPtr(index.offset);
-    and >>= OCTREE_ROOT_BITS;
+    and >>= M1_OCTREE_ROOT_BITS;
     // if view_SIZE==512 and OCTREE_ROOT_BITS==3 then
     // and = 0_0010_0000
 

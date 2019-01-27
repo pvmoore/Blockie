@@ -38,6 +38,7 @@ import blockie.version_;
 import blockie.model;
 import blockie.model1;
 import blockie.model2;
+import blockie.model3;
 
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;

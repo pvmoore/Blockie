@@ -78,19 +78,19 @@ public:
             // (A) - Aggressive skipLOD producing artifacts in some scenes
             // (B) - Better looking skipLOD
 
-            //      FPS(A)  (B)   GPU(MB)     Model2
-            // 1:   605     742      2      - 830   (0MB)
-            // 2:   1340   1140      5      - 1300  (0MB)
-            // 3:   455     352      8      - 460   (1MB)
-            // 4:   425     308    242      - 425   (247MB)
+            //      FPS(A)  (B)   GPU(MB)     Model2            Model 3
+            // 1:   605     742      2      - 842   (0MB)       (0 MB)   927 fps
+            // 2:   1340   1140      5      - 1345  (0MB)       (2 MB)  1455 fps
+            // 3:   455     352      8      - 470   (1MB)       (5 MB)   495 (prev=550) fps
+            // 4:   425     308    242      - 430   (247MB)     (286 MB) 446 (prev=455) fps
 
-            // 4b:  360     290     54      - 383   (46MB)
-            // 4c:  345     290     79      - 376   (59MB)
-            // 5:   1025    956      2      - 1070  (1MB)
-            // 6:   780     564     53      - 711   (41MB)
-            // 7:   415     375     32      - 460   (28MB)
+            // 4b:  360     290     54      - 400   (46MB)      (MB)
+            // 4c:  345     290     79      - 391   (59MB)      (MB)
+            // 5:   1025    956      2      - 1093  (1MB)       (MB)
+            // 6:   780     564     53      - 740   (41MB)      (MB)
+            // 7:   415     375     32      - 472   (28MB)      (MB)
 
-            string w = "4";
+            string w = "1";
 
             World world;
             switch(w) {

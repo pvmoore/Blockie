@@ -60,7 +60,7 @@ align(1) struct OptimisedRoot { align(1):
     }
     uint getOctree(uint x, uint y, uint z) {
         //expect(x<8 && y<8 && z<8);
-        return x | (y<<OCTREE_ROOT_BITS) | (z<<(OCTREE_ROOT_BITS*2));
+        return x | (y<<M1_OCTREE_ROOT_BITS) | (z<<(M1_OCTREE_ROOT_BITS*2));
     }
     uint getOctree(ivec3 i) {
         return getOctree(i.x, i.y, i.z);
@@ -68,6 +68,12 @@ align(1) struct OptimisedRoot { align(1):
     void setDField(uint oct, uint x, uint y, uint z) {
         //expect(x<32 && y<32 && z<32);
         //expect(oct<OCTREE_ROOT_INDEXES_LENGTH);
+
+        /// We only have 5 bits per axis
+        x = min(31, x);
+        y = min(31, y);
+        z = min(31, z);
+
         dfields[oct] = cast(ushort)(x | (y<<5) | (z<<10));
     }
 }
@@ -132,7 +138,7 @@ void mergeDuplicateLeaves(M1ChunkEditView view) {
     }
     foreach(uint oct, ref idx; view.root.indexes) {
         if(!view.root.isSolid(oct)) {
-            recurse(idx, CHUNK_SIZE_SHR-OCTREE_ROOT_BITS);
+            recurse(idx, CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS);
         }
     }
     //writefln("Chunk %s unique leaves = %s", view.chunk.pos, view.leaves.length);
@@ -188,7 +194,7 @@ void mergeDuplicateBranches(M1ChunkEditView view) {
                 recurseBranch(
                     idx,
                     view.toBranchPtr(idx.offset),
-                    CHUNK_SIZE_SHR-OCTREE_ROOT_BITS
+                    CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS
                 );
             }
         }
@@ -259,7 +265,7 @@ Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(M1ChunkEditView view) {
     }
     foreach(uint oct, ref idx; view.root.indexes) {
         if(!view.root.isSolid(oct)) {
-            recurse(idx, CHUNK_SIZE_SHR-OCTREE_ROOT_BITS);
+            recurse(idx, CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS);
         }
     }
 
@@ -267,9 +273,9 @@ Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(M1ChunkEditView view) {
     auto uniqueLeaves  = sorted.map!(it=>it.leaf).array;
     auto oldIndexToNew = new uint[view.leaves.length];
 
-    foreach(uint i,ref v; sorted) {
+    foreach(i,ref v; sorted) {
         foreach(from; v.indexes[]) {
-            oldIndexToNew[from] = i;
+            oldIndexToNew[from] = i.toInt;
         }
     }
     return tuple(uniqueLeaves,oldIndexToNew);
@@ -281,7 +287,7 @@ Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves(M1ChunkEditView view) {
 ubyte[] convertToReadOptimised(M1ChunkEditView view) {
     // assume view.leaves has been de-duped
 
-    OctreeTwig[] twigs = new OctreeTwig[view.branches.length+(8^^OCTREE_ROOT_BITS)];
+    OctreeTwig[] twigs = new OctreeTwig[view.branches.length+(8^^M1_OCTREE_ROOT_BITS)];
     uint twigIndex;
 
     OctreeTwig[] l2twigs = new OctreeTwig[view.l2Branches.length];
@@ -390,7 +396,7 @@ ubyte[] convertToReadOptimised(M1ChunkEditView view) {
     foreach(uint oct, ref idx; view.root.indexes) {
         if(!view.root.isSolid(oct)) {
             auto b = view.toBranchPtr(idx.offset);
-            ubyte lodvox = recurseBranch(b, tindex, CHUNK_SIZE_SHR-OCTREE_ROOT_BITS);
+            ubyte lodvox = recurseBranch(b, tindex, CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS);
 
             root.voxels[oct] = lodvox;
             tindex++;

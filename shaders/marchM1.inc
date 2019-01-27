@@ -15,16 +15,8 @@ bool isSolidRoot(
     inout uint voxelsPtr,
     inout Voxel v)
 {
-//#if OCTREE_ROOT_BITS==2
-//    const uint oct = getOctetRoot_11(upos);
-//    const uint BB  = 8;     // 8 bytes for bits
-//#elif OCTREE_ROOT_BITS==3
-//    const uint oct = getOctetRoot_111(upos);
-//    const uint BB  = 64;    // 64 bytes for bits
-//#elif OCTREE_ROOT_BITS==4
     const uint oct = getOctetRoot_1111(upos);
     const uint BB  = 512;    // 512 bytes for bits
-//#endif
 
     const uint BITS_OFFSET = 4 + 6*4; // octree flag + offset bytes
 
@@ -174,13 +166,7 @@ bool getAirVoxel(
 
     if(isSolidRoot(upos, twigsOffset, voxelsPtr, voxel)) return voxel.value==0;
 
-//    #if CHUNK_SIZE_SHR-OCTREE_ROOT_BITS>6
-//    if(isSolidBranch(distance, upos, twigsOffset, voxelsPtr, voxel, 64)) return voxel.value==0;
-//    #endif
-
-//    #if CHUNK_SIZE_SHR-OCTREE_ROOT_BITS>5
     if(isSolidBranch(distance, upos, twigsOffset, voxelsPtr, voxel, 32)) return voxel.value==0;
-//    #endif
 
     if(isSolidBranch(distance, upos, twigsOffset, voxelsPtr, voxel, 16)) return voxel.value==0;
 

@@ -18,6 +18,6 @@ uint g_index = gl_GlobalInvocationID.x +
 
 void main() {
 
-    uint value = dataIn[g_index].voxel;
+    //uint value = dataIn[g_index].voxel;
     //dataIn[g_index].voxel = value;
 }

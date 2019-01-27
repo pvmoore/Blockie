@@ -169,7 +169,7 @@ public:
 
         textRenderer
             .setColour(WHITE*1.1)
-            .appendText("Memory (MB)")
+            .appendText("RAM (MB)")
             .setColour(WHITE*0.9)
             .appendText("")
             .appendText("");
@@ -181,7 +181,7 @@ public:
     }
     auto move(ivec2 pos) {
         this.pos = pos;
-        textRenderer.replaceText(0,"Memory (MB)", pos.x, pos.y);
+        textRenderer.replaceText(0,"RAM (MB)", pos.x, pos.y);
         return this;
     }
     void render() {

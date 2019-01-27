@@ -72,9 +72,11 @@ public:
         this.chunksMM = chunksVboMM;
         version(MODEL1) {
             this.storage  = new ChunkStorage(world, new Model1);
-        } else {
+        } else version(MODEL2) {
             this.storage  = new ChunkStorage(world, new Model2);
-        }
+        } else version(MODEL3) {
+            this.storage  = new ChunkStorage(world, new Model3);
+        } else assert(false);
 
         getEvents().subscribe("ChunkManager", EventID.CHUNK_LOADED | EventID.CHUNK_EDITED, messages);
         initialise();

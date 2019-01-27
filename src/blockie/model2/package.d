@@ -10,8 +10,11 @@ import blockie.model2.M2ChunkSerialiser;
 import blockie.model2.M2Optimiser;
 import blockie.model2.M2WorldEditor;
 
+const M2_OCTREE_ROOT_BITS = 4;
+
 final class Model2 : Model {
-    public:
-        Chunk           makeChunk(chunkcoords coords) { return new M2Chunk(coords); }
-        ChunkSerialiser makeChunkSerialiser(World w)  { return new M2ChunkSerialiser(w); }
+public:
+    Chunk           makeChunk(chunkcoords coords) { return new M2Chunk(coords); }
+    ChunkSerialiser makeChunkSerialiser(World w)  { return new M2ChunkSerialiser(w); }
+    int             numRootBits() { return M2_OCTREE_ROOT_BITS; }
 }
