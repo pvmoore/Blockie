@@ -24,7 +24,7 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "1";
+        const auto num = "7_hgt";
 
         mixin("auto scene = new TestScene%s;".format(num));
 

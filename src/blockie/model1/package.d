@@ -14,7 +14,8 @@ const M1_OCTREE_ROOT_BITS = 4;
 
 final class Model1 : Model {
 public:
+    string          name() { return "M1"; }
     Chunk           makeChunk(chunkcoords coords) { return new M1Chunk(coords); }
-    ChunkSerialiser makeChunkSerialiser(World w)  { return new M1ChunkSerialiser(w); }
+    ChunkSerialiser makeChunkSerialiser(World w)  { return new M1ChunkSerialiser(w, this); }
     int             numRootBits() { return M1_OCTREE_ROOT_BITS; }
 }

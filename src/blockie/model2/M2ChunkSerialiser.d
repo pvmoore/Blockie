@@ -3,13 +3,8 @@ module blockie.model2.M2ChunkSerialiser;
 import blockie.all;
 
 final class M2ChunkSerialiser : ChunkSerialiser {
-    protected:
-    override string getChunkFilename(Chunk chunk) {
-        return "data/" ~ world.name ~ "/M2." ~ chunk.filename;
-    }
-    override string getAirChunksFilename() {
-        return "data/" ~ world.name ~ "/M2.air-chunks.dat";
-    }
+protected:
+
     override Chunk toChunk(AirChunk ac) {
         auto chunk = new M2Chunk(ac.pos);
         chunk.root.distance.x = ac.distX;
@@ -27,7 +22,7 @@ final class M2ChunkSerialiser : ChunkSerialiser {
         );
     }
 public:
-    this(World w) {
-        super(w);
+    this(World w, Model model) {
+        super(w, model);
     }
 }

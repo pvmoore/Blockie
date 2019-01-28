@@ -4,12 +4,6 @@ import blockie.all;
 
 final class M3ChunkSerialiser : ChunkSerialiser {
 protected:
-    override string getChunkFilename(Chunk chunk) {
-        return "data/" ~ world.name ~ "/M3." ~ chunk.filename;
-    }
-    override string getAirChunksFilename() {
-        return "data/" ~ world.name ~ "/M3.air-chunks.dat";
-    }
     override Chunk toChunk(AirChunk ac) {
         auto chunk = new M3Chunk(ac.pos);
         chunk.root.distance.x = ac.distX;
@@ -27,7 +21,7 @@ protected:
         );
     }
 public:
-    this(World w) {
-        super(w);
+    this(World w, Model model) {
+        super(w, model);
     }
 }

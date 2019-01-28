@@ -4,13 +4,10 @@ import blockie.all;
 
 abstract class ChunkSerialiser {
 protected:
+    const string AIR_CHUNKS_FILENAME = "air-chunks.dat";
     World world;
-
-    static struct ChunkHeader {
-        uint reserved;
-
-        static assert(ChunkHeader.sizeof==4);
-    }
+    Model model;
+    Archive archive;
 
     static align(1) struct AirChunk { align(1):
         chunkcoords pos;
@@ -21,13 +18,16 @@ protected:
         static assert(AirChunk.sizeof==15);
     }
 
-    abstract string getChunkFilename(Chunk chunk);
-    abstract string getAirChunksFilename();
-    abstract Chunk toChunk(AirChunk ac);
+    abstract Chunk    toChunk(AirChunk ac);
     abstract AirChunk toAirChunk(Chunk chunk);
 public:
-    this(World w) {
+    this(World w, Model model) {
         this.world = w;
+        this.model = model;
+        openArchive();
+    }
+    void destroy() {
+        closeArchive();
     }
 
     ///
@@ -36,78 +36,77 @@ public:
     /// to be activated.
     ///
     ulong load(Chunk c) {
-        string filename = getChunkFilename(c);
 
-        if(false==FQN!"std.file".exists(filename)) {
-            /// This chunk is air.
+        if(archive.contains(c.filename)) {
 
-            /// Set version to 1 if it is 0
-            c.atomicUpdate(0, null);
-            return 0;
+            ubyte[] voxels   = archive.getData!ubyte(c.filename);
+            uint archVersion = archive.getComment(c.filename).to!uint;
+            uint version_    = c.getVersion;
+
+            uint ver = c.atomicUpdate(version_, voxels);
+            if(ver != version_+1) {
+                /// Our data is stale
+                log("Loaded chunk data is stale version %s (Chunk version is %s)", version_, ver);
+            }
+            assert(c.getVersion()>0);
+
+            return voxels.length;
         }
-        scope f       = File(filename, "rb");
-        auto fileSize = f.size();
 
-        ChunkHeader[1] header;
-        f.rawRead(header);
+        /// This chunk is air.
 
-        ubyte[] voxels = new ubyte[fileSize - ChunkHeader.sizeof];
-        uint version_  = c.getVersion;
-        f.rawRead(voxels);
-
-        uint ver = c.atomicUpdate(version_, voxels);
-        if(ver != version_+1) {
-            /// Our data is stale
-            log("Loaded chunk data is stale version %s (Chunk version is %s)", version_, ver);
-        }
-        assert(c.getVersion()>0);
-
-        return fileSize;
+        /// Set version to 1 if it is 0
+        c.atomicUpdate(0, null);
+        return 0;
     }
     ///
     /// Saves a Chunk and returns the number of bytes written.
     ///
     ulong save(Chunk c) {
-        string filename = getChunkFilename(c);
 
         if(c.isAir()) {
             // todo - this needs to be versioned in some way
-            if(exists(filename)) {
-                import std.file : remove;
-                remove(filename);
-            }
+
+            archive.remove(c.filename);
             return 0;
         }
 
-        scope f = File(filename, "wb");
+        archive.add(c.filename, c.voxels, c.version_.to!string);
 
-        ChunkHeader header;
-        header.reserved = c.version_;
-
-        f.rawWrite([header]);
-        f.rawWrite(c.voxels);
-
-        return ChunkHeader.sizeof + c.voxels.length;
+        return c.voxels.length;
     }
     Chunk[] loadAirChunks() {
-        string filename = getAirChunksFilename();
-        if(!exists(filename)) return null;
-        scope f = File(filename, "rb");
-        if(f.size==0) return null;
 
-        auto data = new AirChunk[f.size/AirChunk.sizeof];
-        f.rawRead(data);
+        if(archive.contains(AIR_CHUNKS_FILENAME)) {
 
-        auto chunks = new Chunk[data.length];
-        foreach(i, airChunk; data) {
-            chunks[i] = toChunk(airChunk);
-            chunks[i].atomicUpdate(0, null);
+            auto data = archive.getData!AirChunk(AIR_CHUNKS_FILENAME);
+
+            auto chunks = new Chunk[data.length];
+            foreach(i, airChunk; data) {
+                chunks[i] = toChunk(airChunk);
+                chunks[i].atomicUpdate(0, null);
+            }
+            return chunks;
         }
-        return chunks;
+        return null;
     }
     void saveAirChunks(Chunk[] chunks) {
         auto airChunks = chunks.map!(it=>toAirChunk(it)).array;
-        scope f = File(getAirChunksFilename(), "wb");
-        f.rawWrite(airChunks);
+
+        archive.add(AIR_CHUNKS_FILENAME,
+            airChunks.ptr,
+            airChunks.length*AirChunk.sizeof,
+            airChunks.length.to!string);
+    }
+private:
+    string getArchiveFilename() {
+        return "data/%s/%s.chunks.zip".format(world.name, model.name());
+    }
+    void openArchive() {
+        this.archive = new Archive(getArchiveFilename());
+    }
+    void closeArchive() {
+        writefln("Closing archive..."); flushConsole();
+        archive.close();
     }
 }

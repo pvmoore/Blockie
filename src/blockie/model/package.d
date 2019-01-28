@@ -18,6 +18,7 @@ import blockie.model.ChunkDistanceFields;
 import blockie.model.WorldEditor;
 
 interface Model {
+    string          name();
     Chunk           makeChunk(chunkcoords coords);
     ChunkSerialiser makeChunkSerialiser(World w);
     int numRootBits();

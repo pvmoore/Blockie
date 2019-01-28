@@ -42,6 +42,7 @@ public:
                                .array;
 
         serialiser.saveAirChunks(airChunks);
+        serialiser.destroy();
         log("ChunkStorage: Saved %s air chunks", airChunks.length);
     }
     Chunk blockingGet(chunkcoords coords) {

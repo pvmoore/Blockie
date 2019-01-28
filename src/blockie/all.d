@@ -70,7 +70,7 @@ import resources : PNG, HGT;
 import logging : flushLog, log;
 import resusage.memory : ProcessMemInfo, processMemInfo;
 import common :
-    Allocator, Allocator_t, Array, Async, BitWriter, Comment, FQN,
+    Allocator, Allocator_t, Archive, Array, Async, BitWriter, Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
     expect, flushConsole, isZeroMem, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, toInt;
