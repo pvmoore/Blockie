@@ -10,7 +10,6 @@ void main(string[] args) {
 
     try{
         app = new Generator();
-        //scope(exit) app.destroy();
         app.run();
     }catch(Throwable t) {
         writefln("Error: %s", t.msg);
@@ -24,9 +23,10 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "7_hgt";
+        const auto num = "1";
 
-        mixin("auto scene = new TestScene%s;".format(num));
+        SceneGenerator scene;
+        mixin("scene = new TestScene%s;".format(num));
 
         auto world = scene.getWorld();
 

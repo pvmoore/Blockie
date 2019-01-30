@@ -29,7 +29,7 @@ bool isSolidRoot(
 
     if(solid) {
         const uint voxelPtr = voxelsPtr+BITS_OFFSET+BB+BB+oct;
-        v.size  = NIBBLE_SIZE;
+        v.size  = CELL_SIZE;
         v.value = GETBYTE(voxelsIn, voxelPtr);
         v.oct   = oct;
     } else {

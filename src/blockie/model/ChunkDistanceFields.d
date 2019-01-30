@@ -14,8 +14,28 @@ private:
     Chunk fakeChunk;
     chunkcoords chunkMin, chunkMax, gridSize;
     int MAX;
-    int3 maxDistance;
-    int3[] distances;
+
+    struct Field {
+        int up, down;
+
+        bool canContain(Field f) {
+            return up >= f.up && down >= f.down;
+        }
+        string toString() { return "%s-%s".format(up, down); }
+    }
+    struct Fields {
+        Field x,y,z;
+
+        Fields max(Fields f) {
+            return Fields(
+                Field(.max(x.up, f.x.up), .max(x.down, f.x.down)),
+                Field(.max(y.up, f.y.up), .max(y.down, f.y.down)),
+                Field(.max(z.up, f.z.up), .max(z.down, f.z.down))
+            );
+        }
+        string toString() { return "[(%s),(%s),(%s)]".format(x, y, z); }
+    }
+    Fields[] distances;
 public:
     this(ChunkStorage storage, Chunk[] chunks) {
         this.storage   = storage;
@@ -33,14 +53,14 @@ public:
         this.gridSize = chunkMax-chunkMin + 1;
 
         MAX = (chunkMax.max() - chunkMin.min())+1;
-        if(MAX>255) MAX = 255;
+        if(MAX>15) MAX = 15;
 
         /// store existing non-air chunks
         foreach(c; chunks) {
             map[c.pos] = c;
         }
 
-        this.distances = new int3[gridSize.hmul()];
+        this.distances = new Fields[gridSize.hmul()];
     }
     auto generate() {
         if(chunks.length==0) return this;
@@ -58,7 +78,6 @@ public:
         writefln("\tmax          = %s", chunkMax);
         writefln("\tsize         = %s", gridSize);
         writefln("\tMAX          = %s", MAX);
-        writefln("\tmaxDistance  = %s", maxDistance);
         writefln("\tChunks in    = %s", chunks.length);
         writefln("\tChunk grid   = %s chunks", map.length);
 
@@ -81,37 +100,50 @@ private:
     }
     void calculateInitialDistances() {
 
-        int3 maxDistance = int3(0,0,0);
+        Fields maxDistance = Fields();
         int numAirChunks;
 
-        int3 process(int3 chunkPos, int index, int xstart, int ystart, int zstart) {
-            int x,y,z;
+        Fields process(int3 chunkPos, int index, Field xstart) {
+            Fields f;
             /// x
-            for(int i=xstart; i<=MAX; i++) {
-                if(isAir(chunkPos+int3(i,0,0)) && isAir(chunkPos+int3(-i,0,0))) {
-                    x = i;
+            for(int i=xstart.up; i<=MAX; i++) {
+                if(isAir(chunkPos+int3(i,0,0))) {
+                    f.x.up = i;
+                } else break;
+            }
+            for(int i=xstart.down; i<=MAX; i++) {
+                if(isAir(chunkPos+int3(-i,0,0))) {
+                    f.x.down = i;
                 } else break;
             }
             /// y
-            for(int i=ystart; i<=MAX; i++) {
-                if(isAir(chunkPos+int3(0,i,0)) && isAir(chunkPos+int3(0,-i,0))) {
-                    y = i;
+            for(int i=1; i<=MAX; i++) {
+                if(isAir(chunkPos+int3(0,i,0))) {
+                    f.y.up = i;
+                } else break;
+            }
+            for(int i=1; i<=MAX; i++) {
+                if(isAir(chunkPos+int3(0,-i,0))) {
+                    f.y.down = i;
                 } else break;
             }
             /// z
-            for(int i=zstart; i<=MAX; i++) {
-                if(isAir(chunkPos+int3(0,0,i)) && isAir(chunkPos+int3(0,0,-i))) {
-                    z = i;
+            for(int i=1; i<=MAX; i++) {
+                if(isAir(chunkPos+int3(0,0,i))) {
+                    f.z.up = i;
+                } else break;
+            }
+            for(int i=1; i<=MAX; i++) {
+                if(isAir(chunkPos+int3(0,0,-i))) {
+                    f.z.down = i;
                 } else break;
             }
 
-            int3 d = int3(x,y,z);
+            distances[index] = f;
 
-            distances[index] = d;
+            maxDistance = maxDistance.max(f);
 
-            maxDistance = maxDistance.max(d);
-
-            return d;
+            return f;
         }
 
         int index = 0;
@@ -119,8 +151,8 @@ private:
         for(auto z=chunkMin.z; z<=chunkMax.z; z++) {
             for(auto y=chunkMin.y; y<=chunkMax.y; y++) {
 
-                int3 dist;
-                int xstart = 1;
+                Fields dist;
+                Field xstart = Field(1,1);
 
                 for(auto x=chunkMin.x; x<=chunkMax.x; x++) {
                     auto pos   = int3(x,y,z);
@@ -128,10 +160,11 @@ private:
                     if(chunk.isAir) {
                         numAirChunks++;
 
-                        dist   = process(pos, index, xstart, 1, 1);
-                        xstart = max(1, dist.x-1);
+                        dist = process(pos, index, xstart);
+
+                        xstart = Field(max(1, dist.x.up-1), max(1, dist.x.down));
                     } else {
-                        xstart = 1;
+                        xstart = Field(1,1);
                     }
                     index++;
                 }
@@ -143,152 +176,205 @@ private:
     }
     void processVolumes() {
 
-        int3 maxDistance = int3(0,0,0);
+        auto maxDistance = Fields();
         const int X      = 1;
         const int Y      = gridSize.x;
         const int Z      = gridSize.x * gridSize.y;
 
-        bool isAirX(int index, int ysize, int zsize) {
+        bool isAirX(int index, Field ysize, Field zsize) {
 
-            int3 dist = distances[index];
-            if(dist.y < ysize || dist.z < zsize) return false;
+            auto dist = distances[index];
 
-            int a = index;
-            int b = index;
-            for(int y=1; y<=ysize; y++) {
-                a += Y;
-                b -= Y;
-                if(distances[a].z < zsize) return false;
-                if(distances[b].z < zsize) return false;
+            if(!dist.y.canContain(ysize) ||
+               !dist.z.canContain(zsize)) return false;
+
+            int i = index;
+            for(int y=1; y<=ysize.up; y++) {
+                i += Y;
+                if(!distances[i].z.canContain(zsize)) return false;
             }
-            a = index;
-            b = index;
-            for(int z=1; z<=zsize; z++) {
-                a += Z;
-                b -= Z;
-                if(distances[a].y < ysize) return false;
-                if(distances[b].y < ysize) return false;
+            i = index;
+            for(int y=1; y<=ysize.down; y++) {
+                i -= Y;
+                if(!distances[i].z.canContain(zsize)) return false;
             }
-            return true;
-        }
-        bool isAirY(int index, int xsize, int zsize) {
-
-            int3 dist = distances[index];
-            if(dist.x < xsize || dist.z < zsize) return false;
-
-            int a = index;
-            int b = index;
-            for(int x=1; x<=xsize; x++) {
-                a += X;
-                b -= X;
-                if(distances[a].z < zsize) return false;
-                if(distances[b].z < zsize) return false;
+            i = index;
+            for(int z=1; z<=zsize.up; z++) {
+                i += Z;
+                if(!distances[i].y.canContain(ysize)) return false;
             }
-            a = index;
-            b = index;
-            for(int z=1; z<=zsize; z++) {
-                a += Z;
-                b -= Z;
-                if(distances[a].x < xsize) return false;
-                if(distances[b].x < xsize) return false;
+            i = index;
+            for(int z=1; z<=zsize.down; z++) {
+                i -= Z;
+                if(!distances[i].y.canContain(ysize)) return false;
             }
             return true;
         }
-        bool isAirZ(int index, int xsize, int ysize) {
+        bool isAirY(int index, Field xsize, Field zsize) {
 
-            int3 dist = distances[index];
-            if(dist.x < xsize || dist.y < ysize) return false;
+            auto dist = distances[index];
 
-            int a = index;
-            int b = index;
-            for(int x=1; x<=xsize; x++) {
-                a += X;
-                b -= X;
-                if(distances[a].y < ysize) return false;
-                if(distances[b].y < ysize) return false;
+            if(!dist.x.canContain(xsize) ||
+               !dist.z.canContain(zsize)) return false;
+
+            int i = index;
+            for(int x=1; x<=xsize.up; x++) {
+                i += X;
+                if(!distances[i].z.canContain(zsize)) return false;
             }
-            a = index;
-            b = index;
-            for(int y=1; y<=ysize; y++) {
-                a += Y;
-                b -= Y;
-                if(distances[a].x < xsize) return false;
-                if(distances[b].x < xsize) return false;
+            i = index;
+            for(int x=1; x<=xsize.down; x++) {
+                i -= X;
+                if(!distances[i].z.canContain(zsize)) return false;
+            }
+            i = index;
+            for(int z=1; z<=zsize.up; z++) {
+                i += Z;
+                if(!distances[i].x.canContain(xsize)) return false;
+            }
+            i = index;
+            for(int z=1; z<=zsize.down; z++) {
+                i -= Z;
+                if(!distances[i].x.canContain(xsize)) return false;
+            }
+            return true;
+        }
+        bool isAirZ(int index, Field xsize, Field ysize) {
+
+            auto dist = distances[index];
+
+            if(!dist.x.canContain(xsize) ||
+               !dist.y.canContain(ysize)) return false;
+
+            int i = index;
+            for(int x=1; x<=xsize.up; x++) {
+                i += X;
+                if(!distances[i].y.canContain(ysize)) return false;
+            }
+            i = index;
+            for(int x=1; x<=xsize.down; x++) {
+                i -= X;
+                if(!distances[i].y.canContain(ysize)) return false;
+            }
+            i = index;
+            for(int y=1; y<=ysize.up; y++) {
+                i += Y;
+                if(!distances[i].x.canContain(xsize)) return false;
+            }
+            i = index;
+            for(int y=1; y<=ysize.down; y++) {
+                i -= Y;
+                if(!distances[i].x.canContain(xsize)) return false;
             }
             return true;
         }
 
-        int3 processChunk(Chunk chunk, int index, int3 field) {
-            bool gox   = true, goy = true, goz = true;
-            int3 limit = distances[index];
+        Fields processChunk(Chunk chunk, int index, Fields fields) {
+            bool goxup = true, goxdown = true,
+                 goyup = true, goydown = true,
+                 gozup = true, gozdown = true;
 
-            while(gox || goy || goz) {
+            Fields limits = distances[index];
+
+            while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
                 /// expand X
-                if(gox) {
-                    if(field.x<limit.x && isAirX(index+(field.x+1), field.y, field.z) &&
-                                          isAirX(index-(field.x+1), field.y, field.z))
+                if(goxup) {
+                    if(fields.x.up < limits.x.up &&
+                       isAirX(index+(fields.x.up+1), fields.y, fields.z))
                     {
-                        field.x++;
+                        fields.x.up++;
                     }
-                    else gox = false;
+                    else goxup = false;
+                }
+                if(goxdown) {
+                    if(fields.x.down < limits.x.down &&
+                       isAirX(index-(fields.x.down+1), fields.y, fields.z))
+                    {
+                        fields.x.down++;
+                    }
+                    else goxdown = false;
                 }
                 /// expand Y
-                if(goy) {
-                    if(field.y<limit.y && isAirY(index+(field.y+1)*Y, field.x, field.z) &&
-                                          isAirY(index-(field.y+1)*Y, field.x, field.z))
+                if(goyup) {
+                    if(fields.y.up < limits.y.up &&
+                       isAirY(index+(fields.y.up+1)*Y, fields.x, fields.z))
                     {
-                        field.y++;
+                        fields.y.up++;
                     }
-                    else goy = false;
+                    else goyup = false;
+                }
+                if(goydown) {
+                    if(fields.y.down < limits.y.down &&
+                       isAirY(index-(fields.y.down+1)*Y, fields.x, fields.z))
+                    {
+                        fields.y.down++;
+                    }
+                    else goydown = false;
                 }
                 /// expand Z
-                if(goz) {
-                    if(field.z<limit.z && isAirZ(index+(field.z+1)*Z, field.x, field.y) &&
-                                          isAirZ(index-(field.z+1)*Z, field.x, field.y))
+                if(gozup) {
+                    if(fields.z.up < limits.z.up &&
+                       isAirZ(index+(fields.z.up+1)*Z, fields.x, fields.y))
                     {
-                        field.z++;
+                        fields.z.up++;
                     }
-                    else goz = false;
+                    else gozup = false;
+                }
+                if(gozdown) {
+                    if(fields.z.down < limits.z.down &&
+                       isAirZ(index-(fields.z.down+1)*Z, fields.x, fields.y))
+                    {
+                        fields.z.down++;
+                    }
+                    else gozdown = false;
                 }
             }
 
-            chunk.setDistance(cast(ubyte)field.x,cast(ubyte)field.y,cast(ubyte)field.z);
+            chunk.setDistance(
+                cast(ubyte)((fields.x.up<<4) | (fields.x.down)),
+                cast(ubyte)((fields.y.up<<4) | (fields.y.down)),
+                cast(ubyte)((fields.z.up<<4) | (fields.z.down))
+            );
 
-            maxDistance = maxDistance.max(field);
+            maxDistance = maxDistance.max(fields);
 
-            return field;
+            return fields;
         }
 
         /// Traverse all chunks including margin.
         int index = 0;
-        int3 prevz = int3(0,0,0);
+        Fields prevz = Fields();
 
         for(auto z=chunkMin.z; z<=chunkMax.z; z++) {
 
-            int3 prevy = prevz;
+            Fields prevy = prevz;
 
             for(auto y=chunkMin.y; y<=chunkMax.y; y++) {
 
-                int3 prev = prevy;
+                Fields prev = prevy;
 
                 for(auto x=chunkMin.x; x<=chunkMax.x; x++) {
                     auto chunk = getChunk(int3(x,y,z));
 
                     if(chunk.isAir) {
                         prev = processChunk(chunk, index, prev);
-                        if(prev.x==0) prev = int3(0,0,0); else prev.x--;
+                        if(prev.x.up==0) {
+                            prev = Fields();
+                        } else {
+                            prev.x.up--;
+                        }
                     } else {
-                        prev = int3(0,0,0);
+                        prev = Fields();
                     }
                     if(x==chunkMin.x) {
                         prevy = prev;
-                        if(prevy.y==0) prevy = int3(0,0,0); else prevy.y--;
+                        if(prevy.y.up==0) prevy = Fields(); else prevy.y.up--;
                     }
                     index++;
                 }
                 if(y==chunkMin.y) {
                     prevz = prevy;
-                    if(prevz.z==0) prevz = int3(0,0,0); else prevz.z--;
+                    if(prevz.z.up==0) prevz = Fields(); else prevz.z.up--;
                 }
             }
         }

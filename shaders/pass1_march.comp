@@ -16,7 +16,7 @@ layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
 
 #include "header.inc"
 
-#define NIBBLE_SIZE (CHUNK_SIZE>>4)  // 64
+#define CELL_SIZE (CHUNK_SIZE>>4)  // 64
 
 layout(binding = 0, std430) readonly buffer I0 {
     // voxel data in ubytes
@@ -82,7 +82,7 @@ bool isAirChunk(const uint flags) {
 vec3 airChunkDistanceField(const uint flags) {
     return unpackUnorm4x8(flags).yzw * 255;
 }
-vec3 airNibbleDistanceField(const uint v) {
+vec3 airCellDistanceField(const uint v) {
     return vec3(v & 31u, (v>>5) & 31u, (v>>10) & 31u);
 }
 float getMinDistToEdge(
@@ -103,7 +103,7 @@ float getMinDistToEdgeOfDistanceField(
     const Ray ray,
     const Position pos,
     const vec3 radius,
-    const uint sideSize)    // CHUNK_SIZE or NIBBLE_SIZE
+    const uint sideSize)    // CHUNK_SIZE or CELL_SIZE
 {
     // radius = 0 = 1 air chunk  (r=0,    r2=0)
     //        = 1 = 3 air chunks (r=512,  r2=1024)
@@ -118,6 +118,26 @@ float getMinDistToEdgeOfDistanceField(
 
     const vec3 m    = dist * ray.invDirection;
     const float res = min(m.x, min(m.y, m.z));
+    return max(res, 0);
+}
+//
+// Directional distance field stored in radius
+//
+float getMinDistToEdgeOfDistanceField2(Ray ray,
+                                       Position pos,
+                                       vec3 radius,
+                                       uint side)    // CHUNK_SIZE or CELL_SIZE
+{
+    vec3 upradius   = floor(radius/16);  // high 16 bits = up distance
+    vec3 downradius = mod(radius, 16);   // low  16 bits = down distance
+
+    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 rem  = mod(p, side) + downradius*side;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*side);
+    vec3 dist = size-rem;
+
+    vec3 m    = dist * ray.invDirection;
+    float res = min(m.x, min(m.y, m.z));
     return max(res, 0);
 }
 /**
@@ -157,16 +177,16 @@ Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
         float dist;
 
         if(isAirChunk(flags)) {
-            dist = getMinDistToEdgeOfDistanceField(ray, pos, airChunkDistanceField(flags), CHUNK_SIZE);
+            dist = getMinDistToEdgeOfDistanceField2(ray, pos, airChunkDistanceField(flags), CHUNK_SIZE);
         } else {
 
             if(!getAirVoxel(pos, voxel, distance, voxelsRoot)) break;
 
-            const bool isRoot = (voxel.size == NIBBLE_SIZE);
+            const bool isRoot = (voxel.size == CELL_SIZE);
 
             if(isRoot) {
                 uint dfield = GETUSHORT(voxelsIn, ((voxelsRoot+DFIELD_OFFSET)>>1) + voxel.oct);
-                dist = getMinDistToEdgeOfDistanceField(ray, pos, airNibbleDistanceField(dfield), NIBBLE_SIZE);
+                dist = getMinDistToEdgeOfDistanceField(ray, pos, airCellDistanceField(dfield), CELL_SIZE);
             } else {
                 dist = getMinDistToEdge(ray, pos, voxel.size);
             }

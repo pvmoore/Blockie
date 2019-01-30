@@ -4,7 +4,6 @@ public:
 
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;
-import blockie.generate.distance_fields;
 import blockie.generate.testscene1;
 import blockie.generate.testscene2;
 import blockie.generate.testscene3;

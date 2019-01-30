@@ -34,7 +34,7 @@ public:
         new ChunkDistanceFields(storage, chunks)
             .generate();
 
-        auto cdc = new CellDistanceFields(chunks, model)
+        new CellDistanceFieldsDirectional(chunks, model)
             .generate();
 
         writefln("WorldEditor: Chunk air cell distances took (%.2f seconds)", watch.peek().total!"nsecs"*1e-09);

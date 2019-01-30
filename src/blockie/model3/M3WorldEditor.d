@@ -34,7 +34,7 @@ final class M3WorldEditor : WorldEditor {
         new ChunkDistanceFields(storage, chunks)
             .generate();
 
-        auto cdc = new CellDistanceFields(chunks, model)
+        new CellDistanceFieldsDirectional(chunks, model)
             .generate();
 
         writefln("WorldEditor: Saving chunks"); flushConsole();

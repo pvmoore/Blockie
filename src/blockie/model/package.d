@@ -14,6 +14,7 @@ import blockie.model.ChunkManager;
 import blockie.model.ChunkSerialiser;
 import blockie.model.ChunkStorage;
 import blockie.model.CellDistanceFields;
+import blockie.model.CellDistanceFieldsDirectional;
 import blockie.model.ChunkDistanceFields;
 import blockie.model.WorldEditor;
 

@@ -1,7 +1,6 @@
 # Blockie Todo
 - SSAO
 - Load minecraft maps/heightmaps
-- Remove duplicate branches/leaves. This should reduce size of voxels array at cost of making it hard to modify.
 - Test fp16 speed
 - Shadow ray could be done in lower resolution to save time (or use lower resolution octree).
 - Multiple render passes:  One could be for anti-aliasing.
@@ -14,6 +13,5 @@
 - setVoxel(x,y,z, value, size) -> set large voxel blocks in a single call.
 
 ## Ideas
-- Store distance to nearest non-air chunk in the root. This will need to be updated as chunks are edited though.
 - The voxel ubyte value only specifies the general type. The actual voxel that is shown is taken from a fractal algorithm so that a variety of rocks can be represented by the same rock voxel for example.
 - It might not be too much work (relatively) to convert to Vulkan.
