@@ -210,12 +210,17 @@ Voxel march(Ray ray, inout Position pos) {
             dist = getMinDistToEdgeOfChunkDistanceField(ray, pos, getDistanceField(flags));
         } else {
 
+//            if(RENDER_OPTS[0]) {
+//                voxel.value = 1;
+//                break;
+//            }
+
             if(!getAirVoxel(pos, voxel, distance, voxels)) {
                 /// We have hit something
 
-                if(RENDER_OPTS[0]) {
-                    clampPositionToVoxelEntryPoint(ray, pos, voxel.size, distance);
-                }
+//                if(RENDER_OPTS[0]) {
+//                    clampPositionToVoxelEntryPoint(ray, pos, voxel.size, distance);
+//                }
 
                 //voxel.normal = getEstimatedNormal(pos.fpos, voxel.size);
                 break;

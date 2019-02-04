@@ -72,30 +72,6 @@ public:
         //writefln("dir=%s invDir=%s", dir, float3(1)/dir);
 
         try{
-            // (A) - Aggressive skipLOD producing artifacts in some scenes
-            // (B) - Better looking skipLOD
-
-            //      FPS(A)  (B)   GPU(MB)     Model2            Model 3
-            // 1:   605     742      2      - 842   (0MB)       (0 MB)   927 fps        [937]
-            // 2:   1340   1140      5      - 1345  (0MB)       (2 MB)  1455 fps        [1488]
-            // 3:   455     352      8      - 470   (1MB)       (5 MB)   495 (prev=550) [495]
-            // 4:   425     308    242      - 430   (247MB)     (286 MB) 446 (prev=455) [450]
-
-            // 4b:  360     290     54      - 400   (46MB)      (56 MB)  406 fps        []
-            // 4c:  345     290     79      - 391   (59MB)      (68 MB)  378 fps        []
-            // 5:   1025    956      2      - 1093  (1MB)       (1 MB)  1135 fps        []
-            // 6:   780     564     53      - 740   (41MB)      (42 MB)  770 fps        []
-            // 7:   415     375     32      - 472   (28MB)      (31 MB)  499 fps        []
-
-
-            //      1     2    3
-            //
-            // 1   766   852  940   (933)  925
-            // 2  1170  1397 1500   (1430) 1465
-            // 3   355   467  495   (555)  458
-            // 4   317   423  450   (437)  447
-            // 4b
-
             //     |  1            | 2             | 3
             //     |               |               |
             // 1:  |  768 (2 MB)   |  846 (0 MB)   |  926 (0 MB)
@@ -108,7 +84,9 @@ public:
             // 6:  |  575 (53 MB)  |  717 (41 MB)  |  760 (42 MB)
             // 7:  |  390 (32 MB)  |  452 (28 MB)  |  495 (31 MB)
 
-            string w = "1";
+            // NB. RENDER_OPTS is currently slowing down marchM3.inc slightly
+
+            string w = "4";
 
             World world;
             switch(w) {

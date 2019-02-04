@@ -40,6 +40,12 @@ bool isSolidCell(uvec3 upos, uint voxels, inout uint outL4Branch, inout Voxel v)
     } else {
         // Drill down
 
+        // Only show cells
+        if(RENDER_OPTS[0]) {
+            v.value = 1;
+            return true;
+        }
+
         // Read L4 branch
         uint offset = (cell >> 8) + getImpliedIndex(bits, l4oct);
         outL4Branch = voxelsIn[voxels+offset];

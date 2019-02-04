@@ -12,6 +12,25 @@
 - Editor – add/remove voxels.
 - setVoxel(x,y,z, value, size) -> set large voxel blocks in a single call.
 
-## Ideas
+# Ideas
 - The voxel ubyte value only specifies the general type. The actual voxel that is shown is taken from a fractal algorithm so that a variety of rocks can be represented by the same rock voxel for example.
-- It might not be too much work (relatively) to convert to Vulkan.
+
+##### Vulkan
+    It might not be too much work (relatively) to convert to Vulkan.
+
+##### Preprocess scene
+    Run march pass on 1/4 or 1/9 of the pixels and store the distances. eg
+    x . or . . .
+    . .    . x .
+           . . .
+    If nothing is hit then don't run full march pass on that block. If a distance is found then start at that distance
+    when running full pass on the rest of that block.
+    
+##### Store static results
+    If the camera does not move between frames than any static results can be re-used
+    
+##### Accuracy issues
+    Use doubles on any area that seems to be affected poorly by accuracy of floats. It doubles are used minimally
+    then speed should not be affected negatively (much). 
+    
+    
