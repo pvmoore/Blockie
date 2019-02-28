@@ -7,12 +7,12 @@ import blockie.all;
 ///     Root:
 ///         Flag (1 bytes)
 ///         Chunk distances (3 bytes)
-///         Cell info    : 32^^3 cells (Each cell is 1 bit flag + 1 bit bit counts (total 65536 bytes)
-///     Pixel arrays : 0 to 32768 pixel arrays
+///         Cell info    : 64^^3 cells (Each cell is 1 bit flag + 1 bit bit counts (total 65536 bytes)
+///     Pixel arrays : 0 to 262143 pixel arrays
 ///
-/// Pixel array: 32768 bits (4096 bytes)
+/// Pixel array: 4096 bits (512 bytes)
 
-/// Problem: The resulting memory usage is too high. Scene 4 uses 2 GB !!
+/// Problem: The resulting memory usage is high. Scene 4 uses 1.6 GB
 ///
 ///
 

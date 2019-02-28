@@ -10,10 +10,10 @@ import blockie.model4.M4ChunkSerialiser;
 import blockie.model4.M4Optimiser;
 import blockie.model4.M4WorldEditor;
 
-const M4_OCTREE_ROOT_BITS = 5;
+const M4_OCTREE_ROOT_BITS = 6;
 const M4_ROOT_SIZE        = M4Root.sizeof.as!uint;
-const M4_CELLS_PER_CHUNK  = 32768;
-const M4_PIXELS_PER_CELL  = 32768;
+const M4_CELLS_PER_CHUNK  = 64*64*64;
+const M4_PIXELS_PER_CELL  = 4096;
 const M4_PIXELS_SIZE      = M4_PIXELS_PER_CELL / 8; // each pixel is a bit
 
 final class Model4 : Model {

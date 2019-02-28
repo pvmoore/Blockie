@@ -37,6 +37,8 @@ public:
         new CellDistanceFieldsDirectional(chunks, model)
             .generate();
 
+        calcUniqDistances();
+
         writefln("WorldEditor: Saving chunks"); flushConsole();
         foreach(c; chunks) {
             getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
@@ -139,5 +141,25 @@ private:
 
         log("WorldEditor: new ChunkEditView %s", view); flushLog();
         return view;
+    }
+    void calcUniqDistances() {
+        writefln("# chunks = %s", chunks.length);
+
+        uint[M3Distance] uniq;
+        uint total = 0;
+
+        foreach(ch; chunks) {
+            auto c3 = cast(M3Chunk)ch;
+            if(!c3.root().isAir) {
+                foreach(c; c3.root().cells) {
+                    if(c.isAir) {
+                        uniq[c.distance]++;
+                        total++;
+                    }
+                }
+            }
+        }
+        writefln("\t#Total = %s", total);
+        writefln("\t#Uniq  = %s", uniq.length);
     }
 }

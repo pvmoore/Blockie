@@ -4,7 +4,7 @@ import blockie.all;
 
 final class M4ChunkEditView {
 private:
-    const uint BUFFER_INCREMENT = 1024*512;
+    const uint BUFFER_INCREMENT = 1024*1024;
     M4Chunk chunk;
     ubyte[] voxels;
     uint version_;
@@ -94,6 +94,8 @@ private:
 
             offset = allocator.alloc(numBytes, 4);
 
+            chat("offset = %s", offset);
+
             expect(offset!=-1);
         }
         assert((offset%4)==0);
@@ -106,23 +108,25 @@ private:
     }
     M4Root* getRoot() { return cast(M4Root*)voxels.ptr; }
 
-    /// Get cell index (0-32767)
+    /// Get cell index (0-262144)
     uint getCell(uint3 pos) {
-        uint3 p = pos & 0b11_1110_0000;
-        /// x =           00_0001_1111 \
-        /// y =           11_1110_0000  > cell = 0zzz_zzyy_yyyx_xxxx
-        /// z =    0111_1100_0000_0000 /
-        auto oct = (p.x>>>5) | p.y | (p.z<<5);
-        expect(oct<32768);
+        uint3 p = pos & 0b11_1111_0000;
+        /// x =           00_0011_1111 \
+        /// y =         1111_1100_0000  > cell = zz_zzzz_yyyy_yyxx_xxxx
+        /// z = 11_1111_0000_0000_0000 /
+        auto oct = (p.x>>>4) | (p.y<<2) | (p.z<<8);
+        expect(oct<262144);
         return oct;
     }
-    /// Get pixel index (0-32767)
+    /// Get pixel index (0-4095)
     uint getPixelOffset(uint3 pos) {
-        /// x = 0001_1111 \
-        /// y = 0001_1111  >  oct = zzz_zzyy_yyyx_xxxx
-        /// z = 0001_1111 /
-        uint3 p = pos & 31;
-        return (p << uint3(0, 5, 10)).hadd();
+        /// x = 0000_1111 \
+        /// y = 0000_1111  >  oct = zzzz_yyyy_xxxx
+        /// z = 0000_1111 /
+        uint3 p = pos & 15;
+        auto oct = (p << uint3(0, 4, 8)).hadd();
+        expect(oct<4096);
+        return oct;
     }
 
     void unsetVoxel(uint3 offset) {
@@ -149,7 +153,6 @@ private:
             chat("Converted chunk to CELLS");
             expect(allocator.numBytesUsed==M4_ROOT_SIZE, "%s".format(allocator.numBytesUsed));
             expect(allocator.numFreeRegions==1);
-            expect(allocator.freeRegions[0]==tuple(M4_ROOT_SIZE, BUFFER_INCREMENT-M4_ROOT_SIZE));
         }
 
         auto cell = getCell(offset);

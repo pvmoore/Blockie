@@ -2,8 +2,8 @@ module blockie.model.CellDistanceFieldsDirectional;
 
 import blockie.all;
 /**
- *  xyz distance directional fields. Assumes we have 4 bits per direction/axis
- *
+ *  xyz distance directional fields.
+ *      - Assumes we have 4 bits per direction/axis
  */
 final class CellDistanceFieldsDirectional {
 private:
