@@ -15,6 +15,8 @@
 # Ideas
 - The voxel ubyte value only specifies the general type. The actual voxel that is shown is taken from a fractal algorithm so that a variety of rocks can be represented by the same rock voxel for example.
 
+- Hash root cells if they are taking up too much memory
+
 ##### Vulkan
     It might not be too much work (relatively) to convert to Vulkan.
 
@@ -34,3 +36,21 @@
     then speed should not be affected negatively (much). 
     
     
+ ===================================================================
+##### Old Todo: These might no longer be relevant
+ 
+ -   gl_compute_renderer only needs one texture for materials which
+     needs to be atlased. Need to do a modulus on the current hitPos.xz+y
+     uv coords to get the uv coord in the atlas.
+ 
+ -   Investigate shadow mapping
+ 
+ -   Add shadow rays
+ 
+ -   Ambient occlusion
+     -   Nothing seems to work very well using hit pos data. Maybe try bouncing low-res rays
+         off the hit point.
+ -   Try low resolution marching as the first pass. eg. 8x8 screen pixels per ray. Follow
+     this up with 1 ray per pixel for areas that have hit something. This might not work
+     well if the initial ray misses some smaller voxel. Need to try it to know for sure.
+   

@@ -1,14 +1,14 @@
-module blockie.model3.M3WorldEditor;
+module blockie.model4.M4WorldEditor;
 
 import blockie.all;
 
-final class M3WorldEditor : WorldEditor {
+final class M4WorldEditor : WorldEditor {
 private:
     World world;
     Model model;
     ChunkStorage storage;
     Chunk[] chunks;
-    M3ChunkEditView[chunkcoords] chunkViews;
+    M4ChunkEditView[chunkcoords] chunkViews;
     StopWatch watch;
     uint numVoxelsEdited;
 public:
@@ -21,9 +21,11 @@ public:
         storage.destroy();
     }
     void startTransaction() {
+        writefln("WorldEditor: Start transaction");
         watch.start();
     }
     void commitTransaction() {
+        writefln("WorldEditor: Commit transaction");
         writefln("WorldEditor: Processing %s chunk edits", chunkViews.length); flushConsole();
         foreach(v; chunkViews.values) {
             v.commitTransaction();
@@ -50,22 +52,9 @@ public:
 
         auto view = getChunkView(cpos);
 
-        //if(numVoxelsEdited==2232) { writefln("1 %s", view.getNumEdits()); flushConsole(); }
-
         uint3 offset = cast(uint3)(wpos - (cpos<<CHUNK_SIZE_SHR));
         view.setVoxel(offset, value);
         numVoxelsEdited++;
-
-        //if(numVoxelsEdited==2232) { writefln("2"); flushConsole(); }
-
-        //if((numVoxelsEdited&0xf)==0) {
-        //writefln("[%s] VPS = %.2f (%s edits)",
-        //    watch.peek().total!"seconds",
-        //    view.megaEditsPerSecond(), view.getNumEdits());
-
-        //writefln("edit %s %s", view.getChunk.pos, numVoxelsEdited);
-        //flushConsole();
-        //}
     }
     /// Sets N voxel block
     void setVoxelBlock(worldcoords wpos, uint size, ubyte value) {
@@ -126,12 +115,12 @@ public:
         assert(false, "implement me");
     }
 private:
-    M3ChunkEditView getChunkView(chunkcoords coords) {
-        M3ChunkEditView* ptr = coords in chunkViews;
+    M4ChunkEditView getChunkView(chunkcoords coords) {
+        M4ChunkEditView* ptr = coords in chunkViews;
         if(ptr) return *ptr;
 
-        M3Chunk chunk        = cast(M3Chunk)storage.blockingGet(coords);
-        M3ChunkEditView view = new M3ChunkEditView;
+        M4Chunk chunk        = cast(M4Chunk)storage.blockingGet(coords);
+        M4ChunkEditView view = new M4ChunkEditView;
         view.beginTransaction(chunk);
 
         chunks ~= chunk;

@@ -76,6 +76,8 @@ public:
             this.storage  = new ChunkStorage(world, new Model2);
         } else version(MODEL3) {
             this.storage  = new ChunkStorage(world, new Model3);
+        } else version(MODEL4) {
+            this.storage  = new ChunkStorage(world, new Model4);
         } else assert(false);
 
         getEvents().subscribe("ChunkManager", EventID.CHUNK_LOADED | EventID.CHUNK_EDITED, messages);

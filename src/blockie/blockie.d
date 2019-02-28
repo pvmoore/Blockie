@@ -86,7 +86,7 @@ public:
 
             // NB. RENDER_OPTS is currently slowing down marchM3.inc slightly
 
-            string w = "4";
+            string w = "1";
 
             World world;
             switch(w) {

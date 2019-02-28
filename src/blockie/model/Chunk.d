@@ -12,6 +12,8 @@ public:
     uint version_;  // todo - make this readonly
     ubyte[] voxels; // todo - make this readonly
 
+    // End of data
+
     uint getVersion() const      { return version_; }
     ubyte[] getVoxels()          { return voxels; }
     uint getVoxelsLength() const { return cast(uint)voxels.length; }

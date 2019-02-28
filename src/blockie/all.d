@@ -39,6 +39,7 @@ import blockie.model;
 import blockie.model1;
 import blockie.model2;
 import blockie.model3;
+import blockie.model4;
 
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;
@@ -72,7 +73,7 @@ import resusage.memory : ProcessMemInfo, processMemInfo;
 import common :
     Allocator, Allocator_t, Archive, Array, Async, BitWriter, Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
-    expect, flushConsole, isZeroMem, onlyContains,
+    as, expect, flushConsole, isZeroMem, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, toInt;
 import events : initEvents, getEvents, EventMsg;
 import maths.noise;

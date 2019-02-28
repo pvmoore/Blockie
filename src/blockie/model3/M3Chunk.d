@@ -10,7 +10,7 @@ import blockie.all;
 private const NUM_CELLS = 32768;
 
 final class M3Chunk : Chunk {
-    public:
+public:
     this(chunkcoords coords) {
         super(coords);
 

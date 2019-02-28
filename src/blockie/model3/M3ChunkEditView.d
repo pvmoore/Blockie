@@ -77,7 +77,7 @@ public:
 
         //if(chunk.pos==int3(0,0,1) && numEdits==2196) { writefln("start"); flushConsole(); }
 
-        /// If this is the first time processEdits() has been called
+        /// If this is the first time setVoxel() has been called
         /// on this chunk then fetch the version_ and voxel data
         if(version_==0) {
             assert(chunk.voxels.length < voxels.length);

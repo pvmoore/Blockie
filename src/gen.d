@@ -45,10 +45,15 @@ final class Generator {
             }
             generateModel2(scene, world);
         } else version(MODEL3) {
-            foreach(string name; dirEntries(dirName, "M3*", SpanMode.shallow)) {
+            foreach (string name; dirEntries(dirName, "M3*", SpanMode.shallow)) {
                 remove(name);
             }
             generateModel3(scene, world);
+        } else version(MODEL4) {
+            foreach(string name; dirEntries(dirName, "M4*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel4(scene, world);
         } else assert(false);
     }
     void generateModel1(SceneGenerator sceneGenerator, World world) {
@@ -119,6 +124,22 @@ final class Generator {
         scope(exit) editor.destroy();
 
         sceneGenerator.build(editor);
+
+        writefln("Finished");
+    }
+    void generateModel4(SceneGenerator sceneGenerator, World world) {
+        writefln("\n=========================================");
+        writefln("Generating Model4 %s", world);
+        writefln("=========================================\n");
+
+        auto editor = new M4WorldEditor(world, new Model4);
+        scope(exit) editor.destroy();
+
+        sceneGenerator.build(editor);
+
+        //editor.startTransaction();
+        //editor.setVoxel(worldcoords(9,0,0), 1);
+        //editor.commitTransaction();
 
         writefln("Finished");
     }
