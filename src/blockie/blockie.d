@@ -74,15 +74,15 @@ public:
         try{
             //     |  1            | 2             | 3
             //     |               |               |
-            // 1:  |  768 (2 MB)   |  846 (0 MB)   |  926 (0 MB)
-            // 2:  | 1170 (5 MB)   | 1370 (0 MB)   | 1445 (2 MB)
-            // 3:  |  355 (8MB)    |  426 (1 MB)   |  526 (5 MB)
-            // 4:  |  317 (242 MB) |  413 (247 MB) |  430 (286 MB)
-            // 4b: |  297 (54 MB)  |  385 (46 MB)  |  395 (56 MB)
-            // 4c: |  284 (79 MB)  |  358 (59 MB)  |  380 (68 MB)
-            // 5:  |  970 (2 MB)   | 1100 (1 MB)   | 1165 (1 MB)
-            // 6:  |  575 (53 MB)  |  717 (41 MB)  |  760 (42 MB)
-            // 7:  |  390 (32 MB)  |  452 (28 MB)  |  495 (31 MB)
+            // 1:  |  768 (2 MB)   |  854 (0 MB)   |  926 (0 MB)
+            // 2:  | 1170 (5 MB)   | 1370 (0 MB)   | 1430 (2 MB)
+            // 3:  |  355 (8MB)    |  450 (1 MB)   |  550 (5 MB)
+            // 4:  |  317 (242 MB) |  422 (247 MB) |  425 (286 MB)
+            // 4b: |  297 (54 MB)  |  387 (46 MB)  |  405 (56 MB)
+            // 4c: |  284 (79 MB)  |  373 (59 MB)  |  386 (68 MB)
+            // 5:  |  970 (2 MB)   | 1105 (1 MB)   | 1180 (1 MB)
+            // 6:  |  575 (53 MB)  |  727 (41 MB)  |  765 (42 MB)
+            // 7:  |  390 (32 MB)  |  458 (28 MB)  |  500 (31 MB)
 
             // NB. RENDER_OPTS is currently slowing down marchM3.inc slightly
 
@@ -105,6 +105,12 @@ public:
                 case "7" : world = World.load("Test Scene 7 - HGT"); break;
                 default: break;
             }
+
+            version(MODEL1) pragma(msg, "MODEL1");
+            version(MODEL2) pragma(msg, "MODEL2");
+            version(MODEL3) pragma(msg, "MODEL3");
+            version(MODEL4) pragma(msg, "MODEL4");
+
 
             world.camera.resize(gl.windowSize);
 

@@ -1,11 +1,11 @@
-module blockie.model.CellDistanceFieldsDirectional;
+module blockie.model.CellDistanceFieldsBiDirectional;
 
 import blockie.all;
 /**
  *  xyz distance directional fields.
  *      - Assumes we have 4 bits per direction/axis
  */
-final class CellDistanceFieldsDirectional {
+final class CellDistanceFieldsBiDirectional {
 private:
     Chunk[] chunks;
     Model model;
@@ -14,42 +14,22 @@ private:
     ChunkData fakeChunkData;
     StopWatch watch;
 
-    struct Field {
-        int up, down;
-
-        bool canContain(Field f) {
-            return up >= f.up && down >= f.down;
-        }
-        string toString() { return "%s-%s".format(up, down); }
-    }
-    struct Fields {
-        Field x,y,z;
-
-        Fields max(Fields f) {
-            return Fields(
-                Field(.max(x.up, f.x.up), .max(x.down, f.x.down)),
-                Field(.max(y.up, f.y.up), .max(y.down, f.y.down)),
-                Field(.max(z.up, f.z.up), .max(z.down, f.z.down))
-            );
-        }
-        string toString() { return "[(%s),(%s),(%s)]".format(x, y, z); }
-    }
-
     struct ChunkData {
         Chunk chunk;
-        Fields[] f;
+        DFieldsBi[] f;
     }
     ChunkData[chunkcoords] chunkMap;
-    Fields fakeFields;
+    DFieldsBi fakeFields;
     uint[16] DISTANCE_TABLE;
-    uint MAX = 30;
+    uint MAX;
 public:
-    this(Chunk[] chunks, Model model) {
+    this(Chunk[] chunks, Model model, uint max) {
         this.chunks      = chunks;
         this.model       = model;
         this.size        = 1<<model.numRootBits();
         this.sizeSquared = size*size;
-        this.fakeFields  = Fields(Field(MAX,MAX), Field(MAX,MAX), Field(MAX,MAX));
+        this.fakeFields  = DFieldsBi(DFieldBi(MAX,MAX), DFieldBi(MAX,MAX), DFieldBi(MAX,MAX));
+        this.MAX         = max;
 
         if(chunks.length>0) {
 
@@ -60,19 +40,11 @@ public:
             foreach (c; chunks) {
                 chunkMap[c.pos] = ChunkData(
                     c,
-                    new Fields[size*size*size]
+                    new DFieldsBi[size*size*size]
                 );
             }
             chunkMap.rehash();
         }
-        for(int i=0;i<16;i++) {
-            float f = i;
-            DISTANCE_TABLE[i] = cast(uint)From!"std.math".floor(f + f*f*0.03f);
-        }
-        MAX = DISTANCE_TABLE[15];
-
-        writefln("          [0, 1, 2, 3, 4, 5, 6,  7, 8, 9, 10, 11, 12, 13, 14, 15]");
-        writefln("DISTANCES=%s", DISTANCE_TABLE);
         writefln("MAX = %s", MAX);
     }
     auto generate() {
@@ -129,12 +101,16 @@ private:
     }
     void calculateInitialDistances() {
 
-        Fields maxDistance = Fields();
+        auto maxDistance = DFieldsBi();
 
-        Fields processCell(ChunkData data, int3 cellOffset, Field xstart, Field ystart) {
+        DFieldsBi processCell(ChunkData data,
+                                     int3 cellOffset,
+                                     DFieldBi xstart,
+                                     DFieldBi ystart)
+        {
             Chunk chunk    = data.chunk;
             int3 cellCoord = (chunk.pos<<model.numRootBits())+cellOffset;
-            Fields f;
+            DFieldsBi f;
 
             /// x
             for(int i=xstart.up; i<=MAX; i++) {
@@ -180,22 +156,22 @@ private:
             return f;
         }
 
-        Field[] ystart = new Field[size*size];
+        auto ystart = new DFieldBi[size*size];
 
         foreach(k,v; chunkMap) {
 
             auto chunk = v.chunk;
             if(!chunk.isAir) {
 
-                for(int i=0;i<ystart.length;i++) ystart[i] = Field(1,1);
+                for(int i=0;i<ystart.length;i++) ystart[i] = DFieldBi(1,1);
                 int yoffset = 0;
 
                 for(int z=0; z<size; z++) {
 
                     for(int y=0; y<size; y++) {
 
-                        Fields dist;
-                        Field xstart = Field(1,1);
+                        DFieldsBi dist;
+                        auto xstart = DFieldBi(1,1);
 
                         for(int x=0; x<size; x++) {
                             auto p = int3(x,y,z);
@@ -204,11 +180,11 @@ private:
 
                                 dist = processCell(v, p, xstart, ystart[yoffset+x]);
 
-                                xstart            = Field(max(1, dist.x.up-1), max(1, dist.x.down));
-                                ystart[yoffset+x] = Field(max(1, dist.y.up-1), max(1, dist.y.down));
+                                xstart            = DFieldBi(max(1, dist.x.up-1), max(1, dist.x.down));
+                                ystart[yoffset+x] = DFieldBi(max(1, dist.y.up-1), max(1, dist.y.down));
                             } else {
-                                xstart            = Field(1,1);
-                                ystart[yoffset+x] = Field(1,1);
+                                xstart            = DFieldBi(1,1);
+                                ystart[yoffset+x] = DFieldBi(1,1);
                             }
                         }
                     }
@@ -220,7 +196,7 @@ private:
     }
 
     /// In global cellcoords
-    Fields getDistance(int3 cellCoords) {
+    DFieldsBi getDistance(int3 cellCoords) {
 
         auto chunkpos   = cellCoords>>model.numRootBits();
         ChunkData data  = getChunkData(chunkpos);
@@ -239,29 +215,14 @@ private:
     //        writefln(format(fmt, args)); flushConsole();
     //    }
     //}
-    void setDistance(Chunk chunk, uint oct, Fields f) {
 
-        int convert(int v) {
-            long r = 0;
-            foreach(i, n; DISTANCE_TABLE) {
-                if(v>=n) r = i;
-            }
-            return cast(int)r;
-        }
-
-        chunk.setCellDistance(oct,
-            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
-            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
-            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
-        );
-    }
     void processVolumes() {
 
-        Fields maxDistance = Fields();
+        DFieldsBi maxDistance = DFieldsBi();
 
-        bool isAirX(int3 coord, Field ysize, Field zsize) {
+        bool isAirX(int3 coord, DFieldBi ysize, DFieldBi zsize) {
 
-            Fields dist = getDistance(coord);
+            DFieldsBi dist = getDistance(coord);
             if(!dist.y.canContain(ysize) || !dist.z.canContain(zsize)) return false;
 
             int3 a = coord;
@@ -286,9 +247,9 @@ private:
             }
             return true;
         }
-        bool isAirY(int3 coord, Field xsize, Field zsize) {
+        bool isAirY(int3 coord, DFieldBi xsize, DFieldBi zsize) {
 
-            Fields dist = getDistance(coord);
+            DFieldsBi dist = getDistance(coord);
             if(!dist.x.canContain(xsize) || !dist.z.canContain(zsize)) return false;
 
             int3 a = coord;
@@ -313,9 +274,9 @@ private:
             }
             return true;
         }
-        bool isAirZ(int3 coord, Field xsize, Field ysize) {
+        bool isAirZ(int3 coord, DFieldBi xsize, DFieldBi ysize) {
 
-            Fields dist = getDistance(coord);
+            DFieldsBi dist = getDistance(coord);
             if(!dist.x.canContain(xsize) || !dist.y.canContain(ysize)) return false;
 
             int3 a = coord;
@@ -341,12 +302,12 @@ private:
             return true;
         }
 
-        Fields processCell(ChunkData data, int3 cellOffset, Fields fields) {
+        DFieldsBi processCell(ChunkData data, int3 cellOffset, DFieldsBi fields) {
 
-            Chunk chunk    = data.chunk;
-            int3 cellCoord = (chunk.pos<<model.numRootBits())+cellOffset;
-            uint oct       = getOctree(cellOffset);
-            Fields limits  = data.f[oct];
+            Chunk chunk           = data.chunk;
+            int3 cellCoord        = (chunk.pos<<model.numRootBits())+cellOffset;
+            uint oct              = getOctree(cellOffset);
+            DFieldsBi limits = data.f[oct];
 
             bool goxup = true, goyup = true, gozup = true;
             bool goxdown = true, goydown = true, gozdown = true;
@@ -407,7 +368,7 @@ private:
                 }
             }
 
-            setDistance(chunk, oct, fields);
+            chunk.setCellDistance(oct, fields);
 
             maxDistance = maxDistance.max(fields);
 
@@ -421,15 +382,15 @@ private:
             auto chunk = v.chunk;
             if(!chunk.isAir) {
 
-                Fields prevz = Fields();
+                DFieldsBi prevz = DFieldsBi();
 
                 for(int z=0; z<size; z++) {
 
-                    Fields prevy = prevz;
+                    DFieldsBi prevy = prevz;
 
                     for(int y=0; y<size; y++) {
 
-                        Fields prev = prevy;
+                        DFieldsBi prev = prevy;
 
                         for(int x=0; x<size; x++) {
                             auto p = int3(x,y,z);
@@ -437,21 +398,21 @@ private:
                             if(chunk.isAirCell(getOctree(p))) {
                                 prev = processCell(v, p, prev);
 
-                                if(prev.x.up==0) prev = Fields(); else prev.x.up--;
+                                if(prev.x.up==0) prev = DFieldsBi(); else prev.x.up--;
 
                             } else {
-                                prev = Fields();
+                                prev = DFieldsBi();
                             }
 
                             if(x==0) {
                                 prevy = prev;
-                                if(prevy.y.up==0) prevy = Fields(); else prevy.y.up--;
+                                if(prevy.y.up==0) prevy = DFieldsBi(); else prevy.y.up--;
                             }
                         }
 
                         if(y==0) {
                             prevz = prevy;
-                            if(prevz.z.up==0) prevz = Fields(); else prevz.z.up--;
+                            if(prevz.z.up==0) prevz = DFieldsBi(); else prevz.z.up--;
                         }
                     }
                 }

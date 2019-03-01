@@ -24,6 +24,8 @@ final class Generator {
         initEvents(1*MB);
 
         const auto num = "1";
+        //const auto num = "6_bunny";
+        //const auto num = "7_hgt";
 
         SceneGenerator scene;
         mixin("scene = new TestScene%s;".format(num));

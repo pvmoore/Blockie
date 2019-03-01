@@ -34,6 +34,9 @@ public:
         assert(isAirCell(cell), "%s %s".format(pos, cell));
         r.setDField(cell, x,y,z);
     }
+    override void setCellDistance(uint cell, DFieldsBi df) {
+       throw new Error("Not implemented");
+    }
 
     OctreeRoot* root()             { return cast(OctreeRoot*)voxels.ptr; }
     OptimisedRoot* optimisedRoot() { return cast(OptimisedRoot*)voxels.ptr; }

@@ -45,6 +45,17 @@ public:
 
         root().cells[cell].distance.set(x,y,z);
     }
+    override void setCellDistance(uint cell, DFieldsBi f) {
+
+        // Max = 15
+        int convert(int v) { return min(v, 15); }
+
+        setCellDistance(cell,
+            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
+            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
+            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
+        );
+    }
 
     M4Root* root() { return cast(M4Root*)voxels.ptr; }
 }

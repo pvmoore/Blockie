@@ -36,7 +36,7 @@ public:
         new ChunkDistanceFields(storage, chunks)
             .generate();
 
-        new CellDistanceFieldsDirectional(chunks, model)
+        new CellDistanceFieldsBiDirectional(chunks, model, 15)
             .generate();
 
         calcUniqDistances();
