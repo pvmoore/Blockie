@@ -26,6 +26,15 @@ public:
         expect(allocator.numBytesFree == BUFFER_INCREMENT);
 
         this.chunk = chunk;
+
+        expect(chunk.voxels.length < voxels.length);
+        chunk.atomicCopyTo(version_, this.voxels);
+        expect(version_!=0, "%s version_ is %s".format(chunk, version_));
+        alloc(chunk.getVoxelsLength());
+        expect(allocator.numBytesUsed==chunk.getVoxelsLength());
+        expect(allocator.numFreeRegions==1);
+        chat("Got version %s voxels. %s",version_, chunk);
+
         return this;
     }
     auto commitTransaction() {
@@ -49,15 +58,15 @@ public:
 
         /// If this is the first time setVoxel() has been called
         /// on this chunk then fetch the version_ and voxel data
-        if(version_==0) {
-            expect(chunk.voxels.length < voxels.length);
-            chunk.atomicCopyTo(version_, this.voxels);
-            expect(version_!=0, "%s version_ is %s".format(chunk, version_));
-            alloc(chunk.getVoxelsLength());
-            expect(allocator.numBytesUsed==chunk.getVoxelsLength());
-            expect(allocator.numFreeRegions==1);
-            chat("Got version %s voxels. %s",version_, chunk);
-        }
+        //if(version_==0) {
+        //    expect(chunk.voxels.length < voxels.length);
+        //    chunk.atomicCopyTo(version_, this.voxels);
+        //    expect(version_!=0, "%s version_ is %s".format(chunk, version_));
+        //    alloc(chunk.getVoxelsLength());
+        //    expect(allocator.numBytesUsed==chunk.getVoxelsLength());
+        //    expect(allocator.numFreeRegions==1);
+        //    chat("Got version %s voxels. %s",version_, chunk);
+        //}
 
         if(value==0) {
             unsetVoxel(offset);

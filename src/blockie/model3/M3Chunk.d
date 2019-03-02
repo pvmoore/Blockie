@@ -7,8 +7,6 @@ import blockie.all;
 ///         OCTREE_ROOT_BITS == 5
 ///
 
-private const NUM_CELLS = 32768;
-
 final class M3Chunk : Chunk {
 public:
     this(chunkcoords coords) {
@@ -17,17 +15,15 @@ public:
         /// Set to air
         voxels.length = 4;
         auto r = root();
-        r.flag       = M3Flag.AIR;
-        r.distance.x = 0;
-        r.distance.y = 0;
-        r.distance.z = 0;
+        r.flag = M3Flag.AIR;
+        r.distance.set(0,0,0);
     }
 
     override bool isAir() {
         return root().flag==M3Flag.AIR;
     }
     override bool isAirCell(uint cellIndex) {
-        assert(cellIndex<NUM_CELLS, "%s".format(cellIndex));
+        assert(cellIndex<M3_CELLS_PER_CHUNK, "%s".format(cellIndex));
         return root().cells[cellIndex].isAir();
     }
     override void setDistance(ubyte x, ubyte y, ubyte z) {
@@ -37,7 +33,7 @@ public:
         r.distance.z = z;
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        assert(cell<NUM_CELLS);
+        assert(cell<M3_CELLS_PER_CHUNK);
 
         auto c = root().getCell(voxels.ptr, cell);
         assert(!isAir);
@@ -69,15 +65,15 @@ align(1) struct M3Root { align(1):
     M3Distance distance;    /// if flag==AIR
 
     /// If flag==AIR/SOLID this is not present
-    M3Cell[NUM_CELLS] cells;
+    M3Cell[M3_CELLS_PER_CHUNK] cells;
 
-    static assert(M3Root.sizeof==1 + M3Distance.sizeof + NUM_CELLS*M3Cell.sizeof);
+    static assert(M3Root.sizeof==1 + M3Distance.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
 
     bool isAir() const   { return flag==M3Flag.AIR; }
     bool isMixed() const { return flag==M3Flag.MIXED; }
 
     M3Cell* getCell(ubyte* ptr, uint oct) {
-        assert(oct<NUM_CELLS);
+        assert(oct<M3_CELLS_PER_CHUNK);
         return cast(M3Cell*)(ptr+4+(oct*M3Cell.sizeof));
     }
     bool allCellsAreSolid() {
@@ -96,7 +92,7 @@ align(1) struct M3Root { align(1):
 align(1) struct M3Cell { align(1):
     ubyte bits;
     union {
-        M3Distance distance;/// if bits==0
+        M3Distance distance;/// if isAir
         M3Offset offset;    /// if bits!=0
         /// point to 0 to 8 contiguous M3Branches
         /// (if bits==0xff and offset==0xffffff then cell is solid)
@@ -231,6 +227,9 @@ align(1) struct M3Offset { align(1):
 align(1) struct M3Distance { align(1):
     ubyte x,y,z;
 
+    void set(ubyte x, ubyte y, ubyte z) {
+        this.x = x; this.y = y; this.z = z;
+    }
     static assert(M3Distance.sizeof==3);
     string toString() const { return "%s,%s,%s".format(x,y,z); }
 }

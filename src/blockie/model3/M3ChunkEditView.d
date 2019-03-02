@@ -50,13 +50,21 @@ public:
         assert(allocator.numBytesFree == BUFFER_INCREMENT);
 
         this.chunk = chunk;
+
+        assert(chunk.voxels.length < voxels.length);
+        chunk.atomicCopyTo(version_, this.voxels);
+        assert(version_!=0, "%s version_ is %s".format(chunk, version_));
+        alloc(chunk.getVoxelsLength());
+        assert(allocator.numBytesUsed==chunk.getVoxelsLength());
+        assert(allocator.numFreeRegions==1);
+
+        convertToEditable();
+
         return this;
     }
     auto commitTransaction() {
-        //dump();
 
         uint optimisedLength = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
-        //uint optimisedLength = allocator.offsetOfLastAllocatedByte+1;
 
         allocator.freeAll();
 
@@ -78,15 +86,15 @@ public:
         //if(chunk.pos==int3(0,0,1) && numEdits==2196) { writefln("start"); flushConsole(); }
 
         /// If this is the first time setVoxel() has been called
-        /// on this chunk then fetch the version_ and voxel data
-        if(version_==0) {
-            assert(chunk.voxels.length < voxels.length);
-            chunk.atomicCopyTo(version_, this.voxels);
-            assert(version_!=0, "%s version_ is %s".format(chunk, version_));
-            alloc(chunk.getVoxelsLength());
-            assert(allocator.numBytesUsed==chunk.getVoxelsLength());
-            assert(allocator.numFreeRegions==1);
-        }
+        ///// on this chunk then fetch the version_ and voxel data
+        //if(version_==0) {
+        //    assert(chunk.voxels.length < voxels.length);
+        //    chunk.atomicCopyTo(version_, this.voxels);
+        //    assert(version_!=0, "%s version_ is %s".format(chunk, version_));
+        //    alloc(chunk.getVoxelsLength());
+        //    assert(allocator.numBytesUsed==chunk.getVoxelsLength());
+        //    assert(allocator.numFreeRegions==1);
+        //}
 
         if(value==0) {
             unsetVoxel(offset);
@@ -148,6 +156,9 @@ public:
         return "View %s".format(chunk.pos);
     }
 private:
+    void convertToEditable() {
+        // todo - convert optimised voxels to editable voxels
+    }
     //void checkBranches() {
     //    expect(getRoot().flag==M3Flag.MIXED);
     //

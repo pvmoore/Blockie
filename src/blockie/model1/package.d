@@ -7,10 +7,12 @@ import blockie.all;
 import blockie.model1.M1Chunk;
 import blockie.model1.M1ChunkEditView;
 import blockie.model1.M1ChunkSerialiser;
-import blockie.model1.octree;
-import blockie.model1.optimise;
+import blockie.model1.M1Optimiser;
+import blockie.model1.M1WorldEditor;
+
 
 const M1_OCTREE_ROOT_BITS = 4;
+const M1_CELLS_PER_CHUNK  = 16*16*16; // 4096
 
 final class Model1 : Model {
 public:

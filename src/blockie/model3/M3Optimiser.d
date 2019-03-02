@@ -18,15 +18,15 @@ public:
 
         branchTranslations.clear();
 
-        //writefln("Optimiser: Processing %s", view);
-        //writefln("Optimiser: #voxels = %s", voxelsLength);
+        writefln("Optimising %s\n\tStart voxels.length = %s", view.getChunk.pos, voxelsLength);
 
         mergeUniqueLeaves();
         mergeUniqueBranches(3);
         mergeUniqueBranches(4);
         rewriteVoxels();
+        rewriteVoxels2();
 
-        writefln("Optimised chunk %s %s --> %s (%.2f%%)", view.getChunk.pos,
+        writefln("\toptimised %s --> %s (%.2f%%)",
             voxelsLength, this.voxelsLength, this.voxelsLength*100.0 / voxelsLength);
 
         return this.voxelsLength;
@@ -189,7 +189,7 @@ private:
     ///
     void rewriteVoxels() {
         ubyte[] newVoxels = new ubyte[voxelsLength];
-        uint dest = M3Root.sizeof;
+        uint dest         = M3Root.sizeof;
 
         uint count;
 
@@ -309,5 +309,51 @@ private:
 
         voxels[0..dest] = newVoxels[0..dest];
         voxelsLength = dest;
+    }
+    /// Convert standard root to optimised root:
+    ///
+    /// Standard Root:
+    ///     ubyte flag              (1 byte)
+    ///     M3Distance distance     (3 bytes -> later will be 6 bytes)
+    ///     M3Cell[32768] cells     (32768*4 bytes)
+    /// [131076 bytes]
+    ///     ... octrees
+    ///
+    /// Optimised Root:
+    ///     ubyte[4096] flags       (1 bit per cell -> 4096 bytes)
+    ///     uint[1024] popcounts    (4096 bytes)
+    ///     uint numUniqDistances   (4 bytes)
+    ///     uint bitsPerDistancePtr (4 bytes)
+    ///     uint bitsPerOctreePtr   (4 bytes)
+    ///
+    ///     ++implied NUM_DISTANCE_PTRS = 32768-popcount[1023]
+    ///               NUM_OCTREE_PTRS   = popcounts[1023]
+    ///
+    ///     ++offsets A = 4096+4096+4+4+4
+    ///               B = A + (numUniqDistances * bitsPerDistancePtr) (rounded up to next byte)
+    ///               C = B + (NUM_DISTANCE_PTRS * bitsPerDistancePtr) (rounded up to next byte)
+    ///
+    /// [A] ubyte[?] uniqDistances  (?)
+    /// [B] ubyte[?] distancePtrs   (?) bitsPerDistancePtr bits * NUM_DISTANCE_PTRS
+    /// [C] ubyte[?] octreePtrs     )?) bitsPerOctreePtr bits   * NUM_OCTREE_PTRS
+    ///
+    ///     ... octrees
+    void rewriteVoxels2() {
+        writefln("\tIntermediate voxels length = %s", voxelsLength);
+
+        /*
+        ubyte[] newVoxels = new ubyte[voxelsLength];
+        uint dest         = M3Root.sizeof;
+
+        /// Generate unique cell distances
+        uint[M3Distance] uniqDistances;
+        foreach(cell; getRoot().cells) {
+            if(cell.isAir) {
+                uniqDistances[cell.distance]++;
+            }
+        }
+*/
+
+        /// Update cell octree ptrs
     }
 }

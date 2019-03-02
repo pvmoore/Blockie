@@ -59,35 +59,15 @@ final class Generator {
         } else assert(false);
     }
     void generateModel1(SceneGenerator sceneGenerator, World world) {
-        writefln("\nGenerating Model1 %s", world);
+        writefln("\n=========================================");
+        writefln("Generating Model1 %s", world);
+        writefln("=========================================\n");
 
-        auto storage = new ChunkStorage(world, new Model1);
-        scope(exit) storage.destroy();
+        auto editor = new M1WorldEditor(world, new Model1);
+        scope(exit) editor.destroy();
 
-        auto builder = new WorldBuilder();
-        sceneGenerator.build(builder);
-        auto chunks = cast(Chunk[])builder.getChunks();
+        sceneGenerator.build(editor);
 
-        writefln("Generating air cells"); flushConsole();
-        StopWatch w; w.start();
-
-        auto cdc = new CellDistanceFields(chunks, new Model1());
-        cdc.generate();
-
-        writefln("Cell distances took %.2f seconds", w.peek().total!"nsecs"*1e-09);
-
-        new ChunkDistanceFields(storage, chunks)
-            .generate();
-
-        foreach(c; chunks) {
-            getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
-        }
-        Thread.sleep(dur!"seconds"(1));
-
-        writefln("maxBranches        = %s", maxBranches);
-        writefln("maxLeaves          = %s (%s bits)", maxLeaves, bitsRequiredToEncode(maxLeaves));
-        writefln("maxVoxelsLength    = %s", maxVoxelsLength);
-        writefln("numChunksOptimised = %s", numChunksOptimised);
         writefln("Finished");
     }
     void generateModel2(SceneGenerator sceneGenerator, World world) {

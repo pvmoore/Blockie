@@ -1,14 +1,14 @@
-module blockie.model2.M2WorldEditor;
+module blockie.model1.M1WorldEditor;
 
 import blockie.all;
 
-final class M2WorldEditor : WorldEditor {
+final class M1WorldEditor : WorldEditor {
 private:
     World world;
     Model model;
     ChunkStorage storage;
     Chunk[] chunks;
-    M2ChunkEditView[chunkcoords] chunkViews;
+    M1ChunkEditView[chunkcoords] chunkViews;
     StopWatch watch;
     uint numVoxelsEdited;
 public:
@@ -34,40 +34,23 @@ public:
         new ChunkDistanceFields(storage, chunks)
             .generate();
 
-        new CellDistanceFieldsBiDirectional(chunks, model, 15)
+        new CellDistanceFields(chunks, model)
             .generate();
-
-        calcUniqDistances();
 
         writefln("WorldEditor: Saving chunks");
         foreach(c; chunks) {
             getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
+            writefln("chunk updated: %s", c.voxels.length);
         }
-
-        writefln("WorldEditor: Finished");
     }
-    /// Sets a single voxel
     void setVoxel(worldcoords wpos, ubyte value) {
         chunkcoords cpos = wpos >> CHUNK_SIZE_SHR;
 
         auto view = getChunkView(cpos);
 
-        //if(numVoxelsEdited==2232) { writefln("1 %s", view.getNumEdits()); flushConsole(); }
-
         uint3 offset = cast(uint3)(wpos - (cpos<<CHUNK_SIZE_SHR));
         view.setVoxel(offset, value);
         numVoxelsEdited++;
-
-        //if(numVoxelsEdited==2232) { writefln("2"); flushConsole(); }
-
-        //if((numVoxelsEdited&0xf)==0) {
-            //writefln("[%s] VPS = %.2f (%s edits)",
-            //    watch.peek().total!"seconds",
-            //    view.megaEditsPerSecond(), view.getNumEdits());
-
-            //writefln("edit %s %s", view.getChunk.pos, numVoxelsEdited);
-            //flushConsole();
-        //}
     }
     /// Sets N voxel block
     void setVoxelBlock(worldcoords wpos, uint size, ubyte value) {
@@ -95,19 +78,19 @@ public:
         int t = thickness-1;
         /// x
         rectangle(worldcoords(min.x,   min.y, min.z),
-                  worldcoords(min.x+t, max.y, max.z), value);
+        worldcoords(min.x+t, max.y, max.z), value);
         rectangle(worldcoords(max.x-t, min.y, min.z),
-                  worldcoords(max.x,   max.y, max.z), value);
+        worldcoords(max.x,   max.y, max.z), value);
         /// y
         rectangle(worldcoords(min.x, min.y,   min.z),
-                  worldcoords(max.x, min.y+t, max.z), value);
+        worldcoords(max.x, min.y+t, max.z), value);
         rectangle(worldcoords(min.x, max.y-t, min.z),
-                  worldcoords(max.x, max.y,   max.z), value);
+        worldcoords(max.x, max.y,   max.z), value);
         /// z
         rectangle(worldcoords(min.x, min.y, min.z),
-                  worldcoords(max.x, max.y, min.z+t), value);
+        worldcoords(max.x, max.y, min.z+t), value);
         rectangle(worldcoords(min.x, min.y, max.z-t),
-                  worldcoords(max.x, max.y, max.z), value);
+        worldcoords(max.x, max.y, max.z), value);
     }
     /// Solid sphere
     void sphere(worldcoords centre, uint minRadius, uint maxRadius, ubyte value) {
@@ -127,12 +110,12 @@ public:
         assert(false, "implement me");
     }
 private:
-    M2ChunkEditView getChunkView(chunkcoords coords) {
-        M2ChunkEditView* ptr = coords in chunkViews;
+    M1ChunkEditView getChunkView(chunkcoords coords) {
+        M1ChunkEditView* ptr = coords in chunkViews;
         if(ptr) return *ptr;
 
-        M2Chunk chunk        = cast(M2Chunk)storage.blockingGet(coords);
-        M2ChunkEditView view = new M2ChunkEditView;
+        M1Chunk chunk        = cast(M1Chunk)storage.blockingGet(coords);
+        M1ChunkEditView view = new M1ChunkEditView;
         view.beginTransaction(chunk);
 
         chunks ~= chunk;
@@ -140,25 +123,5 @@ private:
 
         log("WorldEditor: new ChunkEditView %s", view); flushLog();
         return view;
-    }
-    void calcUniqDistances() {
-        writefln("# chunks = %s", chunks.length);
-
-        uint[M2Distance] uniq;
-        uint total = 0;
-
-        foreach(ch; chunks) {
-            auto c2 = cast(M2Chunk)ch;
-            if(!c2.root().isAir) {
-                foreach(c; c2.root().cells) {
-                    if(c.isAir) {
-                        uniq[c.distance]++;
-                        total++;
-                    }
-                }
-            }
-        }
-        writefln("\t#Total = %s", total);
-        writefln("\t#Uniq  = %s", uniq.length);
     }
 }

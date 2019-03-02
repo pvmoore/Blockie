@@ -17,7 +17,7 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
 }
 
-versions "GC_STATS" "MODEL3"
+versions "GC_STATS" "MODEL1"
 
 configuration "blockie" {
 	#mainSourceFile "src/main.d"

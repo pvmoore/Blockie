@@ -15,6 +15,8 @@ import blockie.model3.M3WorldEditor;
 ///
 
 const M3_OCTREE_ROOT_BITS = 5;
+const M3_ROOT_SIZE        = M3Root.sizeof.as!uint;
+const M3_CELLS_PER_CHUNK  = 32*32*32;   // 32768
 
 final class Model3 : Model {
 public:

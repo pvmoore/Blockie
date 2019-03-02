@@ -1,12 +1,16 @@
 module blockie.version_;
 
-const string version_ = "0.0.13";
+const string version_ = "0.0.14";
 
 /**===============================================================
     History
 
+Upcoming ... 0.0.15 - Allow larger cell distances for Model 3.
+
+0.0.14 - Refactor Model1 generation to remove technical debt.
+
 0.0.13 - Add Model 4 which does not use an octree but instead uses arrays of pixels
-         for populated cells.
+         for populated cells. On Hold.
 
 0.0.12 - Add Model 3 which is like Model 2 but using a 5 bit root.
 

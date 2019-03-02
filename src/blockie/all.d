@@ -43,7 +43,6 @@ import blockie.model4;
 
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;
-import blockie.generate.worldbuilder;
 
 import blockie.render.box_renderer;
 import blockie.render.irenderer;

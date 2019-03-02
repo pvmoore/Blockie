@@ -24,12 +24,14 @@ public:
         watch.start();
     }
     void commitTransaction() {
+
         writefln("WorldEditor: Processing %s chunk edits", chunkViews.length); flushConsole();
         foreach(v; chunkViews.values) {
             v.commitTransaction();
         }
         watch.stop();
         writefln("WorldEditor: Chunk updates took (%.2f seconds)", watch.peek().total!"nsecs"*1e-09);
+
 
         new ChunkDistanceFields(storage, chunks)
             .generate();

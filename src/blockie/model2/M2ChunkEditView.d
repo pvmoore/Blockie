@@ -51,13 +51,19 @@ public:
         assert(allocator.numBytesFree == BUFFER_INCREMENT);
 
         this.chunk = chunk;
+
+        assert(chunk.voxels.length < voxels.length);
+        chunk.atomicCopyTo(version_, this.voxels);
+        assert(version_!=0, "%s version_ is %s".format(chunk, version_));
+        alloc(chunk.getVoxelsLength());
+        assert(allocator.numBytesUsed==chunk.getVoxelsLength());
+        assert(allocator.numFreeRegions==1);
+
         return this;
     }
     auto commitTransaction() {
-        //dump();
 
         uint optimisedLength = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
-        //uint optimisedLength = allocator.offsetOfLastAllocatedByte+1;
 
         allocator.freeAll();
 
@@ -80,14 +86,14 @@ public:
 
         /// If this is the first time processEdits() has been called
         /// on this chunk then fetch the version_ and voxel data
-        if(version_==0) {
-            assert(chunk.voxels.length < voxels.length);
-            chunk.atomicCopyTo(version_, this.voxels);
-            assert(version_!=0, "%s version_ is %s".format(chunk, version_));
-            alloc(chunk.getVoxelsLength());
-            assert(allocator.numBytesUsed==chunk.getVoxelsLength());
-            assert(allocator.numFreeRegions==1);
-        }
+        //if(version_==0) {
+        //    assert(chunk.voxels.length < voxels.length);
+        //    chunk.atomicCopyTo(version_, this.voxels);
+        //    assert(version_!=0, "%s version_ is %s".format(chunk, version_));
+        //    alloc(chunk.getVoxelsLength());
+        //    assert(allocator.numBytesUsed==chunk.getVoxelsLength());
+        //    assert(allocator.numFreeRegions==1);
+        //}
 
         if(value==0) {
             unsetVoxel(offset);
@@ -101,48 +107,48 @@ public:
         numEdits++;
         return this;
     }
-    void dumpbr(M2Branch* b, int level) {
-        writefln("%s", b.toString);
-        if(b.isSolid || b.isAir) return;
-
-        string pad = "  ".repeat(7-level);
-        for(int i=0; i<8; i++) {
-            if(b.isBranch(i)) {
-                //writef(pad~"  L%s[oct %s] ", level-1, i);
-                if(level-1==1) {
-                    writefln(pad~"  L1[lf %s] %08b", i, b.getLeaf(voxels.ptr, i).bits);
-                } else {
-                    writef(pad~"  L%s[br %s] ", level-1, i);
-                    dumpbr(b.getBranch(voxels.ptr, i), level-1);
-                }
-            }
-        }
-    }
-    void dumpcell(M2Cell* cell, uint oct) {
-        writefln("  [Cell %s] %s", oct, cell.toString);
-        if(cell.isSolid || cell.isAir) return;
-
-        for(int i=0; i<8; i++) {
-            if(cell.isBranch(i)) {
-                writef("    L5[br %s] ", i);
-                dumpbr(cell.getBranch(voxels.ptr, i), 5);
-            }
-        }
-    }
-    void dumprt(M2Root* rt) {
-        writefln("%s {", rt.toString);
-        if(rt.isMixed) {
-            foreach(int oct, cell; rt.cells) {
-                dumpcell(&cell, oct);
-                //if(oct > 4) break;
-            }
-        }
-        writefln("}");
-    }
-    void dump() {
-        dumprt(getRoot());
-        writefln("%s", allocator.toString);
-    }
+    //void dumpbr(M2Branch* b, int level) {
+    //    writefln("%s", b.toString);
+    //    if(b.isSolid || b.isAir) return;
+    //
+    //    string pad = "  ".repeat(7-level);
+    //    for(int i=0; i<8; i++) {
+    //        if(b.isBranch(i)) {
+    //            //writef(pad~"  L%s[oct %s] ", level-1, i);
+    //            if(level-1==1) {
+    //                writefln(pad~"  L1[lf %s] %08b", i, b.getLeaf(voxels.ptr, i).bits);
+    //            } else {
+    //                writef(pad~"  L%s[br %s] ", level-1, i);
+    //                dumpbr(b.getBranch(voxels.ptr, i), level-1);
+    //            }
+    //        }
+    //    }
+    //}
+    //void dumpcell(M2Cell* cell, uint oct) {
+    //    writefln("  [Cell %s] %s", oct, cell.toString);
+    //    if(cell.isSolid || cell.isAir) return;
+    //
+    //    for(int i=0; i<8; i++) {
+    //        if(cell.isBranch(i)) {
+    //            writef("    L5[br %s] ", i);
+    //            dumpbr(cell.getBranch(voxels.ptr, i), 5);
+    //        }
+    //    }
+    //}
+    //void dumprt(M2Root* rt) {
+    //    writefln("%s {", rt.toString);
+    //    if(rt.isMixed) {
+    //        foreach(int oct, cell; rt.cells) {
+    //            dumpcell(&cell, oct);
+    //            //if(oct > 4) break;
+    //        }
+    //    }
+    //    writefln("}");
+    //}
+    //void dump() {
+    //    dumprt(getRoot());
+    //    writefln("%s", allocator.toString);
+    //}
     override string toString() {
         return "View %s".format(chunk.pos);
     }

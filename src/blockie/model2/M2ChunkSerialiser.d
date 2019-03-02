@@ -4,7 +4,6 @@ import blockie.all;
 
 final class M2ChunkSerialiser : ChunkSerialiser {
 protected:
-
     override Chunk toChunk(AirChunk ac) {
         auto chunk = new M2Chunk(ac.pos);
         chunk.root.distance.x = ac.distX;

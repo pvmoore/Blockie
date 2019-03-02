@@ -13,12 +13,9 @@ import blockie.generate.testscene4c;
 import blockie.generate.testscene5;
 import blockie.generate.testscene6_bunny;
 import blockie.generate.testscene7_hgt;
-import blockie.generate.worldbuilder;
-
-import blockie.model.WorldEditor;
 
 interface SceneGenerator {
-    import blockie.all : World;
+    import blockie.all : World, WorldEditor;
 
     World getWorld();
     void build(WorldEditor b);
