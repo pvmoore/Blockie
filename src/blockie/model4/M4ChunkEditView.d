@@ -2,7 +2,7 @@ module blockie.model4.M4ChunkEditView;
 
 import blockie.all;
 
-final class M4ChunkEditView {
+final class M4ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*1024;
     M4Chunk chunk;
@@ -20,24 +20,26 @@ public:
         this.optimiser = new M4Optimiser(this);
     }
     M4Chunk getChunk() { return chunk; }
+    M4Root* root()     { return cast(M4Root*)voxels.ptr; }
 
-    auto beginTransaction(M4Chunk chunk) {
+    override void beginTransaction(Chunk chunk) {
         assert(chunk !is null);
         expect(allocator.numBytesFree == BUFFER_INCREMENT);
 
-        this.chunk = chunk;
+        this.chunk = cast(M4Chunk)chunk;
 
         expect(chunk.voxels.length < voxels.length);
         chunk.atomicCopyTo(version_, this.voxels);
+
+        convertToEditable();
+
         expect(version_!=0, "%s version_ is %s".format(chunk, version_));
         alloc(chunk.getVoxelsLength());
         expect(allocator.numBytesUsed==chunk.getVoxelsLength());
         expect(allocator.numFreeRegions==1);
         chat("Got version %s voxels. %s",version_, chunk);
-
-        return this;
     }
-    auto commitTransaction() {
+    override void commitTransaction() {
 
         uint optimisedLength = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
 
@@ -50,9 +52,8 @@ public:
             chat("Chunk %s updated to version %s", chunk, ver);
         }
         allocator.freeAll();
-        return this;
     }
-    auto setVoxel(uint3 offset, ubyte value) {
+    override void setVoxel(uint3 offset, ubyte value) {
         watch.start();
         assert(chunk !is null);
 
@@ -76,13 +77,44 @@ public:
 
         numEdits++;
         watch.stop();
-        return this;
     }
+    override bool isAir() { return root().isAir(); }
+
+    override bool isAirCell(uint cell) {
+        assert(cell<M4_CELLS_PER_CHUNK);
+
+        return root().cells[cell].isAir;
+    }
+    override void setDistance(ubyte x, ubyte y, ubyte z) {
+        root().distance.set(x,y,z);
+    }
+    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
+        assert(cell < M4_CELLS_PER_CHUNK);
+        assert(!isAir);
+        assert(root().cells[cell].isAir);
+
+        root().cells[cell].distance.set(x,y,z);
+    }
+    override void setCellDistance(uint cell, DFieldsBi f) {
+
+        // Max = 15
+        int convert(int v) { return min(v, 15); }
+
+        setCellDistance(cell,
+            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
+            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
+            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
+        );
+    }
+
     override string toString() {
         return "View %s".format(chunk.pos);
     }
 
 private:
+    void convertToEditable() {
+        // todo -
+    }
     void chat(A...)(lazy string fmt, lazy A args) {
         //if(chunk.pos==int3(0,0,0) && numEdits<0) {
         //    writefln(format(fmt, args));

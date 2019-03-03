@@ -24,8 +24,9 @@ import blockie.model.WorldEditor;
 interface Model {
     string          name();
     Chunk           makeChunk(chunkcoords coords);
+    ChunkEditView   makeEditView();
     ChunkSerialiser makeChunkSerialiser(World w);
-    int numRootBits();
+    int             numRootBits();
 }
 
 align(1) struct Distance3 { align(1):

@@ -21,15 +21,13 @@ final class M1ChunkEditView : ChunkEditView {
         this.leaves.assumeSafeAppend();
         this.optimiser    = new M1Optimiser(this);
     }
-    override M1ChunkEditView beginTransaction(Chunk chunk) {
+    override void beginTransaction(Chunk chunk) {
         assert(chunk !is null);
 
         this.chunk = cast(M1Chunk)chunk;
         convertToEditable();
-
-        return this;
     }
-    override M1ChunkEditView commitTransaction() {
+    override void commitTransaction() {
 
         auto optVoxels = optimiser.optimise();
 
@@ -41,12 +39,9 @@ final class M1ChunkEditView : ChunkEditView {
         } else {
             log("Chunk %s updated to version %s", chunk, ver);
         }
-
-        return this;
     }
-    override ChunkEditView setVoxel(uint3 offset, ubyte value) {
+    override void setVoxel(uint3 offset, ubyte value) {
         setOctreeVoxel(value, offset.x, offset.y, offset.z);
-        return this;
     }
     override bool isAir() {
         return root.flags.flag==OctreeFlag.AIR;

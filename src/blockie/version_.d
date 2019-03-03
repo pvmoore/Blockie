@@ -1,11 +1,14 @@
 module blockie.version_;
 
-const string version_ = "0.0.14";
+const string version_ = "0.0.15";
 
 /**===============================================================
     History
 
-Upcoming ... 0.0.15 - Allow larger cell distances for Model 3.
+Upcoming ... 0.0.17 - Allow larger cell distances for Model 3.
+Upcoming ... 0.0.16 - Use ChunkEditViews when generating distances.
+
+0.0.15 - Tidy up generation.
 
 0.0.14 - Refactor Model1 generation to remove technical debt.
 

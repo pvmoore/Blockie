@@ -22,6 +22,7 @@ final class Model3 : Model {
 public:
     string          name()                        { return "M3"; }
     Chunk           makeChunk(chunkcoords coords) { return new M3Chunk(coords); }
+    ChunkEditView   makeEditView()                { return new M3ChunkEditView; }
     ChunkSerialiser makeChunkSerialiser(World w)  { return new M3ChunkSerialiser(w, this); }
     int             numRootBits()                 { return M3_OCTREE_ROOT_BITS; }
 }

@@ -12,7 +12,7 @@ import blockie.all;
 ///       2 |          100 | 0..8 M2Branches |    16,777,216 |    4^3 =            64 |
 ///       1 |           10 | 0..8 M2Leaves   |   134,217,728 |    2^3 =             8 |
 ///       0 |            1 | 8 bits          | 1,073,741,824 |      1 =             1 |
-final class M2ChunkEditView {
+final class M2ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*512;
     Allocator_t!uint allocator;
@@ -37,6 +37,7 @@ public:
     M2Chunk getChunk()              { return chunk; }
     ubyte[] getVoxels()             { return voxels; }
     Allocator_t!uint getAllocator() { return allocator; }
+    M2Root* root()                  { return cast(M2Root*)voxels.ptr; }
 
     double megaEditsPerSecond() {
         auto p = (numEdits-tempNumEdits) / (watch.peek().total!"nsecs"*1e-03);
@@ -46,22 +47,23 @@ public:
     }
     ulong getNumEdits() const { return numEdits; }
 
-    auto beginTransaction(M2Chunk chunk) {
+    override void beginTransaction(Chunk chunk) {
         assert(chunk !is null);
         assert(allocator.numBytesFree == BUFFER_INCREMENT);
 
-        this.chunk = chunk;
+        this.chunk = cast(M2Chunk)chunk;
 
         assert(chunk.voxels.length < voxels.length);
         chunk.atomicCopyTo(version_, this.voxels);
+
+        convertToEditable();
+
         assert(version_!=0, "%s version_ is %s".format(chunk, version_));
         alloc(chunk.getVoxelsLength());
         assert(allocator.numBytesUsed==chunk.getVoxelsLength());
         assert(allocator.numFreeRegions==1);
-
-        return this;
     }
-    auto commitTransaction() {
+    override void commitTransaction() {
 
         uint optimisedLength = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
 
@@ -75,10 +77,8 @@ public:
         } else {
             log("Chunk %s updated to version %s", chunk, ver);
         }
-
-        return this;
     }
-    auto setVoxel(uint3 offset, ubyte value) {
+    override void setVoxel(uint3 offset, ubyte value) {
         watch.start();
         assert(chunk !is null);
 
@@ -105,8 +105,37 @@ public:
         //if(chunk.pos==int3(0,0,1) && numEdits==2196) { writefln("end "); flushConsole(); }
 
         numEdits++;
-        return this;
     }
+    override bool isAir() { return root().flag==M2Flag.AIR; }
+    override bool isAirCell(uint cellIndex) { return root().cells[cellIndex].isAir(); }
+    override void setDistance(ubyte x, ubyte y, ubyte z) {
+        auto r = root();
+        r.distance.x = x;
+        r.distance.y = y;
+        r.distance.z = z;
+    }
+    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
+        assert(cell<M2_CELLS_PER_CHUNK);
+        auto c = root().getCell(voxels.ptr, cell);
+        assert(!isAir);
+        assert(voxels.length>4, "voxels.length=%s".format(voxels.length));
+        assert(c.isAir,         "oct=%s bits=%s".format(cell, c.bits));
+
+        c.distance.x = x;
+        c.distance.y = y;
+        c.distance.z = z;
+    }
+    override void setCellDistance(uint cell, DFieldsBi f) {
+        // Max = 15
+        int convert(int v) { return min(v, 15); }
+
+        setCellDistance(cell,
+            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
+            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
+            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
+        );
+    }
+
     //void dumpbr(M2Branch* b, int level) {
     //    writefln("%s", b.toString);
     //    if(b.isSolid || b.isAir) return;
@@ -153,6 +182,9 @@ public:
         return "View %s".format(chunk.pos);
     }
 private:
+    void convertToEditable() {
+        // todo
+    }
     //void checkBranches() {
     //    expect(getRoot().flag==M2Flag.MIXED);
     //

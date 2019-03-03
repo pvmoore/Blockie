@@ -20,6 +20,7 @@ final class Model4 : Model {
     public:
     string          name()                        { return "M4"; }
     Chunk           makeChunk(chunkcoords coords) { return new M4Chunk(coords); }
+    ChunkEditView   makeEditView()                { return new M4ChunkEditView; }
     ChunkSerialiser makeChunkSerialiser(World w)  { return new M4ChunkSerialiser(w, this); }
     int             numRootBits()                 { return M4_OCTREE_ROOT_BITS; }
 }
