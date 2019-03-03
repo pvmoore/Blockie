@@ -30,33 +30,6 @@ public:
 
     override bool isAir() { return root().isAir(); }
 
-    override bool isAirCell(uint cell) {
-        assert(cell<M4_CELLS_PER_CHUNK);
-
-        return root().cells[cell].isAir;
-    }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        root().distance.set(x,y,z);
-    }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        assert(cell < M4_CELLS_PER_CHUNK);
-        assert(!isAir);
-        assert(root().cells[cell].isAir);
-
-        root().cells[cell].distance.set(x,y,z);
-    }
-    override void setCellDistance(uint cell, DFieldsBi f) {
-
-        // Max = 15
-        int convert(int v) { return min(v, 15); }
-
-        setCellDistance(cell,
-            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
-            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
-            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
-        );
-    }
-
     M4Root* root() { return cast(M4Root*)voxels.ptr; }
 }
 //======================================================================================
@@ -68,30 +41,41 @@ align(1) struct M4Root { align(1):
     static assert(M4Root.sizeof == 4 + M4_CELLS_PER_CHUNK*4);
 
     Flag flag;
-    M4Distance distance; /// if flag==AIR
+    Distance3 distance; /// if flag==AIR
     M4Cell[M4_CELLS_PER_CHUNK] cells;
     //-------------------------------------------------------------------
     bool isAir()   { return flag==Flag.AIR; }
     bool isCells() { return flag==Flag.CELLS; }
 
-    bool allCellsAreAir() {
-        foreach(c; cells) if(!c.isAir) return false;
-        return true;
-    }
     void setToCells() {
         this.flag = Flag.CELLS;
         this.distance.set(0,0,0);
     }
+    void recalculateFlags() {
+        if(allCellsAreAir()) {
+            flag = Flag.AIR;
+        } else {
+            flag = Flag.CELLS;
+        }
+    }
     string toString() { return "Root(%s)".format(isAir?"AIR":"CELLS"); }
+private:
+    bool allCellsAreAir() {
+        foreach(c; cells) {
+            if(!c.isAir) return false;
+        }
+        return true;
+    }
 }
+//-----------------------------------------------------------------------
 align(1) struct M4Cell { align(1):
     enum Flag : ubyte { AIR=0, SOLID_PIXELS=1, MIXED_PIXELS=2 }
     static assert(M4Cell.sizeof == 4);
 
     Flag flag = Flag.AIR;
     union {
-        M4Distance distance;/// if isAir
-        M4Offset offset;    /// if isMixed
+        Distance3 distance;/// if isAir
+        Offset3 offset;    /// if isMixed
     }
     //-------------------------------------------------------------------
     bool isAir()   { return flag==Flag.AIR; }
@@ -235,25 +219,3 @@ private:
 }
 +/
 //------------------------------------------------------------------------------------
-align(1) struct M4Offset { align(1):
-    ubyte[3] v;
-    static assert(M4Offset.sizeof==3);
-
-    uint get() const { return (v[2]<<16) | (v[1]<<8) | v[0]; }
-    void set(uint o) {
-        assert(o <= 0x00ff_ffff);
-        v[0] = cast(ubyte)(o&0xff);
-        v[1] = cast(ubyte)((o>>8)&0xff);
-        v[2] = cast(ubyte)((o>>16)&0xff);
-    }
-    string toString() const { return "%s".format(get()*4); }
-}
-align(1) struct M4Distance { align(1):
-    ubyte x,y,z;
-    static assert(M4Distance.sizeof==3);
-
-    void set(ubyte x, ubyte y, ubyte z) {
-        this.x = x; this.y = y; this.z = z;
-    }
-    string toString() const { return "%s,%s,%s".format(x,y,z); }
-}

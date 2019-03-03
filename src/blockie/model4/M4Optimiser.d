@@ -11,18 +11,26 @@ public:
     this(M4ChunkEditView view) {
         this.view = view;
     }
-    uint optimise(ubyte[] voxels, uint voxelsLength) {
+    ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
         this.voxels       = voxels;
         this.voxelsLength = voxelsLength;
 
+        /// This chunk is AIR. Nothing to do
+        if(view.isAir) {
+            return [M4Root.Flag.AIR,
+                    view.root().distance.x,
+                    view.root().distance.y,
+                    view.root().distance.z];
+        }
+
         writefln("Optimiser: Processing %s", view);
 
-        rewriteVoxels();
+        auto optVoxels = rewriteVoxels();
 
         writefln("\tOptimised chunk %s %s --> %s (%.2f%%)", view.getChunk.pos,
-            voxelsLength, this.voxelsLength, this.voxelsLength*100.0 / voxelsLength);
+            voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
 
-        return this.voxelsLength;
+        return optVoxels;
     }
 private:
     M4Root* srcRoot() { return cast(M4Root*)voxels.ptr; }
@@ -30,13 +38,7 @@ private:
     /// 1) If flag==MIXED_PIXELS and cell is solid -> Set flag = SOLID_PIXELS and remove pixels
     /// 2) If flag==MIXED_PIXELS and cell is air -> Set flag = AIR and remove pixels
     /// 3) Remove any gaps
-    void rewriteVoxels() {
-
-        /// This chunk is AIR. Nothing to do
-        if(voxelsLength==4) {
-            srcRoot().flag = M4Root.Flag.AIR;
-            return;
-        }
+    ubyte[] rewriteVoxels() {
 
         auto newVoxels = new ubyte[voxelsLength];
         uint dest      = M4_ROOT_SIZE;
@@ -90,10 +92,12 @@ private:
         /// All cells are air -> switch to an air chunk
         if(airCellCount==M4_CELLS_PER_CHUNK) {
             srcRoot().flag = M4Root.Flag.AIR;
-            return;
+            return [M4Root.Flag.AIR,
+                    0,
+                    0,
+                    0];
         }
 
-        voxels[0..dest] = newVoxels[0..dest];
-        voxelsLength    = dest;
+        return newVoxels[0..dest];
     }
 }

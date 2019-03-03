@@ -15,33 +15,33 @@ import blockie.all;
 final class CellDistanceFields {
 private:
     const uint MAX = 255;
-    Chunk[] chunks;
+    ChunkEditView[] views;
     Model model;
     int size, sizeSquared;
-    Chunk fakeChunk;
+    ChunkEditView fakeView;
     ChunkData fakeChunkData;
     StopWatch watch;
 
     struct ChunkData {
-        Chunk chunk;
+        ChunkEditView view;
         ubyte[] x;
         ubyte[] y;
         ubyte[] z;
     }
     ChunkData[chunkcoords] chunkMap;
 public:
-    this(Chunk[] chunks, Model model) {
-        this.chunks      = chunks;
+    this(ChunkEditView[] views, Model model) {
+        this.views       = views;
         this.model       = model;
         this.size        = 1<<model.numRootBits();
         this.sizeSquared = size*size;
 
-        if(chunks.length>0) {
+        if(views.length>0) {
 
-            this.fakeChunk = model.makeChunk(chunkcoords(int.min));
+            this.fakeView = new FakeEditView;
 
             this.fakeChunkData = ChunkData(
-                fakeChunk,
+                fakeView,
                 new ubyte[size*size*size],
                 new ubyte[size*size*size],
                 new ubyte[size*size*size]
@@ -50,9 +50,9 @@ public:
             fakeChunkData.y[] = cast(ubyte)MAX;
             fakeChunkData.z[] = cast(ubyte)MAX;
 
-            foreach (c; chunks) {
-                chunkMap[c.pos] = ChunkData(
-                    c,
+            foreach(v; views) {
+                chunkMap[v.pos] = ChunkData(
+                    v,
                     new ubyte[size*size*size],
                     new ubyte[size*size*size],
                     new ubyte[size*size*size]
@@ -70,12 +70,14 @@ public:
         calculateInitialDistances();
         watch.stop();
         writefln("\tInitial distances took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
+        flushConsole();
 
         watch.reset(); watch.start();
         processVolumes();
 
         watch.stop();
         writefln("\tProcessing volumes took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
+        flushConsole();
         return this;
     }
 private:
@@ -106,20 +108,20 @@ private:
     bool isAirCell(int3 cellCoords) {
         auto chunkpos   = cellCoords>>model.numRootBits();
         ChunkData data  = getChunkData(chunkpos);
-        Chunk chunk     = data.chunk;
-        if(chunk.isAir) return true;
+        auto view       = data.view;
+        if(view.isAir) return true;
 
         int3 rem = cellCoords-(chunkpos<<model.numRootBits());
         uint oct = getOctree(rem);
-        return chunk.isAirCell(oct);
+        return view.isAirCell(oct);
     }
     void calculateInitialDistances() {
 
         int3 maxDistance = int3(0,0,0);
 
         int3 processCell(ChunkData data, int3 cellOffset, int xstart, int ystart, int zstart) {
-            Chunk chunk    = data.chunk;
-            int3 cellCoord = (chunk.pos<<model.numRootBits())+cellOffset;
+            auto view      = data.view;
+            int3 cellCoord = (view.pos<<model.numRootBits())+cellOffset;
             int x,y,z;
 
             /// x
@@ -157,8 +159,8 @@ private:
 
         foreach(k,v; chunkMap) {
 
-            auto chunk = v.chunk;
-            if(!chunk.isAir) {
+            auto view = v.view;
+            if(!view.isAir) {
 
                 ystart[] = 1;
                 int yoffset = 0;
@@ -173,7 +175,7 @@ private:
                         for(int x=0; x<size; x++) {
                             auto p = int3(x,y,z);
 
-                            if(chunk.isAirCell(getOctree(p))) {
+                            if(view.isAirCell(getOctree(p))) {
                                 dist   = processCell(v, p, xstart, ystart[yoffset+x], 1);
                                 xstart = max(1, dist.x-1);
                             } else {
@@ -196,9 +198,9 @@ private:
 
         auto chunkpos   = cellCoords>>model.numRootBits();
         ChunkData data  = getChunkData(chunkpos);
-        Chunk chunk     = data.chunk;
+        auto view       = data.view;
 
-        if(chunk is fakeChunk) {
+        if(view is fakeView) {
             return int3(MAX, MAX, MAX);
         }
 
@@ -299,8 +301,8 @@ private:
 
         int3 processCell(ChunkData data, int3 cellOffset, int3 field) {
 
-            Chunk chunk    = data.chunk;
-            int3 cellCoord = (chunk.pos<<model.numRootBits())+cellOffset;
+            auto view      = data.view;
+            int3 cellCoord = (view.pos<<model.numRootBits())+cellOffset;
             uint oct       = getOctree(cellOffset);
             int3 limit     = int3(data.x[oct], data.y[oct], data.z[oct]);
 
@@ -336,7 +338,7 @@ private:
                 }
             }
 
-            chunk.setCellDistance(oct, cast(ubyte)field.x,cast(ubyte)field.y,cast(ubyte)field.z);
+            view.setCellDistance(oct, cast(ubyte)field.x,cast(ubyte)field.y,cast(ubyte)field.z);
 
             maxDistance = maxDistance.max(field);
 
@@ -345,10 +347,10 @@ private:
 
         int i=0;
         foreach(k,v; chunkMap) {
-            writefln("\tChunk %s of %s", ++i, chunks.length); flushConsole();
+            //writefln("\tChunk %s of %s", ++i, views.length); flushConsole();
 
-            auto chunk = v.chunk;
-            if(!chunk.isAir) {
+            auto view = v.view;
+            if(!view.isAir) {
 
                 int3 prevz = int3(0,0,0);
 
@@ -363,7 +365,7 @@ private:
                         for(int x=0; x<size; x++) {
                             auto p = int3(x,y,z);
 
-                            if(chunk.isAirCell(getOctree(p))) {
+                            if(view.isAirCell(getOctree(p))) {
                                 prev = processCell(v, p, prev);
 
                                 if(prev.x==0) prev = int3(0,0,0); else prev.x--;

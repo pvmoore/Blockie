@@ -22,38 +22,6 @@ public:
     override bool isAir() {
         return root().flag==M3Flag.AIR;
     }
-    override bool isAirCell(uint cellIndex) {
-        assert(cellIndex<M3_CELLS_PER_CHUNK, "%s".format(cellIndex));
-        return root().cells[cellIndex].isAir();
-    }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        auto r = root();
-        r.distance.x = x;
-        r.distance.y = y;
-        r.distance.z = z;
-    }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        assert(cell<M3_CELLS_PER_CHUNK);
-
-        auto c = root().getCell(voxels.ptr, cell);
-        assert(!isAir);
-        assert(voxels.length>4, "voxels.length=%s".format(voxels.length));
-        assert(c.isAir, "oct=%s bits=%s".format(cell, c.bits));
-        c.distance.x = x;
-        c.distance.y = y;
-        c.distance.z = z;
-    }
-    override void setCellDistance(uint cell, DFieldsBi f) {
-
-        // Max = 15
-        int convert(int v) { return min(v, 15); }
-
-        setCellDistance(cell,
-            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
-            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
-            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
-        );
-    }
 
     M3Root* root() { return cast(M3Root*)voxels.ptr; }
 }
@@ -62,12 +30,12 @@ enum M3Flag : ubyte { AIR=0, MIXED }
 
 align(1) struct M3Root { align(1):
     M3Flag flag;
-    M3Distance distance;    /// if flag==AIR
+    Distance3 distance;    /// if flag==AIR
 
     /// If flag==AIR/SOLID this is not present
     M3Cell[M3_CELLS_PER_CHUNK] cells;
 
-    static assert(M3Root.sizeof==1 + M3Distance.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
+    static assert(M3Root.sizeof==1 + Distance3.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
 
     bool isAir() const   { return flag==M3Flag.AIR; }
     bool isMixed() const { return flag==M3Flag.MIXED; }
@@ -76,24 +44,31 @@ align(1) struct M3Root { align(1):
         assert(oct<M3_CELLS_PER_CHUNK);
         return cast(M3Cell*)(ptr+4+(oct*M3Cell.sizeof));
     }
-    bool allCellsAreSolid() {
-        foreach(cell; cells) {
-            if(!cell.isSolid) return false;
+    void recalculateFlags() {
+        if(allCellsAreAir()) {
+            flag = M3Flag.AIR;
+        } else {
+            flag = M3Flag.MIXED;
         }
-        return true;
     }
-
     string toString() const {
         if(isAir) return "AIR(%s)".format(distance);
         return "MIXED";
+    }
+private:
+    bool allCellsAreAir() {
+        foreach(c; cells) {
+            if(!c.isAir) return false;
+        }
+        return true;
     }
 }
 //------------------------------------------------------------------------------------
 align(1) struct M3Cell { align(1):
     ubyte bits;
     union {
-        M3Distance distance;/// if isAir
-        M3Offset offset;    /// if bits!=0
+        Distance3 distance;/// if isAir
+        Offset3 offset;    /// if bits!=0
         /// point to 0 to 8 contiguous M3Branches
         /// (if bits==0xff and offset==0xffffff then cell is solid)
     }
@@ -145,7 +120,7 @@ align(1) struct M3Cell { align(1):
 //------------------------------------------------------------------------------------
 align(1) struct M3Branch { align(1):
     ubyte bits;
-    M3Offset offset; /// point to 0 to 8 contiguous M3Branches
+    Offset3 offset; /// point to 0 to 8 contiguous M3Branches
 
     static assert(M3Branch.sizeof==4);
 
@@ -208,30 +183,6 @@ align(1) struct M3Branch { align(1):
         if(isSolid) return "SOLID";
         return "%08b @ %s".format(bits, offset);
     }
-}
-//------------------------------------------------------------------------------------
-align(1) struct M3Offset { align(1):
-    ubyte[3] v;
-    static assert(M3Offset.sizeof==3);
-
-    uint get() const { return (v[2]<<16) | (v[1]<<8) | v[0]; }
-    void set(uint o) {
-        assert(o <= 0xffffff);
-        v[0] = cast(ubyte)(o&0xff);
-        v[1] = cast(ubyte)((o>>8)&0xff);
-        v[2] = cast(ubyte)((o>>16)&0xff);
-    }
-    string toString() const { return "%s".format(get()*4); }
-}
-//------------------------------------------------------------------------------------
-align(1) struct M3Distance { align(1):
-    ubyte x,y,z;
-
-    void set(ubyte x, ubyte y, ubyte z) {
-        this.x = x; this.y = y; this.z = z;
-    }
-    static assert(M3Distance.sizeof==3);
-    string toString() const { return "%s,%s,%s".format(x,y,z); }
 }
 //------------------------------------------------------------------------------------
 align(1) struct M3Leaf { align(1):

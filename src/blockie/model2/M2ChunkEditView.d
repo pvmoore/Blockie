@@ -30,14 +30,10 @@ private:
     StopWatch watch;
 public:
     this() {
-        this.voxels    = new ubyte[BUFFER_INCREMENT];
-        this.allocator = new Allocator_t!uint(BUFFER_INCREMENT);
+        this.allocator = new Allocator_t!uint(0);
         this.optimiser = new M2Optimiser(this);
     }
-    M2Chunk getChunk()              { return chunk; }
-    ubyte[] getVoxels()             { return voxels; }
-    Allocator_t!uint getAllocator() { return allocator; }
-    M2Root* root()                  { return cast(M2Root*)voxels.ptr; }
+    M2Root* root() { return cast(M2Root*)voxels.ptr; }
 
     double megaEditsPerSecond() {
         auto p = (numEdits-tempNumEdits) / (watch.peek().total!"nsecs"*1e-03);
@@ -47,30 +43,27 @@ public:
     }
     ulong getNumEdits() const { return numEdits; }
 
+    override Chunk getChunk() {
+        return chunk;
+    }
+    override chunkcoords pos() {
+        return chunk.pos;
+    }
     override void beginTransaction(Chunk chunk) {
-        assert(chunk !is null);
-        assert(allocator.numBytesFree == BUFFER_INCREMENT);
+        expect(chunk !is null);
 
         this.chunk = cast(M2Chunk)chunk;
 
-        assert(chunk.voxels.length < voxels.length);
-        chunk.atomicCopyTo(version_, this.voxels);
-
         convertToEditable();
-
-        assert(version_!=0, "%s version_ is %s".format(chunk, version_));
-        alloc(chunk.getVoxelsLength());
-        assert(allocator.numBytesUsed==chunk.getVoxelsLength());
-        assert(allocator.numFreeRegions==1);
     }
     override void commitTransaction() {
 
-        uint optimisedLength = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
+        auto optVoxels = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
 
         allocator.freeAll();
 
         /// Write voxels back to chunk
-        uint ver = chunk.atomicUpdate(version_, voxels[0..optimisedLength]);
+        uint ver = chunk.atomicUpdate(version_, optVoxels);
         if(ver!=version_+1) {
             /// Stale
             log("M2ChunkEditView: %s is stale", chunk);
@@ -82,28 +75,12 @@ public:
         watch.start();
         assert(chunk !is null);
 
-        //if(chunk.pos==int3(0,0,1) && numEdits==2196) { writefln("start"); flushConsole(); }
-
-        /// If this is the first time processEdits() has been called
-        /// on this chunk then fetch the version_ and voxel data
-        //if(version_==0) {
-        //    assert(chunk.voxels.length < voxels.length);
-        //    chunk.atomicCopyTo(version_, this.voxels);
-        //    assert(version_!=0, "%s version_ is %s".format(chunk, version_));
-        //    alloc(chunk.getVoxelsLength());
-        //    assert(allocator.numBytesUsed==chunk.getVoxelsLength());
-        //    assert(allocator.numFreeRegions==1);
-        //}
-
         if(value==0) {
             unsetVoxel(offset);
         } else{
             setVoxel(offset);
         }
         watch.stop();
-
-        //if(chunk.pos==int3(0,0,1) && numEdits==2196) { writefln("end "); flushConsole(); }
-
         numEdits++;
     }
     override bool isAir() { return root().flag==M2Flag.AIR; }
@@ -183,7 +160,18 @@ public:
     }
 private:
     void convertToEditable() {
-        // todo
+        /// Initially only allocate the exact number of voxels used
+        /// in case we don't actually make any edits which is likely
+        this.voxels = new ubyte[chunk.getVoxelsLength];
+        this.allocator.resize(chunk.getVoxelsLength);
+
+        chunk.atomicCopyTo(version_, this.voxels);
+        expect(version_!=0, "%s version_ is %s".format(chunk, version_));
+
+        alloc(chunk.getVoxelsLength);
+
+        expect(allocator.numBytesUsed==chunk.getVoxelsLength);
+        expect(allocator.numBytesFree==0);
     }
     //void checkBranches() {
     //    expect(getRoot().flag==M2Flag.MIXED);
@@ -417,14 +405,16 @@ private:
 
         /// Create root cells if chunk is AIR
         if(getRoot().isAir) {
-            voxels[4..4+M2Cell.sizeof*4096] = 0;
-            assert(allocator.numBytesUsed==4, "%s".format(allocator.numBytesUsed));
-            expect(4==alloc(M2Cell.sizeof*4096));
+            expect(voxels.length==4);
+            expect(allocator.numBytesUsed==4, "%s".format(allocator.numBytesUsed));
+            expect(4==alloc(M2Cell.sizeof*M2_CELLS_PER_CHUNK));
+
+            /// Convert to cells
+            voxels[4..4+M2Cell.sizeof*M2_CELLS_PER_CHUNK] = 0;
+
             getRoot().flag=M2Flag.MIXED;
 
-            assert(allocator.numBytesUsed==M2Root.sizeof, "%s".format(allocator.numBytesUsed));
-            assert(allocator.numFreeRegions==1);
-            assert(allocator.freeRegions[0]==tuple(M2Root.sizeof, BUFFER_INCREMENT-M2Root.sizeof));
+            expect(allocator.numBytesUsed==M2_ROOT_SIZE, "%s".format(allocator.numBytesUsed));
         }
 
         /// Layer 6 - cell

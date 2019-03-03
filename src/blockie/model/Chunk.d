@@ -49,13 +49,7 @@ public:
         dest[0..voxels.length] = voxels[];
     }
 
-
-    // todo - use the one on ChunkEditView?
     abstract bool isAir();
-    abstract bool isAirCell(uint cellIndex);
-    abstract void setDistance(ubyte x, ubyte y, ubyte z);
-    abstract void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z);
-    abstract void setCellDistance(uint cell, DFieldsBi df);
 
     override string toString() {
         return "Chunk %s".format(pos.toString);

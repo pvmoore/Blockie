@@ -12,9 +12,16 @@ public:
     this(M3ChunkEditView view) {
         this.view = view;
     }
-    uint optimise(ubyte[] voxels, uint voxelsLength) {
+    ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
         this.voxels       = voxels;
         this.voxelsLength = voxelsLength;
+
+        if(view.isAir) {
+            return [M3Flag.AIR,
+                    view.root().distance.x,
+                    view.root().distance.y,
+                    view.root().distance.z];
+        }
 
         branchTranslations.clear();
 
@@ -23,13 +30,14 @@ public:
         mergeUniqueLeaves();
         mergeUniqueBranches(3);
         mergeUniqueBranches(4);
-        rewriteVoxels();
-        rewriteVoxels2();
+
+        auto optVoxels = rewriteVoxels();
+        //rewriteVoxels2();
 
         writefln("\toptimised %s --> %s (%.2f%%)",
-            voxelsLength, this.voxelsLength, this.voxelsLength*100.0 / voxelsLength);
+            voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
 
-        return this.voxelsLength;
+        return optVoxels;
     }
 private:
     M3Root* getRoot() { return cast(M3Root*)voxels.ptr; }
@@ -187,7 +195,7 @@ private:
     ///
     ///
     ///
-    void rewriteVoxels() {
+    ubyte[] rewriteVoxels() {
         ubyte[] newVoxels = new ubyte[voxelsLength];
         uint dest         = M3Root.sizeof;
 
@@ -304,11 +312,7 @@ private:
             recurseCell(oldCells++, newCells++);
         }
 
-        //writefln("Dest=%s", dest);
-        //writefln("count=%s", count);
-
-        voxels[0..dest] = newVoxels[0..dest];
-        voxelsLength = dest;
+        return newVoxels[0..dest];
     }
     /// Convert standard root to optimised root:
     ///

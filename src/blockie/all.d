@@ -72,7 +72,7 @@ import resusage.memory : ProcessMemInfo, processMemInfo;
 import common :
     Allocator, Allocator_t, Archive, Array, Async, BitWriter, Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
-    as, expect, flushConsole, isZeroMem, onlyContains,
+    as, dbg, expect, flushConsole, isZeroMem, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, toInt;
 import events : initEvents, getEvents, EventMsg;
 import maths.noise;

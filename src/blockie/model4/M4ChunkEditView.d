@@ -15,36 +15,30 @@ private:
     StopWatch watch;
 public:
     this() {
-        this.voxels.length = BUFFER_INCREMENT;
-        this.allocator = new Allocator_t!uint(BUFFER_INCREMENT);
+        this.allocator = new Allocator_t!uint(0);
         this.optimiser = new M4Optimiser(this);
     }
-    M4Chunk getChunk() { return chunk; }
-    M4Root* root()     { return cast(M4Root*)voxels.ptr; }
+    M4Root* root() { return cast(M4Root*)voxels.ptr; }
 
+    override Chunk getChunk() {
+        return chunk;
+    }
+    override chunkcoords pos() {
+        return chunk.pos;
+    }
     override void beginTransaction(Chunk chunk) {
-        assert(chunk !is null);
-        expect(allocator.numBytesFree == BUFFER_INCREMENT);
+        expect(chunk !is null);
 
         this.chunk = cast(M4Chunk)chunk;
 
-        expect(chunk.voxels.length < voxels.length);
-        chunk.atomicCopyTo(version_, this.voxels);
-
         convertToEditable();
-
-        expect(version_!=0, "%s version_ is %s".format(chunk, version_));
-        alloc(chunk.getVoxelsLength());
-        expect(allocator.numBytesUsed==chunk.getVoxelsLength());
-        expect(allocator.numFreeRegions==1);
-        chat("Got version %s voxels. %s",version_, chunk);
     }
     override void commitTransaction() {
 
-        uint optimisedLength = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
+        auto optVoxels = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
 
         /// Write voxels back to chunk
-        uint ver = chunk.atomicUpdate(version_, voxels[0..optimisedLength]);
+        uint ver = chunk.atomicUpdate(version_, optVoxels);
         if(ver!=version_+1) {
             /// Stale
             chat("M4ChunkEditView: %s is stale", chunk);
@@ -56,18 +50,6 @@ public:
     override void setVoxel(uint3 offset, ubyte value) {
         watch.start();
         assert(chunk !is null);
-
-        /// If this is the first time setVoxel() has been called
-        /// on this chunk then fetch the version_ and voxel data
-        //if(version_==0) {
-        //    expect(chunk.voxels.length < voxels.length);
-        //    chunk.atomicCopyTo(version_, this.voxels);
-        //    expect(version_!=0, "%s version_ is %s".format(chunk, version_));
-        //    alloc(chunk.getVoxelsLength());
-        //    expect(allocator.numBytesUsed==chunk.getVoxelsLength());
-        //    expect(allocator.numFreeRegions==1);
-        //    chat("Got version %s voxels. %s",version_, chunk);
-        //}
 
         if(value==0) {
             unsetVoxel(offset);
@@ -113,7 +95,18 @@ public:
 
 private:
     void convertToEditable() {
-        // todo -
+        /// Initially only allocate the exact number of voxels used
+        /// in case we don't actually make any edits which is likely
+        this.voxels = new ubyte[chunk.getVoxelsLength];
+        this.allocator.resize(chunk.getVoxelsLength);
+
+        chunk.atomicCopyTo(version_, this.voxels);
+        expect(version_!=0, "%s version_ is %s".format(chunk, version_));
+
+        alloc(chunk.getVoxelsLength);
+
+        expect(allocator.numBytesUsed==chunk.getVoxelsLength);
+        expect(allocator.numBytesFree==0);
     }
     void chat(A...)(lazy string fmt, lazy A args) {
         //if(chunk.pos==int3(0,0,0) && numEdits<0) {
@@ -182,18 +175,16 @@ private:
 
         /// Create root if chunk is AIR
         if(getRoot().isAir) {
-            expect(chunk.getVoxelsLength==4);
-
-            voxels[0..M4_ROOT_SIZE] = 0;
+            expect(voxels.length==4);
             expect(allocator.numBytesUsed==4, "%s".format(allocator.numBytesUsed));
             expect(4==alloc(M4_ROOT_SIZE-4));
 
             /// This chunk is now CELLS
+            voxels[0..M4_ROOT_SIZE] = 0;
             getRoot().setToCells();
 
             chat("Converted chunk to CELLS");
             expect(allocator.numBytesUsed==M4_ROOT_SIZE, "%s".format(allocator.numBytesUsed));
-            expect(allocator.numFreeRegions==1);
         }
 
         auto cell = getCell(offset);

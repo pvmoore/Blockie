@@ -89,18 +89,28 @@ public:
     }
     ubyte[] optimise() {
 
-        writefln("Optimising %s", view.chunk.pos);
-
         view.root.recalculateFlags();
+
+        if(view.isAir) {
+            return [OctreeFlag.AIR,
+                    view.root.flags.distX,
+                    view.root.flags.distY,
+                    view.root.flags.distZ];
+        }
+
+        auto originalSize = view.voxelsLength;
 
         mergeDuplicateLeaves();
         mergeDuplicateBranches();
 
         auto optVoxels = convertToReadOptimised();
 
-        writefln("\tmaxBranches     = %s", maxBranches);
-        writefln("\tmaxLeaves       = %s (%s bits)", maxLeaves, bitsRequiredToEncode(maxLeaves));
-        writefln("\tmaxVoxelsLength = %s", maxVoxelsLength);
+        writefln("Optimised chunk %s %s --> %s (%.2f%%)", view.getChunk.pos,
+            originalSize, optVoxels.length, optVoxels.length*100.0 / originalSize);
+
+        //writefln("\tmaxBranches     = %s", maxBranches);
+        //writefln("\tmaxLeaves       = %s (%s bits)", maxLeaves, bitsRequiredToEncode(maxLeaves));
+        //writefln("\tmaxVoxelsLength = %s", maxVoxelsLength);
 
         return optVoxels;
     }
@@ -392,8 +402,8 @@ private:
         //===============================================================
 
         auto initialVoxelsLength = max(view.voxelsLength, OptimisedRoot.sizeof);
-        auto voxels         = uninitializedArray!(ubyte[])(initialVoxelsLength);
-        OptimisedRoot* root = cast(OptimisedRoot*)voxels.ptr;
+        auto voxels              = new ubyte[initialVoxelsLength];
+        OptimisedRoot* root      = cast(OptimisedRoot*)voxels.ptr;
 
         uint tindex = 0;
         twigIndex  += view.root.numOffsets();

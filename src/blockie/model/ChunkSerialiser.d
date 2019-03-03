@@ -97,6 +97,19 @@ public:
             airChunks.ptr,
             airChunks.length*AirChunk.sizeof,
             airChunks.length.to!string);
+
+        ///// sort
+        //alias myComp = (a, b) =>
+        //    a.pos.x==b.pos.x ? a.pos.y==b.pos.y ? a.pos.z > b.pos.z
+        //                                        : a.pos.y > b.pos.y
+        //                     : a.pos.x > b.pos.x;
+        //
+        //auto sorted = airChunks.sort!(myComp).array;
+        //
+        //archive.add(AIR_CHUNKS_FILENAME,
+        //    sorted.ptr,
+        //    sorted.length*AirChunk.sizeof,
+        //    sorted.length.to!string);
     }
 private:
     string getArchiveFilename() {
@@ -106,7 +119,6 @@ private:
         this.archive = new Archive(getArchiveFilename());
     }
     void closeArchive() {
-        writefln("Closing archive..."); flushConsole();
         archive.close();
     }
 }

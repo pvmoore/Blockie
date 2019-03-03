@@ -4,14 +4,26 @@ import blockie.all;
 
 final class M2WorldEditor : WorldEditor {
 protected:
+    override void editsCompleted() {
+        /// Ensure flags are set correctly before we continue
+        foreach(v; views) {
+            (cast(M2ChunkEditView)v).root().recalculateFlags();
+        }
+    }
     override void generateDistances() {
-        new ChunkDistanceFields(storage, chunks)
-            .generate();
 
-        new CellDistanceFieldsBiDirectional(chunks, model, 15)
+        auto addedViews = new ChunkDistanceFields(storage, views)
+            .generate()
+            .getAddedViews();
+
+        new CellDistanceFieldsBiDirectional(views, model, 15)
             .generate();
 
         calcUniqDistances();
+
+        this.views ~= addedViews;
+
+        writefln("\t%s views added to the transaction", addedViews.length);
     }
 public:
     this(World world, Model model) {
@@ -19,14 +31,14 @@ public:
     }
 private:
     void calcUniqDistances() {
-        writefln("# chunks = %s", chunks.length);
+        writefln("# chunks = %s", views.length);
 
-        uint[M2Distance] uniq;
+        uint[Distance3] uniq;
         uint total = 0;
 
-        foreach(ch; chunks) {
-            auto c2 = cast(M2Chunk)ch;
-            if(!c2.root().isAir) {
+        foreach(v; views) {
+            auto c2 = cast(M2ChunkEditView)v;
+            if(!c2.isAir) {
                 foreach(c; c2.root().cells) {
                     if(c.isAir) {
                         uniq[c.distance]++;

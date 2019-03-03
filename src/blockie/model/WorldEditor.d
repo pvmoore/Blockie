@@ -7,24 +7,25 @@ protected:
     World world;
     Model model;
     ChunkStorage storage;
-    Chunk[] chunks;
-    ChunkEditView[chunkcoords] chunkViews;
+    ChunkEditView[] views;
+    ChunkEditView[chunkcoords] viewMap;
     StopWatch watch;
     uint numVoxelsEdited;
 
     ChunkEditView getChunkView(chunkcoords coords) {
-        ChunkEditView* ptr = coords in chunkViews;
+        ChunkEditView* ptr = coords in viewMap;
         if(ptr) return *ptr;
 
         Chunk chunk        = storage.blockingGet(coords);
         ChunkEditView view = model.makeEditView();
         view.beginTransaction(chunk);
 
-        chunks ~= chunk;
-        chunkViews[chunk.pos] = view;
+        views ~= view;
+        viewMap[chunk.pos] = view;
 
         return view;
     }
+    abstract void editsCompleted();
     abstract void generateDistances();
 public:
     this(World world, Model model) {
@@ -36,24 +37,28 @@ public:
         storage.destroy();
     }
     void startTransaction() {
+        writefln("WorldEditor: Starting transaction");
         watch.start();
     }
     void commitTransaction() {
-        writefln("WorldEditor: Processing %s chunk edits", chunkViews.length); flushConsole();
+        writefln("WorldEditor: Committing %s chunk edits ...", viewMap.length); flushConsole();
 
-        foreach(v; chunkViews.values) {
-            v.commitTransaction();
-        }
+        editsCompleted();
 
         generateDistances();
 
+        writefln("\nWorldEditor: Committing transaction (%s views) ...\n", views.length); flushConsole();
+        foreach(v; views) {
+            v.commitTransaction();
+        }
+
         writefln("\tSaving chunks");
-        foreach(c; chunks) {
-            getEvents().fire(EventMsg(EventID.CHUNK_EDITED, c));
+        foreach(v; views) {
+            getEvents().fire(EventMsg(EventID.CHUNK_EDITED, v.getChunk()));
         }
 
         watch.stop();
-        writefln("\tChunk updates took (%.2f seconds)", watch.peek().total!"nsecs"*1e-09);
+        writefln("\nWorldEditor: Transaction took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
         flushConsole();
     }
     void setVoxel(worldcoords wpos, ubyte value) {

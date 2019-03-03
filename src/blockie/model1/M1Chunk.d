@@ -18,31 +18,15 @@ public:
 
         /// Set to air
         voxels.length = OctreeFlags.sizeof;
-        this.root().flags.flag = OctreeFlag.AIR;
+        auto r = root();
+        r.flags.flag = OctreeFlag.AIR;
+        r.flags.distX = 0;
+        r.flags.distY = 0;
+        r.flags.distZ = 0;
     }
 
     override bool isAir() {
         return root().flags.flag==OctreeFlag.AIR;
-    }
-    override bool isAirCell(uint cellIndex) {
-        assert(cellIndex<M1_CELLS_PER_CHUNK);
-        return optimisedRoot().isAir(cellIndex);
-    }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        auto r = root();
-        r.flags.distX = x;
-        r.flags.distY = y;
-        r.flags.distZ = z;
-    }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        assert(cell<M1_CELLS_PER_CHUNK);
-        assert(isAirCell(cell), "%s %s".format(pos, cell));
-
-        auto r = optimisedRoot();
-        r.setDField(cell, x,y,z);
-    }
-    override void setCellDistance(uint cell, DFieldsBi df) {
-       throw new Error("Not implemented");
     }
 
     OctreeRoot* root()             { return cast(OctreeRoot*)voxels.ptr; }
@@ -73,7 +57,7 @@ final struct OctreeRoot {
                   Distance3.sizeof*M1_CELLS_PER_CHUNK); // 25092
 
     bool isAirCell(uint cell) {
-        return isSolid(cell) && indexes[cell].voxel()==0;
+        return isSolid(cell) && getVoxel(cell)==0;
     }
 
     uint numOffsets() {

@@ -8,10 +8,12 @@ final class ChunkDistanceFields {
 private:
     const int RADIUS = 20;
     ChunkStorage storage;
-    Chunk[] chunks;
+    Model model;
     StopWatch watch;
-    Chunk[chunkcoords] map;
-    Chunk fakeChunk;
+    ChunkEditView[] views;
+    ChunkEditView[] addedViews;
+    ChunkEditView[chunkcoords] map;
+    ChunkEditView fakeView;
     chunkcoords chunkMin, chunkMax, gridSize;
     int MAX;
 
@@ -37,15 +39,18 @@ private:
     }
     Fields[] distances;
 public:
-    this(ChunkStorage storage, Chunk[] chunks) {
-        this.storage   = storage;
-        this.chunks    = chunks;
-        this.fakeChunk = storage.model.makeChunk(chunkcoords(int.min));
+    ChunkEditView[] getAddedViews() { return addedViews; }
 
-        this.chunkMin = chunks.map!(it=>it.pos)
-                              .fold!((a,b)=>a.min(b))(chunkcoords(int.max));
-        this.chunkMax = chunks.map!(it=>it.pos)
-                              .fold!((a,b)=>a.max(b))(chunkcoords(int.min));
+    this(ChunkStorage storage, ChunkEditView[] views) {
+        this.storage   = storage;
+        this.views     = views;
+        this.model     = storage.model;
+        this.fakeView  = new FakeEditView;
+
+        this.chunkMin = views.map!(it=>it.pos)
+                             .fold!((a,b)=>a.min(b))(chunkcoords(int.max));
+        this.chunkMax = views.map!(it=>it.pos)
+                             .fold!((a,b)=>a.max(b))(chunkcoords(int.min));
 
         chunkMin -= RADIUS;
         chunkMax += RADIUS;
@@ -56,16 +61,22 @@ public:
         if(MAX>15) MAX = 15;
 
         /// store existing non-air chunks
-        foreach(c; chunks) {
-            map[c.pos] = c;
+        foreach(v; views) {
+            map[v.pos] = v;
         }
 
         this.distances = new Fields[gridSize.hmul()];
     }
     auto generate() {
-        if(chunks.length==0) return this;
+        if(views.length==0) return this;
 
-        writefln("\nGenerating air chunks ..."); flushConsole();
+        writefln("\nGenerating air chunks ...");
+        writefln("\tmin          = %s", chunkMin);
+        writefln("\tmax          = %s", chunkMax);
+        writefln("\tsize         = %s", gridSize);
+        writefln("\tMAX          = %s", MAX);
+        writefln("\tChunks in    = %s", views.length);
+        flushConsole();
 
         watch.start();
 
@@ -74,29 +85,28 @@ public:
 
         watch.stop();
 
-        writefln("\tmin          = %s", chunkMin);
-        writefln("\tmax          = %s", chunkMax);
-        writefln("\tsize         = %s", gridSize);
-        writefln("\tMAX          = %s", MAX);
-        writefln("\tChunks in    = %s", chunks.length);
         writefln("\tChunk grid   = %s chunks", map.length);
 
         writefln("\tTook (%.2f seconds)", watch.peek().total!"nsecs"*1e-09);
         return this;
     }
 private:
-    Chunk getChunk(chunkcoords p) {
+    ChunkEditView getView(chunkcoords p) {
         auto ptr = p in map;
         if(ptr) return *ptr;
 
-        if(p.anyLT(chunkMin) || p.anyGT(chunkMax)) return fakeChunk;
+        if(p.anyLT(chunkMin) || p.anyGT(chunkMax)) return fakeView;
 
         Chunk c = storage.blockingGet(p);
-        map[p] = c;
-        return c;
+        auto view = model.makeEditView();
+        view.beginTransaction(c);
+        addedViews ~= view;
+
+        map[p] = view;
+        return view;
     }
     bool isAir(int3 pos) {
-        return getChunk(pos).isAir;
+        return getView(pos).isAir;
     }
     void calculateInitialDistances() {
 
@@ -155,9 +165,9 @@ private:
                 Field xstart = Field(1,1);
 
                 for(auto x=chunkMin.x; x<=chunkMax.x; x++) {
-                    auto pos   = int3(x,y,z);
-                    auto chunk = getChunk(pos);
-                    if(chunk.isAir) {
+                    auto pos  = int3(x,y,z);
+                    auto view = getView(pos);
+                    if(view.isAir) {
                         numAirChunks++;
 
                         dist = process(pos, index, xstart);
@@ -173,6 +183,7 @@ private:
 
         writefln("\tInitial max  = %s", maxDistance);
         writefln("\tnumAirChunks = %s", numAirChunks);
+        flushConsole();
     }
     void processVolumes() {
 
@@ -269,7 +280,7 @@ private:
             return true;
         }
 
-        Fields processChunk(Chunk chunk, int index, Fields fields) {
+        Fields processView(ChunkEditView view, int index, Fields fields) {
             bool goxup = true, goxdown = true,
                  goyup = true, goydown = true,
                  gozup = true, gozdown = true;
@@ -330,7 +341,7 @@ private:
                 }
             }
 
-            chunk.setDistance(
+            view.setDistance(
                 cast(ubyte)((fields.x.up<<4) | (fields.x.down)),
                 cast(ubyte)((fields.y.up<<4) | (fields.y.down)),
                 cast(ubyte)((fields.z.up<<4) | (fields.z.down))
@@ -354,10 +365,10 @@ private:
                 Fields prev = prevy;
 
                 for(auto x=chunkMin.x; x<=chunkMax.x; x++) {
-                    auto chunk = getChunk(int3(x,y,z));
+                    auto view = getView(int3(x,y,z));
 
-                    if(chunk.isAir) {
-                        prev = processChunk(chunk, index, prev);
+                    if(view.isAir) {
+                        prev = processView(view, index, prev);
                         if(prev.x.up==0) {
                             prev = Fields();
                         } else {

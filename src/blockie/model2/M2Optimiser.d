@@ -12,25 +12,30 @@ public:
     this(M2ChunkEditView view) {
         this.view = view;
     }
-    uint optimise(ubyte[] voxels, uint voxelsLength) {
+    ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
         this.voxels       = voxels;
         this.voxelsLength = voxelsLength;
 
-        branchTranslations.clear();
+        if(view.isAir) {
+            return [M2Flag.AIR,
+                view.root().distance.x,
+                view.root().distance.y,
+                view.root().distance.z];
+        }
 
-        //writefln("Optimiser: Processing %s", view);
-        //writefln("Optimiser: #voxels = %s", voxelsLength);
+        branchTranslations.clear();
 
         mergeUniqueLeaves();
         mergeUniqueBranches(3);
         mergeUniqueBranches(4);
         mergeUniqueBranches(5);
-        rewriteVoxels();
+
+        auto optVoxels = rewriteVoxels();
 
         writefln("Optimised chunk %s %s --> %s (%.2f%%)", view.getChunk.pos,
-            voxelsLength, this.voxelsLength, this.voxelsLength*100.0 / voxelsLength);
+            voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
 
-        return this.voxelsLength;
+        return optVoxels;
     }
 private:
     M2Root* getRoot() { return cast(M2Root*)voxels.ptr; }
@@ -190,9 +195,9 @@ private:
     ///
     ///
     ///
-    void rewriteVoxels() {
+    ubyte[] rewriteVoxels() {
         ubyte[] newVoxels = new ubyte[voxelsLength];
-        uint dest = M2Root.sizeof;
+        uint dest         = M2Root.sizeof;
 
         uint count;
 
@@ -311,7 +316,6 @@ private:
         //writefln("Dest=%s", dest);
         //writefln("count=%s", count);
 
-        voxels[0..dest] = newVoxels[0..dest];
-        voxelsLength = dest;
+        return newVoxels[0..dest];
     }
 }

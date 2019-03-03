@@ -14,7 +14,7 @@ void main(string[] args) {
     }catch(Throwable t) {
         writefln("Error: %s", t.msg);
     }finally{
-        writefln("end");
+        writefln("");
         flushConsole();
     }
 }
@@ -23,12 +23,21 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "1";
-        //const auto num = "6_bunny";
-        //const auto num = "7_hgt";
+        const auto num = "7";
 
         SceneGenerator scene;
-        mixin("scene = new TestScene%s;".format(num));
+        switch(num) {
+            case "1" : scene = new TestScene1; break;
+            case "2" : scene = new TestScene2; break;
+            case "3" : scene = new TestScene3; break;
+            case "4" : scene = new TestScene4; break;
+            case "4b": scene = new TestScene4b; break;
+            case "4c": scene = new TestScene4c; break;
+            case "5" : scene = new TestScene5; break;
+            case "6" : scene = new TestScene6_bunny; break;
+            case "7" : scene = new TestScene7_hgt; break;
+            default: expect(false);
+        }
 
         auto world = scene.getWorld();
 

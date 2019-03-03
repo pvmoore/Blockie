@@ -2,13 +2,6 @@ module blockie.model2.M2Chunk;
 
 import blockie.all;
 
-///
-/// Assumes CHUNK_SIZE       == 1024
-///         OCTREE_ROOT_BITS == 4
-///
-
-private const NUM_CELLS = 4096;
-
 final class M2Chunk : Chunk {
 public:
     this(chunkcoords coords) {
@@ -26,38 +19,6 @@ public:
     override bool isAir() {
         return root().flag==M2Flag.AIR;
     }
-    override bool isAirCell(uint cellIndex) {
-        assert(cellIndex<NUM_CELLS, "%s".format(cellIndex));
-        return root().cells[cellIndex].isAir();
-    }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        auto r = root();
-        r.distance.x = x;
-        r.distance.y = y;
-        r.distance.z = z;
-    }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        assert(cell<NUM_CELLS);
-        auto c = root().getCell(voxels.ptr, cell);
-        assert(!isAir);
-        assert(voxels.length>4, "voxels.length=%s".format(voxels.length));
-        assert(c.isAir, "oct=%s bits=%s".format(cell, c.bits));
-
-        c.distance.x = x;
-        c.distance.y = y;
-        c.distance.z = z;
-    }
-    override void setCellDistance(uint cell, DFieldsBi f) {
-
-        // Max = 15
-        int convert(int v) { return min(v, 15); }
-
-        setCellDistance(cell,
-            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
-            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
-            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
-        );
-    }
 
     M2Root* root() { return cast(M2Root*)voxels.ptr; }
 }
@@ -66,38 +27,45 @@ enum M2Flag : ubyte { AIR=0, MIXED }
 
 align(1) struct M2Root { align(1):
     M2Flag flag;
-    M2Distance distance;    /// if flag==AIR
+    Distance3 distance;    /// if flag==AIR
 
     /// If flag==AIR/SOLID this is not present
-    M2Cell[NUM_CELLS] cells;
+    M2Cell[M2_CELLS_PER_CHUNK] cells;
 
-    static assert(M2Root.sizeof==1 + M2Distance.sizeof + NUM_CELLS*M2Cell.sizeof);
+    static assert(M2Root.sizeof==1 + Distance3.sizeof + M2_CELLS_PER_CHUNK*M2Cell.sizeof);
 
     bool isAir() const   { return flag==M2Flag.AIR; }
     bool isMixed() const { return flag==M2Flag.MIXED; }
 
     M2Cell* getCell(ubyte* ptr, uint oct) {
-        assert(oct<NUM_CELLS);
+        assert(oct<M2_CELLS_PER_CHUNK);
         return cast(M2Cell*)(ptr+4+(oct*M2Cell.sizeof));
     }
-    bool allCellsAreSolid() {
-        foreach(cell; cells) {
-            if(!cell.isSolid) return false;
+    void recalculateFlags() {
+        if(allCellsAreAir()) {
+            flag = M2Flag.AIR;
+        } else {
+            flag = M2Flag.MIXED;
         }
-        return true;
     }
-
     string toString() const {
         if(isAir) return "AIR(%s)".format(distance);
         return "MIXED";
+    }
+private:
+    bool allCellsAreAir() {
+        foreach(c; cells) {
+            if(!c.isAir) return false;
+        }
+        return true;
     }
 }
 //------------------------------------------------------------------------------------
 align(1) struct M2Cell { align(1):
     ubyte bits;
     union {
-        M2Distance distance;/// if bits==0
-        M2Offset offset;    /// if bits!=0
+        Distance3 distance; /// if bits==0
+        Offset3 offset;     /// if bits!=0
                             /// point to 0 to 8 contiguous M2Branches
                             /// (if bits==0xff and offset==0xffffff then cell is solid)
     }
@@ -149,7 +117,7 @@ align(1) struct M2Cell { align(1):
 //------------------------------------------------------------------------------------
 align(1) struct M2Branch { align(1):
     ubyte bits;
-    M2Offset offset; /// point to 0 to 8 contiguous M2Branches
+    Offset3 offset; /// point to 0 to 8 contiguous M2Branches
 
     static assert(M2Branch.sizeof==4);
 
@@ -212,27 +180,6 @@ align(1) struct M2Branch { align(1):
         if(isSolid) return "SOLID";
         return "%08b @ %s".format(bits, offset);
     }
-}
-//------------------------------------------------------------------------------------
-align(1) struct M2Offset { align(1):
-    ubyte[3] v;
-    static assert(M2Offset.sizeof==3);
-
-    uint get() const { return (v[2]<<16) | (v[1]<<8) | v[0]; }
-    void set(uint o) {
-        assert(o <= 0xffffff);
-        v[0] = cast(ubyte)(o&0xff);
-        v[1] = cast(ubyte)((o>>8)&0xff);
-        v[2] = cast(ubyte)((o>>16)&0xff);
-    }
-    string toString() const { return "%s".format(get()*4); }
-}
-//------------------------------------------------------------------------------------
-align(1) struct M2Distance { align(1):
-    ubyte x,y,z;
-
-    static assert(M2Distance.sizeof==3);
-    string toString() const { return "%s,%s,%s".format(x,y,z); }
 }
 //------------------------------------------------------------------------------------
 align(1) struct M2Leaf { align(1):

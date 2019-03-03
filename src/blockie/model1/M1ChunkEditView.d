@@ -21,10 +21,17 @@ final class M1ChunkEditView : ChunkEditView {
         this.leaves.assumeSafeAppend();
         this.optimiser    = new M1Optimiser(this);
     }
+    override Chunk getChunk() {
+        return chunk;
+    }
+    override chunkcoords pos() {
+        return chunk.pos;
+    }
     override void beginTransaction(Chunk chunk) {
         assert(chunk !is null);
 
         this.chunk = cast(M1Chunk)chunk;
+
         convertToEditable();
     }
     override void commitTransaction() {
@@ -47,7 +54,7 @@ final class M1ChunkEditView : ChunkEditView {
         return root.flags.flag==OctreeFlag.AIR;
     }
     override bool isAirCell(uint cell) {
-        assert(cell<M1_CELLS_PER_CHUNK);
+        expect(cell<M1_CELLS_PER_CHUNK);
 
         return root.isAirCell(cell);
     }
@@ -57,8 +64,8 @@ final class M1ChunkEditView : ChunkEditView {
         root.flags.distZ = z;
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        assert(cell<M1_CELLS_PER_CHUNK);
-        assert(isAirCell(cell));
+        expect(cell<M1_CELLS_PER_CHUNK);
+        expect(isAirCell(cell));
 
         /// We only have 5 bits per axis (uni-directional)
         x = min(31, x).as!ubyte;
@@ -97,18 +104,23 @@ final class M1ChunkEditView : ChunkEditView {
     }
 private:
     void convertToEditable() {
-        // todo - this only works if the chunk is solid air
+        // todo - make this work for chunks that are not solid air
 
         this.version_ = chunk.getVersion();
 
         expect(chunk.isAir);
 
         root            = OctreeRoot();
+        root.flags.flag = OctreeFlag.AIR;
+
         branches.length = 0;
         leaves.length   = 0;
     }
     void setOctreeVoxel(ubyte v, uint x, uint y, uint z) {
         //writefln("setOctreeVoxel(%s, %s,%s,%s)", v, x,y,z);
+
+        /// We can't be air any more
+        if(v!=0) root.flags.flag = OctreeFlag.MIXED;
 
         // ensure branches and leaves have enough capacity for this update
         if(branches.capacity < branches.length + 16) {

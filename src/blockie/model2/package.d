@@ -15,6 +15,7 @@ import blockie.model2.M2WorldEditor;
 ///
 
 const M2_OCTREE_ROOT_BITS = 4;
+const M2_ROOT_SIZE        = M2Root.sizeof.as!uint;
 const M2_CELLS_PER_CHUNK  = 16*16*16; // 4096
 
 final class Model2 : Model {

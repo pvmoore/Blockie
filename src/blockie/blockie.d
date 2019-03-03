@@ -76,13 +76,13 @@ public:
             //     |               |               |
             // 1:  |  768 (2 MB)   |  854 (0 MB)   |  926 (0 MB)
             // 2:  | 1170 (5 MB)   | 1370 (0 MB)   | 1430 (2 MB)
-            // 3:  |  355 (8MB)    |  450 (1 MB)   |  550 (5 MB)
-            // 4:  |  317 (242 MB) |  422 (247 MB) |  425 (286 MB)
-            // 4b: |  297 (54 MB)  |  387 (46 MB)  |  405 (56 MB)
-            // 4c: |  284 (79 MB)  |  373 (59 MB)  |  386 (68 MB)
-            // 5:  |  970 (2 MB)   | 1105 (1 MB)   | 1180 (1 MB)
-            // 6:  |  575 (53 MB)  |  727 (41 MB)  |  765 (42 MB)
-            // 7:  |  390 (32 MB)  |  458 (28 MB)  |  500 (31 MB)
+            // 3:  |  355 (8MB)    |  450 (1 MB)   |  535 (5 MB)
+            // 4:  |  317 (242 MB) |  405 (247 MB) |  415 (286 MB)
+            // 4b: |  297 (54 MB)  |  387 (46 MB)  |  402 (56 MB)
+            // 4c: |  284 (79 MB)  |  373 (59 MB)  |  384 (68 MB)
+            // 5:  |  970 (2 MB)   | 1105 (1 MB)   | 1160 (1 MB)
+            // 6:  |  575 (53 MB)  |  727 (41 MB)  |  753 (42 MB)
+            // 7:  |  390 (32 MB)  |  458 (28 MB)  |  485 (31 MB)
 
             // NB. RENDER_OPTS is currently slowing down marchM3.inc slightly
 
@@ -90,7 +90,7 @@ public:
             // Model 3 has superior speed compared to Model 2 with only a small cost
             // in extra memory usage so should be preferred.
 
-            string w = "1";
+            string w = "7";
 
             World world;
             switch(w) {

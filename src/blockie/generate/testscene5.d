@@ -62,13 +62,10 @@ final class TestScene5 : SceneGenerator {
             edit.setVoxel(worldcoords(x,y,z), V_GRASS1);
         }
 
-        writefln("Sphere"); flushConsole();
-
         // main sphere
         edit.sphere(
             ivec3(512,512,512), 290,300, V_EARTH1);
 
-        writefln("left"); flushConsole();
         // left
         edit.sphere(
             ivec3(512+300,512,512), 50,75, V_ROCK1);
