@@ -12,14 +12,12 @@ protected:
     }
     override void generateDistances() {
 
-        auto addedViews = new ChunkDistanceFields(storage, views)
+        auto addedViews = new DistanceFieldsBiDirChunk(storage, views)
             .generate()
             .getAddedViews();
 
-        new CellDistanceFieldsBiDirectional(views, model, 15)
+        new DistanceFieldsBiDirCell(views, model, 15)
             .generate();
-
-        calcUniqDistances();
 
         this.views ~= addedViews;
 
@@ -28,26 +26,5 @@ protected:
 public:
     this(World world, Model model) {
         super(world, model);
-    }
-private:
-    void calcUniqDistances() {
-        writefln("# chunks = %s", views.length);
-
-        uint[Distance3] uniq;
-        uint total = 0;
-
-        foreach(v; views) {
-            auto c2 = cast(M2ChunkEditView)v;
-            if(!c2.isAir) {
-                foreach(c; c2.root().cells) {
-                    if(c.isAir) {
-                        uniq[c.distance]++;
-                        total++;
-                    }
-                }
-            }
-        }
-        writefln("\t#Total = %s", total);
-        writefln("\t#Uniq  = %s", uniq.length);
     }
 }

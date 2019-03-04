@@ -1,20 +1,10 @@
-module blockie.model.CellDistanceFields;
+module blockie.model.DistanceFieldsUniDirCell;
 
 import blockie.all;
 
-/// SIZE:
-/// root = 4 bits -> 16
-/// root = 5 bits -> 32
-///
-///
-///
-///
-///
-///
-///
-final class CellDistanceFields {
+final class DistanceFieldsUniDirCell {
 private:
-    const uint MAX = 255;
+    uint MAX;
     ChunkEditView[] views;
     Model model;
     int size, sizeSquared;
@@ -30,9 +20,10 @@ private:
     }
     ChunkData[chunkcoords] chunkMap;
 public:
-    this(ChunkEditView[] views, Model model) {
+    this(ChunkEditView[] views, Model model, uint max) {
         this.views       = views;
         this.model       = model;
+        this.MAX         = max;
         this.size        = 1<<model.numRootBits();
         this.sizeSquared = size*size;
 

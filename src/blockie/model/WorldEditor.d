@@ -52,7 +52,7 @@ public:
             v.commitTransaction();
         }
 
-        writefln("\tSaving chunks");
+        writefln("\tFiring chunk update events");
         foreach(v; views) {
             getEvents().fire(EventMsg(EventID.CHUNK_EDITED, v.getChunk()));
         }

@@ -1,11 +1,10 @@
-module blockie.model.CellDistanceFieldsBiDirectional;
+module blockie.model.DistanceFieldsBiDirCell;
 
 import blockie.all;
 /**
- *  xyz distance directional fields.
- *      - Assumes we have 4 bits per direction/axis
+ *  xyz bi-directional distance fields.
  */
-final class CellDistanceFieldsBiDirectional {
+final class DistanceFieldsBiDirCell {
 private:
     ChunkEditView[] views;
     Model model;
@@ -45,12 +44,11 @@ public:
             }
             chunkMap.rehash();
         }
-        writefln("MAX = %s", MAX);
     }
     auto generate() {
         if(chunkMap.length==0) return this;
 
-        writefln("\nGenerating cell distances ..."); flushConsole();
+        writefln("\nGenerating cell distances ... (max = %s)", MAX); flushConsole();
 
         watch.start();
         calculateInitialDistances();

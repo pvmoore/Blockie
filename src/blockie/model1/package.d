@@ -7,6 +7,7 @@ import blockie.all;
 import blockie.model1.M1Chunk;
 import blockie.model1.M1ChunkEditView;
 import blockie.model1.M1ChunkSerialiser;
+import blockie.model1.M1DeOptimiser;
 import blockie.model1.M1Optimiser;
 import blockie.model1.M1WorldEditor;
 

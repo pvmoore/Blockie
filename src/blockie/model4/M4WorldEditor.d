@@ -11,11 +11,12 @@ protected:
         }
     }
     override void generateDistances() {
-        auto addedViews = new ChunkDistanceFields(storage, views)
+
+        auto addedViews = new DistanceFieldsBiDirChunk(storage, views)
             .generate()
             .getAddedViews();
 
-        new CellDistanceFieldsBiDirectional(views, model, 15)
+        new DistanceFieldsBiDirCell(views, model, 15)
             .generate();
 
         calcUniqDistances();

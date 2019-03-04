@@ -11,42 +11,20 @@ protected:
         }
     }
     override void generateDistances() {
-        auto addedViews = new ChunkDistanceFields(storage, views)
+
+        auto addedViews = new DistanceFieldsBiDirChunk(storage, views)
             .generate()
             .getAddedViews();
 
-        new CellDistanceFieldsBiDirectional(views, model, 15)
+        new DistanceFieldsBiDirCell(views, model, 15)
             .generate();
-
-        calcUniqDistances();
 
         this.views ~= addedViews;
 
-        writefln("\t%s views added to the transaction", addedViews.length);
+        writefln("\t%s views added to the transaction", addedViews.length); flushConsole();
     }
 public:
     this(World world, Model model) {
         super(world, model);
-    }
-private:
-    void calcUniqDistances() {
-        writefln("# chunks = %s", views.length);
-
-        uint[Distance3] uniq;
-        uint total = 0;
-
-        foreach(v; views) {
-            auto c3 = cast(M3ChunkEditView)v;
-            if(!c3.isAir) {
-                foreach(c; c3.root().cells) {
-                    if(c.isAir) {
-                        uniq[c.distance]++;
-                        total++;
-                    }
-                }
-            }
-        }
-        writefln("\t#Total = %s", total);
-        writefln("\t#Uniq  = %s", uniq.length);
     }
 }

@@ -90,7 +90,7 @@ public:
             // Model 3 has superior speed compared to Model 2 with only a small cost
             // in extra memory usage so should be preferred.
 
-            string w = "7";
+            string w = "1";
 
             World world;
             switch(w) {

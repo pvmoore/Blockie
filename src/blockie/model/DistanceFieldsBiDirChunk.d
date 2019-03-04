@@ -1,10 +1,10 @@
-module blockie.model.ChunkDistanceFields;
+module blockie.model.DistanceFieldsBiDirChunk;
 
 import blockie.all;
 import std.algorithm.searching : minElement, maxElement;
 import std.algorithm.iteration : fold;
 
-final class ChunkDistanceFields {
+final class DistanceFieldsBiDirChunk {
 private:
     const int RADIUS = 20;
     ChunkStorage storage;

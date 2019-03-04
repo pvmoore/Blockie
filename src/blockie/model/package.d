@@ -13,10 +13,10 @@ import blockie.model.ChunkEditView;
 import blockie.model.ChunkManager;
 import blockie.model.ChunkSerialiser;
 import blockie.model.ChunkStorage;
-import blockie.model.CellDistanceFields;
-import blockie.model.CellDistanceFieldsBiDirectional;
-import blockie.model.ChunkDistanceFields;
 import blockie.model.DistanceField;
+import blockie.model.DistanceFieldsBiDirCell;
+import blockie.model.DistanceFieldsBiDirChunk;
+import blockie.model.DistanceFieldsUniDirCell;
 import blockie.model.WorldEditor;
 
 interface Model {
@@ -39,29 +39,52 @@ align(1) struct Distance3 { align(1):
     }
 
     string toString() const { return "%s,%s,%s".format(x,y,z); }
+
+    bool opEquals(inout Distance3 o) const {
+        return x==o.x && y==o.y && z==o.z;
+    }
+    size_t toHash() const nothrow @trusted {
+        ulong a = 5381;
+        a  = ((a << 7) )  + x;
+        a ^= ((a << 13) ) + y;
+        a  = ((a << 19) ) + z;
+        return a;
+    }
 }
 
 align(1) struct Distance6 { align(1):
-    ubyte x1,x2, y1,y2, z1, z2;
+    ubyte xdown, xup,
+          ydown, yup,
+          zdown, zup;
     static assert(Distance6.sizeof==6);
 
-    void set(ubyte x1, ubyte x2, ubyte y1, ubyte y2, ubyte z1, ubyte z2) {
-        this.x1 = x1;
-        this.x2 = x2;
-        this.y1 = y1;
-        this.y2 = y2;
-        this.z1 = z1;
-        this.z2 = z2;
-    }
     void set(DFieldsBi f) {
-        x1 = f.x.up.as!ubyte;
-        x2 = f.x.down.as!ubyte;
-        y1 = f.y.up.as!ubyte;
-        y2 = f.y.down.as!ubyte;
-        z1 = f.z.up.as!ubyte;
-        z2 = f.z.down.as!ubyte;
+        xdown = f.x.down.as!ubyte;
+        xup   = f.x.up.as!ubyte;
+
+        ydown = f.y.down.as!ubyte;
+        yup   = f.y.up.as!ubyte;
+
+        zdown = f.z.down.as!ubyte;
+        zup   = f.z.up.as!ubyte;
     }
-    string toString() const { return "%s-%s, %s-%s, %s-%s".format(x1,x2,y1,y2,z1,z2); }
+    bool opEquals(inout Distance6 o) const {
+        return xdown==o.xdown && xup==o.xup &&
+               ydown==o.ydown && yup==o.yup &&
+               zdown==o.zdown && zup==o.zup;
+    }
+    size_t toHash() const nothrow @trusted {
+        ulong a = 5381;
+        a  = ((a << 7) )  + xdown;
+        a ^= ((a << 13) ) + ydown;
+        a  = ((a << 19) ) + zdown;
+
+        a  = ((a << 23) ) + xup;
+        a ^= ((a << 29) ) + yup;
+        a  = ((a << 31) ) + zup;
+        return a;
+    }
+    string toString() const { return "%s-%s, %s-%s, %s-%s".format(xdown,xup,ydown,yup,zdown,zup); }
 }
 //===========================================================================
 align(1) struct Offset3 { align(1):

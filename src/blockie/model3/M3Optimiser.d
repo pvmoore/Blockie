@@ -1,5 +1,8 @@
 module blockie.model3.M3Optimiser;
 
+/**
+ *  Convert edit-optimised voxels into render-optimised voxels.
+ */
 import blockie.all;
 
 final class M3Optimiser {
@@ -25,14 +28,13 @@ public:
 
         branchTranslations.clear();
 
-        writefln("Optimising %s\n\tStart voxels.length = %s", view.getChunk.pos, voxelsLength);
+        writefln("Optimising %s\n\tStart voxels length        = %s", view.getChunk.pos, voxelsLength);
 
         mergeUniqueLeaves();
         mergeUniqueBranches(3);
         mergeUniqueBranches(4);
 
         auto optVoxels = rewriteVoxels();
-        //rewriteVoxels2();
 
         writefln("\toptimised %s --> %s (%.2f%%)",
             voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
@@ -308,22 +310,22 @@ private:
         /// Recurse through the cells, updating the offsets
         auto oldCells = cast(M3Cell*)(voxels.ptr+4);
         auto newCells = cast(M3Cell*)(newVoxels.ptr+4);
-        for(auto i=0; i<32768; i++) {
+        for(auto i=0; i<M3_CELLS_PER_CHUNK; i++) {
             recurseCell(oldCells++, newCells++);
         }
 
         return newVoxels[0..dest];
     }
-    /// Convert standard root to optimised root:
     ///
     /// Standard Root:
-    ///     ubyte flag              (1 byte)
-    ///     M3Distance distance     (3 bytes -> later will be 6 bytes)
-    ///     M3Cell[32768] cells     (32768*4 bytes)
+    ///     ubyte flag                  (1 byte)
+    ///     M3Distance chunkDistances   (3 bytes)
+    ///     M3Cell[32768] cells         (32768*4 bytes) -> will need to be 7 bytes per cell
     /// [131076 bytes]
     ///     ... octrees
     ///
     /// Optimised Root:
+
     ///     ubyte[4096] flags       (1 bit per cell -> 4096 bytes)
     ///     uint[1024] popcounts    (4096 bytes)
     ///     uint numUniqDistances   (4 bytes)
@@ -337,27 +339,75 @@ private:
     ///               B = A + (numUniqDistances * bitsPerDistancePtr) (rounded up to next byte)
     ///               C = B + (NUM_DISTANCE_PTRS * bitsPerDistancePtr) (rounded up to next byte)
     ///
-    /// [A] ubyte[?] uniqDistances  (?)
-    /// [B] ubyte[?] distancePtrs   (?) bitsPerDistancePtr bits * NUM_DISTANCE_PTRS
-    /// [C] ubyte[?] octreePtrs     )?) bitsPerOctreePtr bits   * NUM_OCTREE_PTRS
+    /// [A] ubyte[] uniqDistances  6*numUniqDistances bytes
+    /// [B] ubyte[] distancePtrs   bitsPerDistancePtr bits * NUM_DISTANCE_PTRS
+    /// [C] ubyte[] octreePtrs     bitsPerOctreePtr bits   * NUM_OCTREE_PTRS
     ///
     ///     ... octrees
-    void rewriteVoxels2() {
-        writefln("\tIntermediate voxels length = %s", voxelsLength);
+    /*
+    ubyte[] rewriteVoxels2(ubyte[] srcVoxels) {
+        writefln("\tIntermediate voxels length = %s", srcVoxels.length);
 
-        /*
-        ubyte[] newVoxels = new ubyte[voxelsLength];
-        uint dest         = M3Root.sizeof;
 
-        /// Generate unique cell distances
-        uint[M3Distance] uniqDistances;
-        foreach(cell; getRoot().cells) {
+        M3Root* srcRoot() { return cast(M3Root*)srcVoxels.ptr; }
+
+        ubyte[] newVoxels = new ubyte[srcVoxels.length];
+        uint dest         = 0;
+
+        /// Write flag and chunk distances
+        newVoxels[0..4] = srcVoxels[0..4];
+        dest = 4;
+
+        /// Write flag bits and pop counts and generate unique cell distances
+        uint[Distance6] uniqDistancesMap;
+        uint numDistances;
+        uint numOctreePtrs;
+
+        void writeByte(ubyte b) {
+            newVoxels[dest++] = b;
+        }
+        auto writer = new BitWriter(&writeByte);
+        //writer.write(1, 1);
+
+        foreach(cell; srcRoot().cells) {
             if(cell.isAir) {
-                uniqDistances[cell.distance]++;
+                numDistances++;
+                uniqDistancesMap[cell.distance]++;
+
+            } else {
+                numOctreePtrs++;
             }
         }
-*/
+        auto uniqDistances      = uniqDistancesMap.keys;
+        uint bitsPerDistancePtr = bitsRequiredToEncode(uniqDistances.length);
+        uint bitsPerOctreePtr   = bitsRequiredToEncode(numOctreePtrs);
+
+        writefln("\tnum distances      = %s", numDistances);
+        writefln("\tnum octree ptrs    = %s", numOctreePtrs);
+        writefln("\tunique distances   = %s", uniqDistances.length);
+        writefln("\tbitsPerDistancePtr = %s", bitsPerDistancePtr);
+        writefln("\tbitsPerOctreePtr   = %s", bitsPerOctreePtr);
+
+        //void recurseLeaf(M3Leaf* srcLeaf, M3Leaf* destLeaf) {
+        //
+        //}
+        void recurseBranch(M3Branch* srcBranch, M3Branch* destBranch) {
+
+        }
+        void recurseCell(M3Cell* srcCell, M3Cell* destCell) {
+
+        }
 
         /// Update cell octree ptrs
+        foreach(cell; srcRoot().cells) {
+            if(cell.isAir) {
+
+            } else {
+
+            }
+        }
+
+        return srcVoxels;
     }
+    */
 }

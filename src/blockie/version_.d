@@ -1,11 +1,14 @@
 module blockie.version_;
 
-const string version_ = "0.0.16";
+const string version_ = "0.0.17";
 
 /**===============================================================
     History
 
-Upcoming ... 0.0.17 - Allow larger cell distances for Model 3.
+Upcoming ... 0.0.18 - Add voxel de-optimiser code
+
+0.0.17 - Test speed of larger cell distance fields for Model 3. Not much improvement for
+         higher memory usage.
 
 0.0.16 - Use ChunkEditViews when generating distances.
 
