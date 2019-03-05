@@ -8,12 +8,10 @@ public:
         super(coords);
 
         /// Set to air
-        voxels.length = 4;
+        voxels.length = 8;
         auto r = root();
-        r.flag       = M2Flag.AIR;
-        r.distance.x = 0;
-        r.distance.y = 0;
-        r.distance.z = 0;
+        r.flag = M2Flag.AIR;
+        r.distance.clear();
     }
 
     override bool isAir() {
@@ -27,19 +25,20 @@ enum M2Flag : ubyte { AIR=0, MIXED }
 
 align(1) struct M2Root { align(1):
     M2Flag flag;
-    Distance3 distance;    /// if flag==AIR
+    ubyte _reserved;
+    Distance6 distance;    /// if flag==AIR
 
     /// If flag==AIR/SOLID this is not present
     M2Cell[M2_CELLS_PER_CHUNK] cells;
 
-    static assert(M2Root.sizeof==1 + Distance3.sizeof + M2_CELLS_PER_CHUNK*M2Cell.sizeof);
+    static assert(M2Root.sizeof==2 + Distance6.sizeof + M2_CELLS_PER_CHUNK*M2Cell.sizeof);
 
     bool isAir() const   { return flag==M2Flag.AIR; }
     bool isMixed() const { return flag==M2Flag.MIXED; }
 
     M2Cell* getCell(ubyte* ptr, uint oct) {
         assert(oct<M2_CELLS_PER_CHUNK);
-        return cast(M2Cell*)(ptr+4+(oct*M2Cell.sizeof));
+        return cast(M2Cell*)(ptr+8+(oct*M2Cell.sizeof));
     }
     void recalculateFlags() {
         if(allCellsAreAir()) {

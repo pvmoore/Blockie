@@ -24,7 +24,7 @@ uint getOctet(uvec3 upos, int shr) {
 
 bool isSolidCell(uvec3 upos, uint voxels, inout uint outL5Branch, inout Voxel v) {
     uint cellOct = getCellOctet(upos);
-    uint cell    = voxelsIn[voxels+1+cellOct];
+    uint cell    = voxelsIn[voxels+2+cellOct];
 
     uint bits  = cell & 0xffu;
     uint l5oct = getOctet(upos, 5);

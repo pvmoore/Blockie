@@ -12,7 +12,7 @@ protected:
     }
     override void generateDistances() {
 
-        auto addedViews = new DistanceFieldsBiDirChunk(storage, views)
+        auto addedViews = new DistanceFieldsBiDirChunk(storage, views, 15)
             .generate()
             .getAddedViews();
 
@@ -31,7 +31,7 @@ public:
     }
 private:
     void calcUniqDistances() {
-        writefln("# chunks = %s", views.length);
+        writefln("\nCalculating uniq distances (#chunks = %s)", views.length);
 
         uint[Distance3] uniq;
         uint total = 0;
@@ -47,7 +47,9 @@ private:
                 }
             }
         }
-        writefln("\t#Total = %s", total);
-        writefln("\t#Uniq  = %s", uniq.length);
+        writefln("\tTotal distances = %000,d", total);
+        writefln("\tUniq distances  = %000,d (%s bits per = %000,d bytes)",
+            uniq.length, bitsRequiredToEncode(uniq.length),
+            (total*bitsRequiredToEncode(uniq.length))/8);
     }
 }

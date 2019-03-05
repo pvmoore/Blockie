@@ -20,10 +20,7 @@ public:
         this.voxelsLength = voxelsLength;
 
         if(view.isAir) {
-            return [M3Flag.AIR,
-                    view.root().distance.x,
-                    view.root().distance.y,
-                    view.root().distance.z];
+            return cast(ubyte[])[M3Flag.AIR, 0] ~ view.root().distance.toBytes();
         }
 
         branchTranslations.clear();
@@ -114,8 +111,8 @@ private:
             }
         }
 
-        auto cellPtr = cast(M3Cell*)(voxels.ptr+4);
-        for(auto i=0; i<32768; i++) {
+        auto cellPtr = cast(M3Cell*)(voxels.ptr+8);
+        for(auto i=0; i<M3_CELLS_PER_CHUNK; i++) {
             recurseCell(cellPtr++);
         }
 
@@ -183,8 +180,8 @@ private:
             }
         }
 
-        auto cellPtr = cast(M3Cell*)(voxels.ptr+4);
-        for(auto i=0; i<32768; i++) {
+        auto cellPtr = cast(M3Cell*)(voxels.ptr+8);
+        for(auto i=0; i<M3_CELLS_PER_CHUNK; i++) {
             recurseCell(cellPtr++);
         }
 
@@ -308,8 +305,8 @@ private:
         newVoxels[0..dest] = voxels[0..dest];
 
         /// Recurse through the cells, updating the offsets
-        auto oldCells = cast(M3Cell*)(voxels.ptr+4);
-        auto newCells = cast(M3Cell*)(newVoxels.ptr+4);
+        auto oldCells = cast(M3Cell*)(voxels.ptr+8);
+        auto newCells = cast(M3Cell*)(newVoxels.ptr+8);
         for(auto i=0; i<M3_CELLS_PER_CHUNK; i++) {
             recurseCell(oldCells++, newCells++);
         }

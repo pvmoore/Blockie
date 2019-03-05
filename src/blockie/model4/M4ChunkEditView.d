@@ -4,7 +4,7 @@ import blockie.all;
 
 final class M4ChunkEditView : ChunkEditView {
 private:
-    const uint BUFFER_INCREMENT = 1024*1024;
+    const uint BUFFER_INCREMENT = 10*1024*1024;
     M4Chunk chunk;
     ubyte[] voxels;
     uint version_;
@@ -32,6 +32,9 @@ public:
         this.chunk = cast(M4Chunk)chunk;
 
         convertToEditable();
+    }
+    override void voxelEditsCompleted() {
+
     }
     override void commitTransaction() {
 
@@ -67,8 +70,8 @@ public:
 
         return root().cells[cell].isAir;
     }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        root().distance.set(x,y,z);
+    override void setChunkDistance(DFieldsBi f) {
+        root().distance.set(f);
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
         assert(cell < M4_CELLS_PER_CHUNK);

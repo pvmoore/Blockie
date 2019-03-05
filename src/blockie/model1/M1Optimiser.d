@@ -32,18 +32,19 @@ import blockie.all;
  *      Indexes into leavesOffset
  */
 align(1) struct OptimisedRoot { align(1):
-    OctreeFlags flags;
+    OctreeFlags flags;  // 8 bytes
     uint twigsOffset;
     uint l2TwigsOffset;
     uint leavesOffset;
     uint l2IndexOffset;
     uint leafIndexOffset;
     uint encodeBits;    // (leafEncodeBits | (l2EncodeBits<<8))
+
     uint[M1_CELLS_PER_CHUNK/16] bitsAndPopcnts;
     ubyte[M1_CELLS_PER_CHUNK] voxels;
     ushort[M1_CELLS_PER_CHUNK] dfields;
 
-    static assert(OptimisedRoot.sizeof==13340);
+    static assert(OptimisedRoot.sizeof==13344);
     static assert(OptimisedRoot.bitsAndPopcnts.offsetof%4==0);
     static assert(OptimisedRoot.voxels.offsetof%4==0);
     static assert(OptimisedRoot.dfields.offsetof%4==0);
@@ -58,7 +59,6 @@ align(1) struct OptimisedRoot { align(1):
         return isSolid(oct) && voxels[oct]==0;
     }
     uint getOctree(uint x, uint y, uint z) {
-        //expect(x<8 && y<8 && z<8);
         return x | (y<<M1_OCTREE_ROOT_BITS) | (z<<(M1_OCTREE_ROOT_BITS*2));
     }
     uint getOctree(ivec3 i) {
@@ -92,10 +92,7 @@ public:
         view.root.recalculateFlags();
 
         if(view.isAir) {
-            return [OctreeFlag.AIR,
-                    view.root.flags.distX,
-                    view.root.flags.distY,
-                    view.root.flags.distZ];
+            return cast(ubyte[])[OctreeFlag.AIR, 0] ~ view.root.flags.distance.toBytes();
         }
 
         auto originalSize = view.voxelsLength;
@@ -279,9 +276,9 @@ private:
             foreach(uint oct, ref idx; view.root.indexes) {
                 if(!view.root.isSolid(oct)) {
                     recurseBranch(
-                    idx,
-                    view.toBranchPtr(idx.offset),
-                    CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS
+                        idx,
+                        view.toBranchPtr(idx.offset),
+                        CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS
                     );
                 }
             }

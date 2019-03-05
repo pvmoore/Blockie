@@ -17,31 +17,11 @@ private:
     chunkcoords chunkMin, chunkMax, gridSize;
     int MAX;
 
-    struct Field {
-        int up, down;
-
-        bool canContain(Field f) {
-            return up >= f.up && down >= f.down;
-        }
-        string toString() { return "%s-%s".format(up, down); }
-    }
-    struct Fields {
-        Field x,y,z;
-
-        Fields max(Fields f) {
-            return Fields(
-                Field(.max(x.up, f.x.up), .max(x.down, f.x.down)),
-                Field(.max(y.up, f.y.up), .max(y.down, f.y.down)),
-                Field(.max(z.up, f.z.up), .max(z.down, f.z.down))
-            );
-        }
-        string toString() { return "[(%s),(%s),(%s)]".format(x, y, z); }
-    }
-    Fields[] distances;
+    DFieldsBi[] distances;
 public:
     ChunkEditView[] getAddedViews() { return addedViews; }
 
-    this(ChunkStorage storage, ChunkEditView[] views) {
+    this(ChunkStorage storage, ChunkEditView[] views, uint max) {
         this.storage   = storage;
         this.views     = views;
         this.model     = storage.model;
@@ -58,14 +38,14 @@ public:
         this.gridSize = chunkMax-chunkMin + 1;
 
         MAX = (chunkMax.max() - chunkMin.min())+1;
-        if(MAX>15) MAX = 15;
+        if(MAX>max) MAX = max;
 
         /// store existing non-air chunks
         foreach(v; views) {
             map[v.pos] = v;
         }
 
-        this.distances = new Fields[gridSize.hmul()];
+        this.distances = new DFieldsBi[gridSize.hmul()];
     }
     auto generate() {
         if(views.length==0) return this;
@@ -109,12 +89,13 @@ private:
         return getView(pos).isAir;
     }
     void calculateInitialDistances() {
+        writefln("\tCalculating initial distances"); flushConsole();
 
-        Fields maxDistance = Fields();
+        auto maxDistance = DFieldsBi();
         int numAirChunks;
 
-        Fields process(int3 chunkPos, int index, Field xstart) {
-            Fields f;
+        DFieldsBi process(int3 chunkPos, int index, DFieldBi xstart) {
+            DFieldsBi f;
             /// x
             for(int i=xstart.up; i<=MAX; i++) {
                 if(isAir(chunkPos+int3(i,0,0))) {
@@ -161,8 +142,8 @@ private:
         for(auto z=chunkMin.z; z<=chunkMax.z; z++) {
             for(auto y=chunkMin.y; y<=chunkMax.y; y++) {
 
-                Fields dist;
-                Field xstart = Field(1,1);
+                DFieldsBi dist;
+                auto xstart = DFieldBi(1,1);
 
                 for(auto x=chunkMin.x; x<=chunkMax.x; x++) {
                     auto pos  = int3(x,y,z);
@@ -172,9 +153,9 @@ private:
 
                         dist = process(pos, index, xstart);
 
-                        xstart = Field(max(1, dist.x.up-1), max(1, dist.x.down));
+                        xstart = DFieldBi(max(1, dist.x.up-1), max(1, dist.x.down));
                     } else {
-                        xstart = Field(1,1);
+                        xstart = DFieldBi(1,1);
                     }
                     index++;
                 }
@@ -186,13 +167,14 @@ private:
         flushConsole();
     }
     void processVolumes() {
+        writefln("\tProcessing volumes"); flushConsole();
 
-        auto maxDistance = Fields();
+        auto maxDistance = DFieldsBi();
         const int X      = 1;
         const int Y      = gridSize.x;
         const int Z      = gridSize.x * gridSize.y;
 
-        bool isAirX(int index, Field ysize, Field zsize) {
+        bool isAirX(int index, DFieldBi ysize, DFieldBi zsize) {
 
             auto dist = distances[index];
 
@@ -221,7 +203,7 @@ private:
             }
             return true;
         }
-        bool isAirY(int index, Field xsize, Field zsize) {
+        bool isAirY(int index, DFieldBi xsize, DFieldBi zsize) {
 
             auto dist = distances[index];
 
@@ -250,7 +232,7 @@ private:
             }
             return true;
         }
-        bool isAirZ(int index, Field xsize, Field ysize) {
+        bool isAirZ(int index, DFieldBi xsize, DFieldBi ysize) {
 
             auto dist = distances[index];
 
@@ -280,12 +262,12 @@ private:
             return true;
         }
 
-        Fields processView(ChunkEditView view, int index, Fields fields) {
+        DFieldsBi processView(ChunkEditView view, int index, DFieldsBi fields) {
             bool goxup = true, goxdown = true,
                  goyup = true, goydown = true,
                  gozup = true, gozdown = true;
 
-            Fields limits = distances[index];
+            auto limits = distances[index];
 
             while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
                 /// expand X
@@ -341,11 +323,7 @@ private:
                 }
             }
 
-            view.setDistance(
-                cast(ubyte)((fields.x.up<<4) | (fields.x.down)),
-                cast(ubyte)((fields.y.up<<4) | (fields.y.down)),
-                cast(ubyte)((fields.z.up<<4) | (fields.z.down))
-            );
+            view.setChunkDistance(fields);
 
             maxDistance = maxDistance.max(fields);
 
@@ -353,16 +331,16 @@ private:
         }
 
         /// Traverse all chunks including margin.
-        int index = 0;
-        Fields prevz = Fields();
+        int index  = 0;
+        auto prevz = DFieldsBi();
 
         for(auto z=chunkMin.z; z<=chunkMax.z; z++) {
 
-            Fields prevy = prevz;
+            auto prevy = prevz;
 
             for(auto y=chunkMin.y; y<=chunkMax.y; y++) {
 
-                Fields prev = prevy;
+                auto prev = prevy;
 
                 for(auto x=chunkMin.x; x<=chunkMax.x; x++) {
                     auto view = getView(int3(x,y,z));
@@ -370,22 +348,22 @@ private:
                     if(view.isAir) {
                         prev = processView(view, index, prev);
                         if(prev.x.up==0) {
-                            prev = Fields();
+                            prev = DFieldsBi();
                         } else {
                             prev.x.up--;
                         }
                     } else {
-                        prev = Fields();
+                        prev = DFieldsBi();
                     }
                     if(x==chunkMin.x) {
                         prevy = prev;
-                        if(prevy.y.up==0) prevy = Fields(); else prevy.y.up--;
+                        if(prevy.y.up==0) prevy = DFieldsBi(); else prevy.y.up--;
                     }
                     index++;
                 }
                 if(y==chunkMin.y) {
                     prevz = prevy;
-                    if(prevz.z.up==0) prevz = Fields(); else prevz.z.up--;
+                    if(prevz.z.up==0) prevz = DFieldsBi(); else prevz.z.up--;
                 }
             }
         }

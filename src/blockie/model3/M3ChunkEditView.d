@@ -57,6 +57,9 @@ public:
 
         convertToEditable();
     }
+    override void voxelEditsCompleted() {
+
+    }
     override void commitTransaction() {
 
         auto optVoxels = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
@@ -91,11 +94,8 @@ public:
         assert(cellIndex<M3_CELLS_PER_CHUNK, "%s".format(cellIndex));
         return root().cells[cellIndex].isAir();
     }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        auto r = root();
-        r.distance.x = x;
-        r.distance.y = y;
-        r.distance.z = z;
+    override void setChunkDistance(DFieldsBi f) {
+        root().distance.set(f);
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
         assert(cell<M3_CELLS_PER_CHUNK);
@@ -418,12 +418,12 @@ private:
 
         /// Create root cells if chunk is AIR
         if(getRoot().isAir) {
-            expect(voxels.length==4);
-            expect(allocator.numBytesUsed==4, "%s".format(allocator.numBytesUsed));
-            expect(4==alloc(M3Cell.sizeof*M3_CELLS_PER_CHUNK));
+            expect(voxels.length==8);
+            expect(allocator.numBytesUsed==8, "%s".format(allocator.numBytesUsed));
+            expect(8==alloc(M3Cell.sizeof*M3_CELLS_PER_CHUNK));
 
             /// Convert to cells
-            voxels[4..4+M3Cell.sizeof*M3_CELLS_PER_CHUNK] = 0;
+            voxels[8..8+M3Cell.sizeof*M3_CELLS_PER_CHUNK] = 0;
 
             getRoot().flag=M3Flag.MIXED;
 
@@ -431,10 +431,9 @@ private:
         }
 
         /// Layer 5 - cell
-        uint oct  = getCellOct(offset);
-        auto cell = getRoot().getCell(voxels.ptr, oct);
+        uint oct   = getCellOct(offset);
+        auto cell  = getRoot().getCell(voxels.ptr, oct);
         cellOffset = toUint(cell);
-        assert(oct == (toUint(cell)-4)/4);
 
         chat("  oct %s cell %s", oct, cell.toString);
         if(cell.isSolid) return;

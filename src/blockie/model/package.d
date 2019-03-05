@@ -32,6 +32,11 @@ align(1) struct Distance3 { align(1):
     ubyte x,y,z;
     static assert(Distance3.sizeof==3);
 
+    void set(Distance3 d) {
+        x = d.x;
+        y = d.y;
+        z = d.z;
+    }
     void set(ubyte x, ubyte y, ubyte z) {
         this.x = x;
         this.y = y;
@@ -58,6 +63,14 @@ align(1) struct Distance6 { align(1):
           zdown, zup;
     static assert(Distance6.sizeof==6);
 
+    void clear() {
+        xdown = xup = ydown = yup = zdown = zup = 0;
+    }
+    void set(Distance6 d) {
+        xdown = d.xdown; xup = d.xup;
+        ydown = d.ydown; yup = d.yup;
+        zdown = d.zdown; zup = d.zup;
+    }
     void set(DFieldsBi f) {
         xdown = f.x.down.as!ubyte;
         xup   = f.x.up.as!ubyte;
@@ -67,6 +80,9 @@ align(1) struct Distance6 { align(1):
 
         zdown = f.z.down.as!ubyte;
         zup   = f.z.up.as!ubyte;
+    }
+    ubyte[] toBytes() {
+        return [xdown, xup, ydown, yup, zdown, zup];
     }
     bool opEquals(inout Distance6 o) const {
         return xdown==o.xdown && xup==o.xup &&

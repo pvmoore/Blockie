@@ -12,7 +12,7 @@ protected:
     }
     override void generateDistances() {
 
-        auto addedViews = new DistanceFieldsBiDirChunk(storage, views)
+        auto addedViews = new DistanceFieldsBiDirChunk(storage, views, 31)
                             .generate()
                             .getAddedViews();
 

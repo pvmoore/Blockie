@@ -72,23 +72,21 @@ public:
         //writefln("dir=%s invDir=%s", dir, float3(1)/dir);
 
         try{
-            //     |  1            | 2             | 3
-            //     |               |               |
-            // 1:  |  768 (2 MB)   |  854 (0 MB)   |  926 (0 MB)
-            // 2:  | 1170 (5 MB)   | 1370 (0 MB)   | 1430 (2 MB)
-            // 3:  |  355 (8MB)    |  450 (1 MB)   |  535 (5 MB)
-            // 4:  |  317 (242 MB) |  405 (247 MB) |  415 (286 MB)
-            // 4b: |  297 (54 MB)  |  387 (46 MB)  |  402 (56 MB)
-            // 4c: |  284 (79 MB)  |  373 (59 MB)  |  384 (68 MB)
-            // 5:  |  970 (2 MB)   | 1105 (1 MB)   | 1160 (1 MB)
-            // 6:  |  575 (53 MB)  |  727 (41 MB)  |  753 (42 MB)
-            // 7:  |  390 (32 MB)  |  458 (28 MB)  |  485 (31 MB)
-
-            // NB. RENDER_OPTS is currently slowing down marchM3.inc slightly
+            //     |  1            | 2             | 3              | 4
+            //     |               |               |                |
+            // 1:  |  768 (2 MB)   |  862 (0 MB)   |  940 (0 MB)    |
+            // 2:  | 1190 (5 MB)   | 1380 (0 MB)   | 1440 (2 MB)    |
+            // 3:  |  356 (8MB)    |  458 (1 MB)   |  544 (5 MB)    |
+            // 4:  |  317 (242 MB) |  397 (247 MB) |  430 (286 MB)  |
+            // 4b: |  297 (54 MB)  |  382 (46 MB)  |  413 (56 MB)   |
+            // 4c: |  284 (79 MB)  |  366 (59 MB)  |  395 (68 MB)   |
+            // 5:  |  980 (2 MB)   | 1124 (1 MB)   | 1185 (1 MB)    |
+            // 6:  |  575 (53 MB)  |  725 (41 MB)  |  780 (42 MB)   |
+            // 7:  |  390 (32 MB)  |  455 (28 MB)  |  498 (31 MB)   |
 
             // Notes:
-            // Model 3 has superior speed compared to Model 2 with only a small cost
-            // in extra memory usage so should be preferred.
+            //    Model 3 has superior speed compared to Model 2 with only a small cost
+            //    in extra memory usage so should be preferred.
 
             string w = "1";
 

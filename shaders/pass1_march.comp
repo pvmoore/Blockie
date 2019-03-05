@@ -56,6 +56,15 @@ uint g_index    = gl_GlobalInvocationID.x +
                   gl_GlobalInvocationID.y*SIZE.x;
 vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
 
+struct Flags {
+    uint a;
+    uint b;
+};
+#define CHUNK_FLAG(f)       (f.a & 0xffu)
+#define CHUNK_DISTANCE_X(f) (f.a >> 16)
+#define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
+#define CHUNK_DISTANCE_Z(f) (f.b >> 16)
+
 #include "useful_functions.comp"
 #include "getoctet.inc"
 #include "marchM1.inc"
@@ -76,11 +85,13 @@ bool updatePosition(inout Position pos, vec3 add) {
     pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
     return pos.chunk != prevChunk;
 }
-bool isAirChunk(const uint flags) {
-    return (flags & 0xffu)==1;
+bool isAirChunk(Flags flags) {
+    return CHUNK_FLAG(flags)==1;
 }
-vec3 airChunkDistanceField(const uint flags) {
-    return unpackUnorm4x8(flags).yzw * 255;
+uvec3 airChunkDistanceField(Flags flags) {
+    return uvec3(CHUNK_DISTANCE_X(flags),
+                 CHUNK_DISTANCE_Y(flags),
+                 CHUNK_DISTANCE_Z(flags));
 }
 vec3 airCellDistanceField(const uint v) {
     return vec3(v & 31u, (v>>5) & 31u, (v>>10) & 31u);
@@ -121,15 +132,15 @@ float getMinDistToEdgeOfDistanceField(
     return max(res, 0);
 }
 //
-// Directional distance field stored in radius
+// Bi-directional distance field stored in radius
 //
 float getMinDistToEdgeOfDistanceField2(Ray ray,
                                        Position pos,
-                                       vec3 radius,
+                                       uvec3 radius,
                                        uint side)    // CHUNK_SIZE or CELL_SIZE
 {
-    vec3 upradius   = floor(radius/16);  // high 16 bits = up distance
-    vec3 downradius = mod(radius, 16);   // low  16 bits = down distance
+    uvec3 upradius   = radius >> 8u;        // high 16 bits = up distance
+    uvec3 downradius = radius & 0xffu;      // low  16 bits = down distance
 
     vec3 p    = pos.fpos-WORLD_BB[0];
     vec3 rem  = mod(p, side) + downradius*side;
@@ -167,7 +178,7 @@ Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
     Voxel voxel;
     float distance   = 0;
     uint voxelsRoot  = chunkDataIn[pos.chunk];
-    uint flags       = voxelsIn[voxelsRoot/4];
+    Flags flags      = Flags(voxelsIn[voxelsRoot/4], voxelsIn[voxelsRoot/4+1]);
 
     // Assume:
     //      1) pos.chunk will always start with a valid chunk
@@ -201,7 +212,7 @@ Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
         if(chunkChanged) {
             if(pos.chunk==-1) break;
             voxelsRoot  = chunkDataIn[pos.chunk];
-            flags       = voxelsIn[voxelsRoot/4];
+            flags       = Flags(voxelsIn[voxelsRoot/4], voxelsIn[voxelsRoot/4+1]);
         }
 	}while(distance<maxDistance);
 

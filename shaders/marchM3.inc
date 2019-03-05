@@ -24,7 +24,7 @@ uint getOctet(uvec3 upos, int shr) {
 
 bool isSolidCell(uvec3 upos, uint voxels, inout uint outL4Branch, inout Voxel v) {
     uint cellOct = getCellOctet(upos);
-    uint cell    = voxelsIn[voxels+1+cellOct];
+    uint cell    = voxelsIn[voxels+2+cellOct];
 
     uint bits  = cell & 0xffu;
     uint l4oct = getOctet(upos, 4);
@@ -41,10 +41,10 @@ bool isSolidCell(uvec3 upos, uint voxels, inout uint outL4Branch, inout Voxel v)
         // Drill down
 
         // Only show cells
-        if(RENDER_OPTS[0]) {
-            v.value = 1;
-            return true;
-        }
+//        if(RENDER_OPTS[0]) {
+//            v.value = 1;
+//            return true;
+//        }
 
         // Read L4 branch
         uint offset = (cell >> 8) + getImpliedIndex(bits, l4oct);

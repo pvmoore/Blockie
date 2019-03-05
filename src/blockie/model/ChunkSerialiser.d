@@ -11,11 +11,9 @@ protected:
 
     static align(1) struct AirChunk { align(1):
         chunkcoords pos;
-        ubyte distX;
-        ubyte distY;
-        ubyte distZ;
+        Distance6 distance;
 
-        static assert(AirChunk.sizeof==15);
+        static assert(AirChunk.sizeof==18);
     }
 
     abstract Chunk    toChunk(AirChunk ac);
@@ -97,19 +95,6 @@ public:
             airChunks.ptr,
             airChunks.length*AirChunk.sizeof,
             airChunks.length.to!string);
-
-        ///// sort
-        //alias myComp = (a, b) =>
-        //    a.pos.x==b.pos.x ? a.pos.y==b.pos.y ? a.pos.z > b.pos.z
-        //                                        : a.pos.y > b.pos.y
-        //                     : a.pos.x > b.pos.x;
-        //
-        //auto sorted = airChunks.sort!(myComp).array;
-        //
-        //archive.add(AIR_CHUNKS_FILENAME,
-        //    sorted.ptr,
-        //    sorted.length*AirChunk.sizeof,
-        //    sorted.length.to!string);
     }
 private:
     string getArchiveFilename() {

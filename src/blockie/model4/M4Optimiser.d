@@ -17,15 +17,12 @@ public:
 
         /// This chunk is AIR. Nothing to do
         if(view.isAir) {
-            return [M4Root.Flag.AIR,
-                    view.root().distance.x,
-                    view.root().distance.y,
-                    view.root().distance.z];
+            return cast(ubyte[])[M4Root.Flag.AIR, 0] ~ view.root().distance.toBytes();
         }
 
         writefln("Optimiser: Processing %s", view);
 
-        auto optVoxels = rewriteVoxels();
+        auto optVoxels = rewriteVoxels(voxels[0..voxelsLength]);
 
         writefln("\tOptimised chunk %s %s --> %s (%.2f%%)", view.getChunk.pos,
             voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
@@ -33,19 +30,17 @@ public:
         return optVoxels;
     }
 private:
-    M4Root* srcRoot() { return cast(M4Root*)voxels.ptr; }
-
     /// 1) If flag==MIXED_PIXELS and cell is solid -> Set flag = SOLID_PIXELS and remove pixels
     /// 2) If flag==MIXED_PIXELS and cell is air -> Set flag = AIR and remove pixels
     /// 3) Remove any gaps
-    ubyte[] rewriteVoxels() {
+    ubyte[] rewriteVoxels(ubyte[] srcVoxels) {
 
         auto newVoxels = new ubyte[voxelsLength];
         uint dest      = M4_ROOT_SIZE;
 
-        M4Root* destRoot() {
-            return cast(M4Root*)newVoxels.ptr;
-        }
+        M4Root* srcRoot()  { return cast(M4Root*)srcVoxels.ptr; }
+        M4Root* destRoot() { return cast(M4Root*)newVoxels.ptr; }
+
         bool pixelsAreAll1(ubyte* p) {
             return onlyContains(p, M4_PIXELS_PER_CELL/8, 0xff);
         }
@@ -87,17 +82,32 @@ private:
             } else expect(false, "%s".format(cell.flag));
         }
 
-        writefln("\t%s air, %s pixel cells", airCellCount, M4_CELLS_PER_CHUNK-airCellCount);
+        auto pixelCells = M4_CELLS_PER_CHUNK-airCellCount;
+
+        auto distanceBytes = airCellCount*4;
+        auto pixelBytes = pixelCells*M4_PIXELS_SIZE;
+        auto totalBytes = distanceBytes + pixelBytes;
+
+        totalDistanceBytes += distanceBytes;
+        totalPixelBytes    += pixelBytes;
+
+        writefln("\t#air cells   = %000,d", airCellCount);
+        writefln("\t#pixel cells = %000,d",  pixelCells);
+        writefln("\tair cells size    = %000,d", (airCellCount*4));
+        writefln("\tpixels cells size = %000,d", (pixelCells*M4_PIXELS_SIZE));
+        writefln("\tTotal bytes       = %000,d", totalBytes);
+
+        writefln("totalDistance : %000,d", totalDistanceBytes);
+        writefln("totalPixel    : %000,d", totalPixelBytes);
 
         /// All cells are air -> switch to an air chunk
         if(airCellCount==M4_CELLS_PER_CHUNK) {
             srcRoot().flag = M4Root.Flag.AIR;
-            return [M4Root.Flag.AIR,
-                    0,
-                    0,
-                    0];
+            return cast(ubyte[])[M4Root.Flag.AIR, 0, 0,0,0,0,0,0];
         }
 
         return newVoxels[0..dest];
     }
+    static ulong totalPixelBytes = 0;
+    static ulong totalDistanceBytes = 0;
 }

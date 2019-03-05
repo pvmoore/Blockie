@@ -34,6 +34,9 @@ final class M1ChunkEditView : ChunkEditView {
 
         convertToEditable();
     }
+    override void voxelEditsCompleted() {
+
+    }
     override void commitTransaction() {
 
         auto optVoxels = optimiser.optimise();
@@ -58,10 +61,8 @@ final class M1ChunkEditView : ChunkEditView {
 
         return root.isAirCell(cell);
     }
-    override void setDistance(ubyte x, ubyte y, ubyte z) {
-        root.flags.distX = x;
-        root.flags.distY = y;
-        root.flags.distZ = z;
+    override void setChunkDistance(DFieldsBi f) {
+        root.flags.distance.set(f);
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
         expect(cell<M1_CELLS_PER_CHUNK);
@@ -220,7 +221,7 @@ private:
         //    uint oct = getOctetRoot_11111(x,y,z, CHUNK_SIZE_SHR);
         //} else static assert(false);
 
-        auto root  = &root;
+        auto root  = &root;                 // ? wtf
         auto index = &root.indexes[oct];
 
         if(root.isSolid(oct)) {

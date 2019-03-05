@@ -1,6 +1,8 @@
 
 #line 1 5
 
+#define FLAGS_SIZE (8)
+
 uint getImpliedIndex_8bit(const uint bits, const uint oct) {
     const uint and = 0x7f >> (7-oct);
     return bitCount(bits & and);
@@ -18,7 +20,7 @@ bool isSolidRoot(
     const uint oct = getOctetRoot_1111(upos);
     const uint BB  = 512;    // 512 bytes for bits
 
-    const uint BITS_OFFSET = 4 + 6*4; // octree flag + offset bytes
+    const uint BITS_OFFSET = FLAGS_SIZE + 6*4; // octree flag + offset bytes
 
     const uint uintIndex = (voxelsPtr+BITS_OFFSET)/4 + (oct>>4);
     const uint bitIndex  = oct&15u;
@@ -152,13 +154,13 @@ bool getAirVoxel(
 */
     const uint offsets = voxelsRoot/4;
 
-    #define l2twigsOffset    voxelsRoot + voxelsIn[offsets+2]
-    #define leavesOffset     voxelsRoot + voxelsIn[offsets+3]
-    #define l2IndexOffset    voxelsRoot + voxelsIn[offsets+4]
-    #define leafIndexOffset  voxelsRoot + voxelsIn[offsets+5]
+    #define l2twigsOffset    voxelsRoot + voxelsIn[offsets+3]
+    #define leavesOffset     voxelsRoot + voxelsIn[offsets+4]
+    #define l2IndexOffset    voxelsRoot + voxelsIn[offsets+5]
+    #define leafIndexOffset  voxelsRoot + voxelsIn[offsets+6]
 
-    #define GETTWIGSOFFSET (voxelsRoot + voxelsIn[offsets+1])
-    #define GETBITCOUNTS (voxelsIn[offsets+6])
+    #define GETTWIGSOFFSET (voxelsRoot + voxelsIn[offsets+2])
+    #define GETBITCOUNTS (voxelsIn[offsets+7])
 
     const uvec3 upos       = pos.upos;
     const uint twigsOffset = GETTWIGSOFFSET;

@@ -13,10 +13,10 @@ public:
         super(coords);
 
         /// Set to air
-        voxels.length = 4;
+        voxels.length = 8;
         auto r = root();
         r.flag = M3Flag.AIR;
-        r.distance.set(0,0,0);
+        r.distance.clear();
     }
 
     override bool isAir() {
@@ -30,19 +30,20 @@ enum M3Flag : ubyte { AIR=0, MIXED }
 
 align(1) struct M3Root { align(1):
     M3Flag flag;
-    Distance3 distance;    /// if flag==AIR
+    ubyte _reserved;
+    Distance6 distance;    /// if flag==AIR
 
     /// If flag==AIR/SOLID this is not present
     M3Cell[M3_CELLS_PER_CHUNK] cells;
 
-    static assert(M3Root.sizeof==1 + Distance3.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
+    static assert(M3Root.sizeof==2 + Distance6.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
 
     bool isAir() const   { return flag==M3Flag.AIR; }
     bool isMixed() const { return flag==M3Flag.MIXED; }
 
     M3Cell* getCell(ubyte* ptr, uint oct) {
         assert(oct<M3_CELLS_PER_CHUNK);
-        return cast(M3Cell*)(ptr+4+(oct*M3Cell.sizeof));
+        return cast(M3Cell*)(ptr+8+(oct*M3Cell.sizeof));
     }
     void recalculateFlags() {
         if(allCellsAreAir()) {

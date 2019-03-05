@@ -20,9 +20,7 @@ public:
         voxels.length = OctreeFlags.sizeof;
         auto r = root();
         r.flags.flag = OctreeFlag.AIR;
-        r.flags.distX = 0;
-        r.flags.distY = 0;
-        r.flags.distZ = 0;
+        r.flags.distance.clear();
     }
 
     override bool isAir() {
@@ -40,11 +38,10 @@ enum OctreeFlag : ubyte {
 }
 align(1) final struct OctreeFlags { align(1):
     OctreeFlag flag;
-    ubyte distX;
-    ubyte distY;
-    ubyte distZ;
+    ubyte _reserved;
+    Distance6 distance;
 
-    static assert(OctreeFlags.sizeof==4);
+    static assert(OctreeFlags.sizeof==8);
 }
 
 final struct OctreeRoot {
@@ -54,7 +51,7 @@ final struct OctreeRoot {
     Distance3[M1_CELLS_PER_CHUNK] cellDistances;
 
     static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+512+OctreeIndex.sizeof*4096+
-                  Distance3.sizeof*M1_CELLS_PER_CHUNK); // 25092
+                  Distance3.sizeof*M1_CELLS_PER_CHUNK);
 
     bool isAirCell(uint cell) {
         return isSolid(cell) && getVoxel(cell)==0;

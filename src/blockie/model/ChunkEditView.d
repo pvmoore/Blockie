@@ -4,6 +4,7 @@ import blockie.all;
 
 interface ChunkEditView {
     void beginTransaction(Chunk chunk);
+    void voxelEditsCompleted();
     void commitTransaction();
     void setVoxel(uint3 offset, ubyte value);
 
@@ -12,9 +13,9 @@ interface ChunkEditView {
 
     bool isAir();
     bool isAirCell(uint cellIndex);
-    void setDistance(ubyte x, ubyte y, ubyte z);
+    void setChunkDistance(DFieldsBi f);
     void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z);
-    void setCellDistance(uint cell, DFieldsBi df);
+    void setCellDistance(uint cell, DFieldsBi f);
 }
 
 ///
@@ -27,9 +28,10 @@ final class FakeEditView : ChunkEditView {
 
     Chunk getChunk() { throw new Error("Abstract"); }
     void beginTransaction(Chunk chunk) { throw new Error("Abstract"); }
+    void voxelEditsCompleted() { throw new Error("Abstract"); }
     void commitTransaction() { throw new Error("Abstract"); }
     void setVoxel(uint3 offset, ubyte value) { throw new Error("Abstract"); }
-    void setDistance(ubyte x, ubyte y, ubyte z) { throw new Error("Abstract"); }
+    void setChunkDistance(DFieldsBi f) { throw new Error("Abstract"); }
     void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) { throw new Error("Abstract"); }
     void setCellDistance(uint cell, DFieldsBi df) { throw new Error("Abstract"); }
 }

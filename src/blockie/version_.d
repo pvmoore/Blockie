@@ -1,11 +1,14 @@
 module blockie.version_;
 
-const string version_ = "0.0.17";
+const string version_ = "0.0.18";
 
 /**===============================================================
     History
 
-Upcoming ... 0.0.18 - Add voxel de-optimiser code
+Upcoming ... 0.0.20 - Add voxel de-optimiser code
+Upcoming ... 0.0.19 - Implement new Model 4 idea
+
+0.0.18 - Use 6 bytes for chunk distance fields allowing a distance of 255 instead of 15.
 
 0.0.17 - Test speed of larger cell distance fields for Model 3. Not much improvement for
          higher memory usage.

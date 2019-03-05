@@ -54,6 +54,15 @@ uint g_index    = gl_GlobalInvocationID.x +
                   gl_GlobalInvocationID.y*SIZE.x;
 vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
 
+struct Flags {
+    uint a;
+    uint b;
+};
+#define CHUNK_FLAG(f)       (f.a & 0xffu)
+#define CHUNK_DISTANCE_X(f) (f.a >> 16)
+#define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
+#define CHUNK_DISTANCE_Z(f) (f.b >> 16)
+
 #include "useful_functions.comp"
 #include "marchM2.inc"
 #include "camera.inc"
@@ -73,11 +82,16 @@ bool updatePosition(inout Position pos, vec3 add) {
     pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
     return pos.chunk != prevChunk;
 }
-bool isAirChunk(uint flags) {
-    return (flags & 0xffu)==0;
+bool isAirChunk(Flags flags) {
+    return CHUNK_FLAG(flags)==0;
+}
+uvec3 getChunkDistanceField(Flags f) {
+    return uvec3(CHUNK_DISTANCE_X(f),
+                 CHUNK_DISTANCE_Y(f),
+                 CHUNK_DISTANCE_Z(f));
 }
 /// Unpacks x,y,z from 2nd,3rd and 4th ubyte of _val_
-vec3 getDistanceField(uint val) {
+vec3 getCellDistanceField(uint val) {
     return unpackUnorm4x8(val).yzw * 255;
 }
 float getMinDistToEdge(
@@ -95,14 +109,14 @@ float getMinDistToEdge(
     return max(res, 0);
 }
 //
-// Directional distance field stored in radius
+// Bi-directional distance field stored in radius
 //
 float getMinDistToEdgeOfChunkDistanceField(Ray ray,
                                            Position pos,
-                                           vec3 radius)
+                                           uvec3 radius)
 {
-    vec3 upradius   = floor(radius/16);  // high 16 bits = up distance
-    vec3 downradius = mod(radius, 16);   // low  16 bits = down distance
+    uvec3 upradius   = radius >> 8u;        // high 16 bits = up distance
+    uvec3 downradius = radius & 0xffu;      // low  16 bits = down distance
 
     vec3 p    = pos.fpos-WORLD_BB[0];
     vec3 rem  = mod(p, CHUNK_SIZE) + downradius*CHUNK_SIZE;
@@ -114,7 +128,7 @@ float getMinDistToEdgeOfChunkDistanceField(Ray ray,
     return max(res, 0);
 }
 //
-// Directional distance field stored in radius
+// Bi-directional distance field stored in radius
 //
 float getMinDistToEdgeOfCellDistanceField(Ray ray, Position pos, vec3 radius)
 {
@@ -195,7 +209,7 @@ Voxel march(Ray ray, inout Position pos) {
     Voxel voxel;
     float distance = 0;
     uint voxels    = chunkDataIn[pos.chunk] / 4;
-    uint flags     = voxelsIn[voxels];
+    Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
 
     // Assume:
     //      1) pos.chunk will always start with a valid chunk
@@ -204,7 +218,7 @@ Voxel march(Ray ray, inout Position pos) {
         float dist;
 
         if(isAirChunk(flags)) {
-            dist = getMinDistToEdgeOfChunkDistanceField(ray, pos, getDistanceField(flags));
+            dist = getMinDistToEdgeOfChunkDistanceField(ray, pos, getChunkDistanceField(flags));
         } else {
 
             if(!getAirVoxel(pos, voxel, distance, voxels)) {
@@ -223,8 +237,8 @@ Voxel march(Ray ray, inout Position pos) {
             bool isCell = (voxel.size == CELL_SIZE);
 
             if(isCell) {
-                uint cell       = voxelsIn[voxels + 1 + voxel.oct];
-                vec3 distances  = getDistanceField(cell);
+                uint cell       = voxelsIn[voxels + 2 + voxel.oct];
+                vec3 distances  = getCellDistanceField(cell);
                 dist = getMinDistToEdgeOfCellDistanceField(ray, pos, distances);
             } else {
                 dist = getMinDistToEdge(ray, pos, voxel.size);
@@ -243,8 +257,8 @@ Voxel march(Ray ray, inout Position pos) {
                 voxel.value=0;
                 break;
             }
-            voxels  = chunkDataIn[pos.chunk] / 4;
-            flags   = voxelsIn[voxels];
+            voxels = chunkDataIn[pos.chunk] / 4;
+            flags  = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
         }
 	}
 
