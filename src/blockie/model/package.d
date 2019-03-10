@@ -116,4 +116,13 @@ align(1) struct Offset3 { align(1):
     }
     string toString() const { return "%s".format(get()*4); }
 }
+align(1) struct Offset4 { align(1):
+    uint v;
+    static assert(Offset4.sizeof==4);
+
+    uint get() const { return v; }
+    void set(uint o) { v = o; }
+
+    string toString() const { return "%s".format(get()); }
+}
 //===========================================================================

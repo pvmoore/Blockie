@@ -23,7 +23,7 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "1";
+        const auto num = "7";
 
         SceneGenerator scene;
         switch(num) {
@@ -36,6 +36,7 @@ final class Generator {
             case "5" : scene = new TestScene5; break;
             case "6" : scene = new TestScene6_bunny; break;
             case "7" : scene = new TestScene7_hgt; break;
+            case "8" : scene = new TestScene8; break;
             default: expect(false);
         }
 
@@ -66,6 +67,8 @@ final class Generator {
             }
             generateModel4(scene, world);
         } else assert(false);
+
+        writefln("\nFinished OK");
     }
     void generateModel1(SceneGenerator sceneGenerator, World world) {
         writefln("\n=========================================");
@@ -76,8 +79,6 @@ final class Generator {
         scope(exit) editor.destroy();
 
         sceneGenerator.build(editor);
-
-        writefln("Finished");
     }
     void generateModel2(SceneGenerator sceneGenerator, World world) {
         writefln("\nGenerating Model2 %s", world);
@@ -105,8 +106,6 @@ final class Generator {
 
         //editor.setVoxelBlock(worldcoords(0,0,0), 2, 1);
         //editor.commitTransaction();
-
-        writefln("Finished");
     }
     void generateModel3(SceneGenerator sceneGenerator, World world) {
         writefln("\nGenerating Model3 %s", world);
@@ -115,8 +114,6 @@ final class Generator {
         scope(exit) editor.destroy();
 
         sceneGenerator.build(editor);
-
-        writefln("Finished");
     }
     void generateModel4(SceneGenerator sceneGenerator, World world) {
         writefln("\n=========================================");
@@ -129,9 +126,35 @@ final class Generator {
         sceneGenerator.build(editor);
 
         //editor.startTransaction();
-        //editor.setVoxel(worldcoords(9,0,0), 1);
+        //editor.setVoxel(worldcoords(0,0,0), 1);
+        //editor.setVoxel(worldcoords(7,7,7), 1);
         //editor.commitTransaction();
 
-        writefln("Finished");
+        //writefln("testing...");
+        //
+        //uint3 p = uint3(
+        //    63,
+        //    63,
+        //    63
+        //);
+        //uint3 b   = p << uint3(0,7,14);
+        //uint cell = b.x | b.y | b.z;
+        //writefln("pos  = %s", p);
+        //writefln("bits = %07b, %07b, %07b", p.z, p.y, p.x);
+        //writefln("cell = %s", cell);
+        //
+        //uint3 c = (p<<1) << uint3(0,6,12);
+        //uint d = c.x | c.y | c.z;
+        //writefln("d=%s", d);
+        //
+        //M4Root root;
+        //root.setCellToNonAir(cell);
+        //root.calculateLevel1To6Bits();
+        //writefln("bits[1]=%08b", root.bits[0]);
+        //
+        //writef("bits[2]="); foreach(i; 4..12) writef("%08b ", root.bits[i]); writefln("");
+        //writef("bits[3]="); foreach(i; 12..76) writef("%08b ", root.bits[i]); writefln("");
+
+        //uint bit = root.bits[4 + ]
     }
 }

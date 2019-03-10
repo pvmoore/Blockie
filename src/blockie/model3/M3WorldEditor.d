@@ -4,12 +4,6 @@ import blockie.all;
 
 final class M3WorldEditor : WorldEditor {
 protected:
-    override void editsCompleted() {
-        /// Ensure flags are set correctly before we continue
-        foreach(v; views) {
-            (cast(M3ChunkEditView)v).root().recalculateFlags();
-        }
-    }
     override void generateDistances() {
 
         auto addedViews = new DistanceFieldsBiDirChunk(storage, views, 31)

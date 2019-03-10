@@ -74,21 +74,22 @@ public:
         try{
             //     |  1            | 2             | 3              | 4
             //     |               |               |                |
-            // 1:  |  768 (2 MB)   |  862 (0 MB)   |  940 (0 MB)    |
-            // 2:  | 1190 (5 MB)   | 1380 (0 MB)   | 1440 (2 MB)    |
-            // 3:  |  356 (8MB)    |  458 (1 MB)   |  544 (5 MB)    |
-            // 4:  |  317 (242 MB) |  397 (247 MB) |  430 (286 MB)  |
-            // 4b: |  297 (54 MB)  |  382 (46 MB)  |  413 (56 MB)   |
-            // 4c: |  284 (79 MB)  |  366 (59 MB)  |  395 (68 MB)   |
-            // 5:  |  980 (2 MB)   | 1124 (1 MB)   | 1185 (1 MB)    |
-            // 6:  |  575 (53 MB)  |  725 (41 MB)  |  780 (42 MB)   |
-            // 7:  |  390 (32 MB)  |  455 (28 MB)  |  498 (31 MB)   |
+            // 1:  |  768 (2 MB)   |  862 (0 MB)   |  940 (0 MB)    | 780 (1 MB)
+            // 2:  | 1190 (5 MB)   | 1380 (0 MB)   | 1440 (2 MB)    | 1125 (11 MB)
+            // 3:  |  356 (8MB)    |  458 (1 MB)   |  544 (5 MB)    | 327 (23 MB)
+            // 4:  |  317 (242 MB) |  397 (247 MB) |  430 (286 MB)  | ? (378 MB)
+            // 4b: |  297 (54 MB)  |  382 (46 MB)  |  413 (56 MB)   | ? (70 MB)
+            // 4c: |  284 (79 MB)  |  366 (59 MB)  |  395 (68 MB)   | ? (77 MB)
+            // 5:  |  980 (2 MB)   | 1124 (1 MB)   | 1185 (1 MB)    | 980 (1 MB)
+            // 6:  |  575 (53 MB)  |  725 (41 MB)  |  780 (42 MB)   | 614 (34 MB)
+            // 7:  |  390 (32 MB)  |  455 (28 MB)  |  498 (31 MB)   | 352 (241 MB)
+            // 8:  |  523 (1 MB)   |  662 (0 MB)   |  702 (1 MB)    | 583 (1 MB)
 
             // Notes:
-            //    Model 3 has superior speed compared to Model 2 with only a small cost
-            //    in extra memory usage so should be preferred.
+            //    Model 3 has superior speed compared to Model 2 with only
+            //    a small cost in extra memory usage so should be preferred.
 
-            string w = "1";
+            string w = "4";
 
             World world;
             switch(w) {
@@ -101,6 +102,7 @@ public:
                 case "5" : world = World.load("Test Scene 5"); break;
                 case "6" : world = World.load("Test Scene 6 - Bunny"); break;
                 case "7" : world = World.load("Test Scene 7 - HGT"); break;
+                case "8" : world = World.load("Test Scene 8"); break;
                 default: break;
             }
 

@@ -3,6 +3,8 @@ name "blockie"
 platforms "windows"
 	
 buildType "debug" {
+    dflags "-color" platform="dmd"
+
 	buildOptions "debugMode" "debugInfo" "alwaysStackFrame" "stackStomping" "warningsAsErrors"
 }
 buildType "release" {
@@ -14,10 +16,10 @@ buildType "release" {
     dflags "-cache=.dub/cache"              platform="ldc"
     dflags "-ffast-math"                    platform="ldc"
 
-	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
+	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "GC_STATS" "MODEL3"
+versions "GC_STATS" "MODEL4"
 
 configuration "blockie" {
 	#mainSourceFile "src/main.d"

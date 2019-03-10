@@ -38,6 +38,7 @@ public:
         if(archive.contains(c.filename)) {
 
             ubyte[] voxels   = archive.getData!ubyte(c.filename);
+
             uint archVersion = archive.getComment(c.filename).to!uint;
             uint version_    = c.getVersion;
 
@@ -46,6 +47,7 @@ public:
                 /// Our data is stale
                 log("Loaded chunk data is stale version %s (Chunk version is %s)", version_, ver);
             }
+
             assert(c.getVersion()>0);
 
             return voxels.length;
@@ -55,6 +57,7 @@ public:
 
         /// Set version to 1 if it is 0
         c.atomicUpdate(0, null);
+
         return 0;
     }
     ///

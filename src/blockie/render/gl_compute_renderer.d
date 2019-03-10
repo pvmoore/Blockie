@@ -98,6 +98,7 @@ public:
     }
     @Implements("IRenderer")
     void render() {
+        log("render");
         renderTiming.startFrame();
 
         glBeginQuery(GL_TIME_ELAPSED, timerQueries[flipFlop]);
@@ -116,9 +117,13 @@ public:
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         if(DEBUG) {
-            float[] buf = readBuffer!float(marchDebugOutVBO, 0, 8);
+            uint[] buf = readBuffer!uint(marchDebugOutVBO, 0, 10);
             if(buf[0]) {
-                writefln("debugOut=%s", buf);
+                writef("debugOut {\n");
+                foreach(i, value; buf) {
+                    writefln("\t[%s] % 12s (%08x)", i, value, value);
+                }
+                writefln("}");
             }
         }
 
@@ -141,6 +146,8 @@ public:
             renderTiming.average(2),
             computeTiming.average(2)
         );
+        log("render end");
+        flushLog();
     }
     @Implements("SceneChangeListener")
     void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {
@@ -308,7 +315,22 @@ public:
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
-        }
+        } else version(MODEL4) {
+            marchProgram.loadCompute(
+                "pass1_marchM4.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+
+            shadeProgram.loadCompute(
+                "pass3_shadeM3.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+        } else expect(false);
+
         dummyProgram.loadCompute(
             "pass2.comp",
             ["shaders/", "C:/pvmoore/_assets/shaders/"],
@@ -322,8 +344,8 @@ public:
         dummyProgram.use()
                     .setUniform("SIZE", ivec2(width,height));
 
-        /// create 750MB voxels buffer
-        marchVoxelsInVBO = VBO.shaderStorage(1024*1024*750, GL_DYNAMIC_DRAW);
+        /// create 1300MB voxels buffer
+        marchVoxelsInVBO = VBO.shaderStorage(1024*1024*1300, GL_DYNAMIC_DRAW);
 
         /// create space for 1 million offsets
         marchChunksInVBO = VBO.shaderStorage(1024*1024*uint.sizeof, GL_DYNAMIC_DRAW);
@@ -331,7 +353,7 @@ public:
         marchOutVBO = VBO.shaderStorage(width*height*8, GL_DYNAMIC_DRAW);
 
         if(DEBUG) {
-            marchDebugOutVBO = VBO.shaderStorage(DEBUG_BUFFER_LENGTH*float.sizeof, GL_DYNAMIC_DRAW);
+            marchDebugOutVBO = VBO.shaderStorage(DEBUG_BUFFER_LENGTH*uint.sizeof, GL_DYNAMIC_DRAW);
         }
 
         glGenQueries(timerQueries.length, timerQueries.ptr);
@@ -415,6 +437,7 @@ public:
         return dest;
     }
     void cameraMoved() {
+        log("cameraMoved");
         auto camera = world.camera;
         const float Y  = renderRect.y;
         const float w  = width;
@@ -451,6 +474,7 @@ public:
             .setUniform("SCREEN_YDELTA", (bottom-top) / h);
 
         sphereRenderer.cameraUpdate(camera);
+        log("cameraMoved end"); flushLog();
     }
 }
 

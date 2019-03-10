@@ -33,7 +33,7 @@ layout(binding = 2, std430) writeonly buffer O0 {
 //uniform writeonly image2D imageOut;
 
 //layout(binding = 3, std430) writeonly buffer O0 {
-//	float debugOut[];
+//	uint debugOut[];
 //};
 
 uniform ivec2 SIZE;             // Render window size
@@ -139,8 +139,8 @@ float getMinDistToEdgeOfDistanceField2(Ray ray,
                                        uvec3 radius,
                                        uint side)    // CHUNK_SIZE or CELL_SIZE
 {
-    uvec3 upradius   = radius >> 8u;        // high 16 bits = up distance
-    uvec3 downradius = radius & 0xffu;      // low  16 bits = down distance
+    uvec3 upradius   = radius >> 8u;        // high 8 bits = up distance
+    uvec3 downradius = radius & 0xffu;      // low  8 bits = down distance
 
     vec3 p    = pos.fpos-WORLD_BB[0];
     vec3 rem  = mod(p, side) + downradius*side;

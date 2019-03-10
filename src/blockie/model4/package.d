@@ -11,23 +11,17 @@ import blockie.model4.M4DeOptimiser;
 import blockie.model4.M4Optimiser;
 import blockie.model4.M4WorldEditor;
 
-version = ROOT7;
 
-version(ROOT6) {
-    const M4_OCTREE_ROOT_BITS = 6;
-    const M4_ROOT_SIZE        = M4Root.sizeof.as!uint;
-    const M4_CELLS_PER_CHUNK  = 64*64*64;   // 262,144
-    const M4_PIXELS_PER_CELL  = 4096;
-    const M4_PIXELS_SIZE      = M4_PIXELS_PER_CELL / 8; // each pixel is a bit
-}
-version(ROOT7) {
-    const M4_OCTREE_ROOT_BITS = 7;
-    const M4_ROOT_SIZE        = M4Root.sizeof.as!uint;
-    const M4_CELLS_PER_CHUNK  = 128*128*128;   // 2,097,152
-    const M4_PIXELS_PER_CELL  = 512;
-    const M4_PIXELS_SIZE      = M4_PIXELS_PER_CELL / 8; // each pixel is a bit
-    //pragma(msg, "M4_ROOT_SIZE = %s".format(M4_ROOT_SIZE));
-}
+
+//const M4_OCTREE_ROOT_BITS = 6;
+//const M4_ROOT_SIZE        = M4Root.sizeof.as!uint;
+//const M4_CELLS_PER_CHUNK  = 64*64*64;   // 262,144
+
+const M4_OCTREE_ROOT_BITS = 7;
+const M4_ROOT_SIZE        = M4Root.sizeof.as!uint;
+const M4_CELLS_PER_CHUNK  = 128*128*128;   // 2,097,152
+
+pragma(msg, "M4_ROOT_SIZE = %000,d".format(M4_ROOT_SIZE));
 
 final class Model4 : Model {
     public:

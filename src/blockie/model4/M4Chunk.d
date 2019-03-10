@@ -3,18 +3,21 @@ module blockie.model4.M4Chunk;
 import blockie.all;
 
 ///
-/// Chunk:
-///     Root:
-///         Flag (1 bytes)
-///         Chunk distances (3 bytes)
-///         Cell info    : 64^^3 cells (Each cell is 1 bit flag + 1 bit bit counts (total 65536 bytes)
-///     Pixel arrays : 0 to 262143 pixel arrays
+/// voxels:
+///     M4Root:
+///         Flag (1 byte)               \
+///         reserved (1 byte)           | Minimum root
+///         Chunk distances (6 bytes)   /
 ///
-/// Pixel array: 4096 bits (512 bytes)
-
-/// Problem: The resulting memory usage is high. Scene 4 uses 1.6 GB
+///         Bits (level 1 to 7)
+///         Level 7 Popcounts
 ///
+///     M4Branches (8^^3 blocks)
+///          bits (1 byte)
 ///
+///          100  2 M4Branch    --> point to 1..8 M4Leaf
+///           10  1 M4Leaf      --> Each leaf contains 8 bits
+///            1  0 Bit in M4Leaf
 
 final class M4Chunk : Chunk {
 public:
@@ -33,191 +36,196 @@ public:
     M4Root* root() { return cast(M4Root*)voxels.ptr; }
 }
 //======================================================================================
-/// If flag==AIR -> root size is 4
-/// else         -> root size is 4 + M4_CELLS_PER_CHUNK*4
-///
 align(1) struct M4Root { align(1):
-    enum Flag : ubyte { AIR=0, CELLS=1 }
+    enum Flag : ubyte {
+        AIR    = 0,      /// M4Root size will be 8
+        OCTREE = 1
+    }
 
     Flag flag;
     ubyte _reserved;
-    Distance6 distance; /// if flag==AIR
-    M4Cell[M4_CELLS_PER_CHUNK] cells;
+    Distance6 distance; /// Only used if flag==AIR
 
-    static assert(M4Root.sizeof == 2 + Distance6.sizeof + M4_CELLS_PER_CHUNK*4);
-    //-------------------------------------------------------------------
-    bool isAir()   { return flag==Flag.AIR; }
-    bool isCells() { return flag==Flag.CELLS; }
+    /// (calculated when this root is read-optimised)
+    uint[M4_CELLS_PER_CHUNK/32] l7popcounts;    // 262144 bytes
 
-    void setToCells() {
-        this.flag = Flag.CELLS;
+    ubyte[M4_CELLS_PER_CHUNK/8] l7bits; // 262144 bytes
+
+    /// Octree flags (Levels 1 to 6)
+    ubyte[37452] bits;
+    //-----------------------------------------------------------------------------------
+    static assert(bits.sizeof        == 4684+32768);
+    static assert(l7popcounts.sizeof == 262144);
+    static assert(l7bits.sizeof      == 262144);
+    static assert(M4Root.sizeof      == 8 + 262144 + 262144 + 37452);
+    //-----------------------------------------------------------------------------------
+    static immutable uint[] BITS_OFFSET = [
+        uint.max,
+        0,//0,      /// [1] = 2^^3   = 8 bits      (1 byte)
+        4,//1,      /// [2] = 4^^3   = 64 bits     (8 bytes)
+        12,//9,      /// [3] = 8^^3   = 512 bits    (64 bytes)
+        76,//73,     /// [4] = 16^^3  = 4096 bits   (512 bytes)
+        588,//585,    /// [5] = 32^^3  = 32768 bits  (4096 bytes)
+        4684//4681,   /// [6] = 64^^3  = 262144 bits (32768 bytes)
+    ];
+    //-----------------------------------------------------------------------------------
+    bool isAir() { return flag==Flag.AIR; }
+
+    void setToOctrees() {
+        this.flag = Flag.OCTREE;
         this.distance.clear();
     }
+
+    /// Check bit at level 7
+    bool isAirCell(uint cell) {
+        expect(cell < M4_CELLS_PER_CHUNK);
+
+        const b = l7bits[cell/8];
+        return (b & (1u<<(cell&7))) == 0;
+    }
+    void setCellToAir(uint cell) {
+        throw new Error("Implement me");
+    }
+    void setCellToNonAir(uint cell) {
+        l7bits[cell/8] |= (1u<<(cell&7));
+    }
     void recalculateFlags() {
-        if(allCellsAreAir()) {
+        /// Scan level 7 bits because these are the only ones guaranteed to be correct
+        if(isZeroMem(l7bits.ptr, M4_CELLS_PER_CHUNK/8)) {
             flag = Flag.AIR;
         } else {
-            flag = Flag.CELLS;
+            flag = Flag.OCTREE;
         }
     }
-    string toString() { return "Root(%s)".format(isAir?"AIR":"CELLS"); }
-private:
-    bool allCellsAreAir() {
-        foreach(c; cells) {
-            if(!c.isAir) return false;
-        }
-        return true;
-    }
-}
-//-----------------------------------------------------------------------
-align(1) struct M4Cell { align(1):
-    enum Flag : ubyte { AIR=0, SOLID_PIXELS=1, MIXED_PIXELS=2 }
+    void calculateLevel1To6Bits() {
+        bits[] = 0;
 
-    Flag flag = Flag.AIR;
-    union {
-        Distance3 distance;/// if isAir
-        Offset3 offset;    /// if isMixed
+        for(uint cell = 0; cell<M4_CELLS_PER_CHUNK; cell++) {
+
+            if(!isAirCell(cell)) {
+                uint3 p = uint3(
+                    cell & 0b1111111,
+                    (cell >>> 7) & 0b1111111,
+                    (cell >>> 14) & 0b1111111
+                );
+                expect((p.x | (p.y<<7) | (p.z<<14)) ==cell);
+
+                for(int i = 6; i>0; i--) {
+                    p >>>= 1;
+
+                    uint j = p.x | (p.y<<i) | (p.z<<(i+i));
+
+                    bits[BITS_OFFSET[i] + j/8] |= (1u<<(j&7));
+                }
+            }
+        }
     }
-    static assert(M4Cell.sizeof == 4);
-    //-------------------------------------------------------------------
-    bool isAir()   { return flag==Flag.AIR; }
-    bool isSolid() { return flag==Flag.SOLID_PIXELS; }
-    bool isMixed() { return flag==Flag.MIXED_PIXELS; }
+    void calculateL7Popcounts() {
+        uint* bitsPtr = cast(uint*)(l7bits.ptr);
+        uint sum = 0;
+        for(auto i=0; i<l7popcounts.length; i++) {
+            sum           += popcnt(*bitsPtr++);
+            l7popcounts[i] = sum;
+        }
+    }
+    string toString() { return "Root(%s)".format(isAir?"AIR":"OCTREE"); }
+}
+//---------------------------------------------------------------------------------
+align(1)  struct M4Cell { align(1):
+    ubyte bits;
+    Offset4 offset;
+    static assert(M4Cell.sizeof==5);
+
+    bool isAir()            { return bits==0; }
+    //bool isSolid()          { return bits==0xff && offset.get()==0xff_ffff; } /// special flag
+    uint numBranches()      { return popcnt(bits); }
+    bool isAir(uint oct)    { return (bits & (1u<<oct))==0; }
+    bool isBranch(uint oct) { return !isAir(oct); }
 
     void setToAir() {
-        this.flag = Flag.AIR;
-        this.distance.set(0,0,0);
+        bits = 0;
     }
-    void setToSolidPixels() {
-        this.flag = Flag.SOLID_PIXELS;
-        this.distance.set(0,0,0);
+    //void setToSolid() {
+    //    bits = 0xff;
+    //    offset.set(0xffffff);
+    //}
+    void setToBranches(uint oct) {
+        expect(oct<8);
+        bits |= cast(ubyte)(1u<<oct);
     }
-    void setToMixedPixels(uint offset) {
-        this.flag = Flag.MIXED_PIXELS;
-        this.offset.set(offset);
+}
+//---------------------------------------------------------------------------------
+align(1) struct M4Branch { align(1):
+    ubyte bits;
+    Offset4 offset; /// point to 0..8 contiguous M4Leafs
+    static assert(M4Branch.sizeof==5);
+
+    bool isAir()     { return bits==0; }
+    //bool isSolid()   { return bits==0xff && offset.get()==0xffff_ffff; } /// special flag
+    //bool isMixed()   { return !isAir && !isSolid; }
+    uint numLeaves() { return popcnt(bits); }
+
+    bool isAir(uint oct)  { return (bits & (1u<<oct))==0; }
+    bool isLeaf(uint oct) { return !isAir(oct); }
+
+    //bool allLeavesAreSolid(ubyte* ptr) {
+    //    if(bits!=0xff) return false;
+    //
+    //    auto leaf = getLeaf(ptr, 0);
+    //
+    //    for(int i=0; i<8; i++) {
+    //        if(!leaf.isSolid) return false;
+    //        leaf++;
+    //    }
+    //    return true;
+    //}
+    //bool allBranchesAreSolid(ubyte* ptr) {
+    //    if(bits!=0xff) return false;
+    //
+    //    auto br = getBranch(ptr, 0);
+    //
+    //    for(int i=0; i<8; i++) {
+    //        if(!br.isSolid) return false;
+    //        br++;
+    //    }
+    //    return true;
+    //}
+
+    void setToAir() {
+        bits = 0;
+    }
+    //void setToSolid() {
+    //    bits = 0xff;
+    //    offset.set(0xffffff);
+    //}
+    void setToLeaf(uint oct) {
+        expect(oct<8);
+        bits |= cast(ubyte)(1u<<oct);
     }
 
     string toString() {
-        return "Cell(%s)".format(isAir   ? "AIR":
-                                 isSolid ? "SOLID"
-                                         : "PIXELS@%s".format(offset));
+        if(isAir) return "AIR";
+        //if(isSolid) return "SOLID";
+        return "%08b @ %s".format(bits, offset);
     }
 }
-/+
-align(1) struct M4Root { align(1):
-    M4Flag flag;
-    M4Distance distance;    /// if flag==AIR
-    uint[M4_CELLS_PER_CHUNK/32] cellBits;       // 1024 uints, 4096 bytes, 32768 bits
-
-    /// eg. [0] = popcnt(cellBits[0])
-    ///     [1] = popcnt(cellBits[0]) + popcnt(cellBits[1])
-    ///     [2] = popcnt(cellBits[0]) + popcnt(cellBits[1] + popcnt(cellBits[2])
-    ///  [1023] = total num bits set
-    uint[M4_CELLS_PER_CHUNK/32] cellPopCounts;  // 1024 uints
-
-    static assert(M4Root.sizeof == 4 + 4096 + 4096);
-
-    bool isAir()   { return flag==M4Flag.AIR; }
-    bool isMixed() { return flag==M4Flag.MIXED; }
-
-    bool isAir(uint cell) {
-        assert(cell<M4_CELLS_PER_CHUNK);
-
-        const b = cellBits[cell>>>5];
-        const r = cell&31;
-        return (b & (1<<r)) == 0;
-    }
-    ubyte* pixels(ubyte[] voxels, uint cell) {
-        return voxels.ptr + pixelsOffset(cell);
-    }
-    bool allCellsAreAir() {
-        return cellBits.onlyContains(0);
-    }
-    void setToAir(ref ubyte[] voxels, uint cell) {
-        assert(cell<M4_CELLS_PER_CHUNK);
-        assert(!isAir(cell));
-
-        /// Clear bit
-        const r = cell&31;
-        cellBits[cell>>>5] &= ~((1u<<r));
-
-        /// Update popcnts
-        for(auto i=cell>>>5; i<cellPopCounts.length; i++) {
-            assert(cellPopCounts[i]!=0);
-            cellPopCounts[i]--;
-        }
-
-        /// Shift subsequent pixels left
-        auto num = totalPopCount() - popCount(cell);
-
-        if(num > 0) {
-            import core.stdc.string : memmove;
-
-            auto dest = pixels(voxels, cell);
-            memmove(dest, dest + M4_PIXELS_SIZE, num*M4_PIXELS_SIZE);
-        }
-
-        /// decrease voxels array
-        voxels.length -= M4_PIXELS_SIZE;
-    }
-    void setToPixels(ref ubyte[] voxels, uint cell) {
-        assert(cell<M4_CELLS_PER_CHUNK);
-        assert(isAir(cell));
-
-        /// Set bit
-        const r = cell&31;
-        cellBits[cell>>>5] |= ~((1u<<r));
-
-        /// Update popcnts
-        for(auto i=cell>>>5; i<cellPopCounts.length; i++) {
-            cellPopCounts[i]++;
-        }
-
-        /// Shift subsequent pixels right
-        import core.stdc.string : memmove, memset;
-
-        auto num    = (totalPopCount()-1) - popCount(cell);
-        auto offset = pixels(voxels, cell);
-
-        /// extend voxels array
-        voxels.length += M4_PIXELS_SIZE;
-
-        if(num > 0) {
-            memmove(offset + M4_PIXELS_SIZE, offset, num*M4_PIXELS_SIZE);
-        }
-
-        /// Zero pixels
-        memset(offset, 0, M4_PIXELS_SIZE);
-    }
-    string toString() { return "%s pixel cells".format(totalPopCount()); }
-private:
-    uint pixelsOffset(uint cell) {
-        assert(cell<M4_CELLS_PER_CHUNK);
-
-        return M4_ROOT_SIZE + (popCount(cell) * M4_PIXELS_SIZE); // pixel array is bits
-    }
-    /// Returns num bits set in cellBits between bit 0 and bit _oct_
-    uint popCount(uint cell) {
-        assert(cell<M4_CELLS_PER_CHUNK);
-
-        if(cell-- == 0) return 0;
-
-        uint o = cell>>>5;
-        uint i = o==0 ? 0 : cellPopCounts[o-1];
-
-        const r = cell&31;
-        if(r!=0) {
-            const mask = 0xffff_ffff >>> (32-r);
-            i += popcnt(cellBits[o] & mask);
-        }
-        return i;
-    }
-    uint totalPopCount() {
-        return cellPopCounts[$-1];
-    }
-    uint numAirCells() {
-        return M4_CELLS_PER_CHUNK - cellPopCounts[$-1];
-    }
-}
-+/
 //------------------------------------------------------------------------------------
+align(1) struct M4Leaf { align(1):
+    ubyte bits;   /// 1 bit per voxel
+    static assert(M4Leaf.sizeof==1);
+
+    bool isSolid() const { return bits==0xff; }
+
+    void setToAir() {
+        bits = 0;
+    }
+    void unsetVoxel(uint oct) {
+        assert(oct<8);
+        bits &= cast(ubyte)~(1<<oct);
+    }
+    void setVoxel(uint oct) {
+        assert(oct<8);
+        bits |= cast(ubyte)(1<<oct);
+    }
+    string toString() const { return "%08b".format(bits); }
+}

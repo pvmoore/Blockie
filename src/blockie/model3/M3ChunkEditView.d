@@ -58,7 +58,7 @@ public:
         convertToEditable();
     }
     override void voxelEditsCompleted() {
-
+        root().recalculateFlags();
     }
     override void commitTransaction() {
 

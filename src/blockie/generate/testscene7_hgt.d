@@ -48,14 +48,16 @@ private:
         expect(hgt.inches==3);
         expect(hgt.data.length==3601*3601);
 
-        for(auto z=0; z<3601; z++)
-        for(auto x=0; x<3601; x++) {
-            int height = hgt[x,z];
-            //int height = cast(int)((hgt[x,z]*30000) / 65535.0);
-            //writefln("%s", height);
-            for(auto y=0; y<height; y++) {
-                edit.setVoxel(worldcoords(x, y, z), V_ROCK1);
+        for(auto z=0; z<3601; z++) {
+            for(auto x=0; x<3601; x++) {
+                int height = hgt[x,z];
+                //int height = cast(int)((hgt[x,z]*30000) / 65535.0);
+                //writefln("%s", height);
+                for(auto y=0; y<height; y++) {
+                    edit.setVoxel(worldcoords(x, y, z), V_ROCK1);
+                }
             }
+            writefln("%s / %s", z, 3601); flushConsole();
         }
     }
 }

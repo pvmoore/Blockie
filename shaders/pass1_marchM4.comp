@@ -1,16 +1,10 @@
-#version 430 core
-
-/*
-    Set by program:
-*/
+#version 450 core
 
 #define GROUP_SIZE_X 8
 #define GROUP_SIZE_Y 8
 layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
 
 #include "header.inc"
-
-#define CELL_SIZE (CHUNK_SIZE>>5)  // 32
 
 layout(binding = 0, std430) readonly buffer I0 {
     // voxel data in ubytes
@@ -64,7 +58,7 @@ struct Flags {
 #define CHUNK_DISTANCE_Z(f) (f.b >> 16)
 
 #include "useful_functions.comp"
-#include "marchM3.inc"
+#include "marchM4.inc"
 #include "camera.inc"
 
 #line 1
@@ -89,10 +83,6 @@ uvec3 getChunkDistanceField(Flags f) {
     return uvec3(CHUNK_DISTANCE_X(f),
                  CHUNK_DISTANCE_Y(f),
                  CHUNK_DISTANCE_Z(f));
-}
-/// Unpacks x,y,z from 2nd,3rd and 4th ubyte of _val_
-vec3 getCellDistanceField(uint val) {
-    return unpackUnorm4x8(val).yzw * 255;
 }
 float getMinDistToEdge(Ray ray,
                        Position pos,
@@ -126,61 +116,6 @@ float getMinDistToEdgeOfChunkDistanceField(Ray ray,
     float res = min(m.x, min(m.y, m.z));
     return max(res, 0);
 }
-//
-// Directional distance field stored in radius
-//
-float getMinDistToEdgeOfCellDistanceField(Ray ray, Position pos, vec3 radius)
-{
-    // Extract distance values
-    vec3 up   = floor(radius/16);  // high 8 bits = up distance
-    vec3 down = mod(radius, 16);   // low  8 bits = down distance
-
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, CELL_SIZE) + down*CELL_SIZE;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*CELL_SIZE);
-    vec3 dist = size-rem;
-
-    vec3 m    = dist * ray.invDirection;
-    float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-/// Estimate surface normal of hit position
-/// 0 =  1, 0, 0
-/// 1 = -1, 0, 0
-/// 2 =  0, 1, 0
-/// 3 =  0,-1, 0
-/// 4 =  0, 0, 1
-/// 5 =  0, 0,-1
-//uint getEstimatedNormal(vec3 hitPos, float voxelSize) {
-//    vec3 p   = hitPos-WORLD_BB[0];
-//    vec3 rem = mod(p, voxelSize);
-//    vec3 dir = rem-(voxelSize/2);
-//
-//    vec3 a = abs(dir);
-//
-//    uint b = a.x>=a.y && a.x>=a.z ? (0 + (dir.x<0 ? 1 : 0)) :
-//             a.y>=a.z ?             (2 + (dir.y<0 ? 1 : 0)) :
-//                                    (4 + (dir.z<0 ? 1 : 0));
-//    return b;
-//}
-void clampPositionToVoxelEntryPoint(Ray ray, Position pos, uint voxelSize, inout float distance) {
-
-    vec3 dir    = -ray.direction;
-    vec3 invDir = -ray.invDirection;
-
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, voxelSize);
-    vec3 size = vec3(greaterThanEqual(dir, vec3(0))) * voxelSize;
-    vec3 dist = size-rem;
-
-    vec3 m    = dist * invDir;
-    float res = min(m.x, min(m.y, m.z));
-    float f   = max(res, 0);
-
-    distance -= f;
-
-    //updatePosition(pos, dir*f);
-}
 ///
 /// Skip dist a little bit depending on how near to the camera
 /// the ray is. This is necessary in the pathological case
@@ -210,6 +145,14 @@ Voxel march(Ray ray, inout Position pos) {
     uint voxels    = chunkDataIn[pos.chunk] / 4;
     Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
 
+    L100_BITS_LEN       = voxelsIn[voxels+(L100BITS_LEN_OFFSET/4)];
+    NUM_UNIQ_BRANCHES   = voxelsIn[voxels+(NUM_UNIQ_BRANCHES_OFFSET/4)];
+
+    L100PopcountsOffset = (L100_BITS_OFFSET + L100_BITS_LEN) / 4;
+    uniqBranchesOffset  = L100PopcountsOffset + L100_BITS_LEN/4;
+    branchPtrsOffset    = uniqBranchesOffset + (NUM_UNIQ_BRANCHES*8/4);
+    bitsPerBranch       = bitsRequiredToEncode(NUM_UNIQ_BRANCHES);
+
     // Assume:
     //      1) pos.chunk will always start with a valid chunk
 
@@ -220,34 +163,16 @@ Voxel march(Ray ray, inout Position pos) {
             dist = getMinDistToEdgeOfChunkDistanceField(ray, pos, getChunkDistanceField(flags));
         } else {
 
-//            if(RENDER_OPTS[0]) {
-//                voxel.value = 1;
-//                break;
-//            }
+            uint size = getAirVoxel(pos, voxels);
 
-            if(!getAirVoxel(pos, voxel, distance, voxels)) {
+            if(size==0) {
                 /// We have hit something
-
-//                if(RENDER_OPTS[0]) {
-//                    clampPositionToVoxelEntryPoint(ray, pos, voxel.size, distance);
-//                }
-
-                //voxel.normal = getEstimatedNormal(pos.fpos, voxel.size);
+                voxel.value = 1;
                 break;
             }
 
             /// We are inside an air voxel of some size
-
-            bool isCell = (voxel.size == CELL_SIZE);
-
-            if(isCell) {
-                uint cell       = voxelsIn[voxels + 2 + voxel.oct];
-                vec3 distances  = getCellDistanceField(cell);
-
-                dist = getMinDistToEdgeOfCellDistanceField(ray, pos, distances);
-            } else {
-                dist = getMinDistToEdge(ray, pos, voxel.size);
-            }
+            dist = getMinDistToEdge(ray, pos, size);
         }
 
         skipLOD(distance, dist);
@@ -259,11 +184,19 @@ Voxel march(Ray ray, inout Position pos) {
         if(chunkChanged) {
             if(pos.chunk==-1) {
                 /// We ran out of scenery
-                voxel.value=0;
+                voxel.value = 0;
                 break;
             }
             voxels = chunkDataIn[pos.chunk] / 4;
             flags  = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+
+            L100_BITS_LEN       = voxelsIn[voxels+(L100BITS_LEN_OFFSET/4)];
+            NUM_UNIQ_BRANCHES   = voxelsIn[voxels+(NUM_UNIQ_BRANCHES_OFFSET/4)];
+
+            L100PopcountsOffset = (L100_BITS_OFFSET + L100_BITS_LEN) / 4;
+            uniqBranchesOffset  = L100PopcountsOffset + L100_BITS_LEN/4;
+            branchPtrsOffset    = uniqBranchesOffset + (NUM_UNIQ_BRANCHES*8/4);
+            bitsPerBranch       = bitsRequiredToEncode(NUM_UNIQ_BRANCHES);
         }
 	}
 

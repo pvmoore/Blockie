@@ -134,6 +134,7 @@ private:
 
         base = lastccp - HALF_VIEW_WINDOW;
         log("\t\tBounds(chunks)   = %s %s", base, (base+(VIEW_WINDOW.to!int)));
+        flushLog();
 
         StopWatch watch; watch.start();
 
@@ -163,8 +164,10 @@ private:
         writeChunkData();
 
         watch.stop();
+        log("\tWritten %s bytes to GPU", totalGPUWrites);
         log("\t\ttook %s millis", watch.peek().total!"nsecs"/1000000.0);
         log("}");
+        flushLog();
     }
     ///
     /// The camera has moved to a different chunk. Update
@@ -245,6 +248,7 @@ private:
         log("}");
     }
     bool chunksUpdated(Chunk[] chunks) {
+        log("Chunks updated");
         StopWatch w; w.start();
         bool chunkDataChanged = false;
 
@@ -272,6 +276,8 @@ private:
         w.stop();
         totalChunkUpdateTime += w.peek().total!"nsecs";
         numChunkUpdateBatches++;
+        log("Total bytes written to GPU: %s", totalGPUWrites);
+        flushLog();
         return chunkDataChanged;
     }
     void updateWorldBB(worldcoords min, worldcoords max) {

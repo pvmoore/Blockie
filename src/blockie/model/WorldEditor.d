@@ -25,7 +25,6 @@ protected:
 
         return view;
     }
-    abstract void editsCompleted();
     abstract void generateDistances();
 public:
     this(World world, Model model) {
@@ -43,7 +42,9 @@ public:
     void commitTransaction() {
         writefln("WorldEditor: Committing %s chunk edits ...", viewMap.length); flushConsole();
 
-        editsCompleted();
+        foreach(v; views) {
+            v.voxelEditsCompleted();
+        }
 
         generateDistances();
 

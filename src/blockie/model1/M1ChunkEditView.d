@@ -35,7 +35,7 @@ final class M1ChunkEditView : ChunkEditView {
         convertToEditable();
     }
     override void voxelEditsCompleted() {
-
+        root.recalculateFlags();
     }
     override void commitTransaction() {
 

@@ -5,15 +5,11 @@ import blockie.all;
 final class M4Optimiser {
 private:
     M4ChunkEditView view;
-    ubyte[] voxels;
-    uint voxelsLength;
 public:
     this(M4ChunkEditView view) {
         this.view = view;
     }
-    ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
-        this.voxels       = voxels;
-        this.voxelsLength = voxelsLength;
+    ubyte[] optimise(ubyte[] voxels) {
 
         /// This chunk is AIR. Nothing to do
         if(view.isAir) {
@@ -22,92 +18,222 @@ public:
 
         writefln("Optimiser: Processing %s", view);
 
-        auto optVoxels = rewriteVoxels(voxels[0..voxelsLength]);
+        view.root().calculateLevel1To6Bits();
+        view.root().calculateL7Popcounts();
 
-        writefln("\tOptimised chunk %s %s --> %s (%.2f%%)", view.getChunk.pos,
-            voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
+        auto optVoxels = rewriteVoxels(voxels);
+
+        writefln("\tOptimised chunk %s %000,d --> %000,d (%.2f%%)", view.getChunk.pos,
+            voxels.length, optVoxels.length, optVoxels.length*100.0 / voxels.length);
 
         return optVoxels;
     }
 private:
-    /// 1) If flag==MIXED_PIXELS and cell is solid -> Set flag = SOLID_PIXELS and remove pixels
-    /// 2) If flag==MIXED_PIXELS and cell is air -> Set flag = AIR and remove pixels
-    /// 3) Remove any gaps
+    /**
+     *  Re-write octrees to be in order and remove any gaps.
+     */
     ubyte[] rewriteVoxels(ubyte[] srcVoxels) {
 
-        auto newVoxels = new ubyte[voxelsLength];
-        uint dest      = M4_ROOT_SIZE;
+        auto destVoxels = new ubyte[srcVoxels.length];
+        uint dest       = 0;
 
-        M4Root* srcRoot()  { return cast(M4Root*)srcVoxels.ptr; }
-        M4Root* destRoot() { return cast(M4Root*)newVoxels.ptr; }
+        expect(view.cellOffsets.length == view.root().l7popcounts[$-1]);
 
-        bool pixelsAreAll1(ubyte* p) {
-            return onlyContains(p, M4_PIXELS_PER_CELL/8, 0xff);
+        auto numBranches = 0;
+        auto numCells = 0;
+
+        ubyte[] L100Bits;
+        uint[] L100Popcounts;
+
+        ubyte[] branchEncBytes;
+        uint[ulong] uniqBranchesMap;
+        ulong[] uniqBranches;
+        ulong[] allBranches;
+        uint bitsPerBranch;
+
+        M4Root* srcRoot() { return cast(M4Root*)srcVoxels.ptr; }
+
+        M4Cell* getSrcCell(uint cell) {
+            return cast(M4Cell*)(srcVoxels.ptr + view.cellOffsets[cell]);
         }
-        bool pixelsAreAll0(ubyte* p) {
-            return onlyContains(p, M4_PIXELS_PER_CELL/8, 0);
-        }
-        void copyRoot() {
-            newVoxels[0..dest] = voxels[0..dest];
-        }
-        void copyPixels(ubyte* src) {
-            newVoxels[dest..dest+M4_PIXELS_SIZE] = src[0..M4_PIXELS_SIZE];
-            dest += M4_PIXELS_SIZE;
-        }
 
-        copyRoot();
+        void recurse() {
 
-        auto airCellCount = 0;
+            void recurseBranch(M4Branch* srcBranch, uint cell, uint branch) {
 
-        foreach(ref cell; destRoot().cells) {
-            if(cell.isAir) {
-                /// Nothing to do - no pixels
-                airCellCount++;
-            } else if(cell.isSolid) {
-                /// Nothing to do - no pixels
-            } else if(cell.isMixed) {
-                auto ptr = voxels.ptr + (cell.offset.get()*4);
-                if(pixelsAreAll0(ptr)) {
-                    /// Set cell to air and don't copy pixels
-                    cell.setToAir();
+                expect(srcBranch.bits!=0);
 
-                } else if(pixelsAreAll1(ptr)) {
-                    /// Set cell to solid and don't copy pixels
-                    cell.setToSolidPixels();
+                numBranches++;
 
-                } else {
-                    cell.offset.set(dest/4);
-                    copyPixels(ptr);
+                auto srcLeaves  = cast(M4Leaf*)(srcVoxels.ptr  + srcBranch.offset.get());
+
+                auto allLeaves = 0L;
+
+                for(auto i=0; i<8; i++) {
+                    allLeaves <<= 8;
+                    if(srcBranch.isLeaf(i)) {
+                        allLeaves |= srcLeaves.bits;
+                    }
+                    srcLeaves++;
                 }
-            } else expect(false, "%s".format(cell.flag));
+
+                import core.bitop : bswap;
+
+                allLeaves = bswap(allLeaves);
+
+                if(allLeaves !in uniqBranchesMap) {
+                    uniqBranchesMap[allLeaves] = uniqBranchesMap.length.as!uint;
+                    uniqBranches ~= allLeaves;
+                }
+
+                allBranches ~= allLeaves;
+            }
+
+            void recurseCell(M4Cell* srcCell, uint cell) {
+                expect(srcCell.bits!=0);
+
+                numCells++;
+
+                L100Bits ~= srcCell.bits;
+
+                auto srcBranches = cast(M4Branch*)(srcVoxels.ptr + srcCell.offset.get());
+
+                for(auto i=0; i<8; i++) {
+                    if(srcCell.isBranch(i)) {
+                        recurseBranch(srcBranches, cell, i);
+                    }
+                    srcBranches++;
+                }
+            }
+
+            for(auto cell=0; cell<M4_CELLS_PER_CHUNK; cell++) {
+                if(!srcRoot().isAirCell(cell)) {
+                    recurseCell(getSrcCell(cell), cell);
+                }
+            }
+        }
+        void adjustBitsLengths() {
+            /// Align bits to 4 bytes
+            if(L100Bits.length%4!=0) {
+                L100Bits.length += (4-L100Bits.length%4);
+            }
+            expect(L100Bits.length%4==0);
+            writefln("L100Bits.length = %s", L100Bits.length);
+        }
+        void calculateBranchPtrs() {
+
+            bitsPerBranch = bitsRequiredToEncode2(uniqBranches.length);
+            writefln("bitsPerBranch = %s", bitsPerBranch);
+
+            void writeByte(ubyte b) {
+                branchEncBytes ~= b;
+            }
+            auto writer = new BitWriter(&writeByte);
+
+            foreach(i, branch; allBranches) {
+                uint index = uniqBranchesMap[branch];
+                writer.write(index, bitsPerBranch);
+            }
+            writer.flush();
+        }
+        void calculatePopcounts() {
+            uint sum = 0;
+            L100Popcounts.length = L100Bits.length / 4;
+
+            for(auto i=0; i<L100Bits.length/4; i++) {
+                sum += popcnt(L100Bits[i*4+0]);
+                sum += popcnt(L100Bits[i*4+1]);
+                sum += popcnt(L100Bits[i*4+2]);
+                sum += popcnt(L100Bits[i*4+3]);
+                L100Popcounts[i] = sum;
+            }
+        }
+        void write() {
+
+            dest = 0;
+            uint numCells = view.root().l7popcounts[$-1];
+
+            void writeUbyte(ubyte value) {
+                (destVoxels.ptr+dest)[0] = value;
+                dest++;
+            }
+            void writeUint(uint value) {
+                auto ptr = cast(uint*)(destVoxels.ptr+dest);
+                ptr[0] = value;
+                dest += 4;
+            }
+            void copy(uint src, uint numBytes) {
+                destVoxels[dest..dest+numBytes] = srcVoxels[src..src+numBytes];
+                dest += numBytes;
+            }
+            void copyUbytes(ubyte[] values) {
+                destVoxels[dest..dest+values.length] = values;
+                dest += values.length;
+            }
+            void copyUints(uint[] values) {
+                auto ptr = cast(uint*)(destVoxels.ptr+dest);
+                ptr[0..values.length] = values;
+                dest += values.length*4;
+            }
+            void copyUlongs(ulong[] values) {
+                auto ptr = cast(ulong*)(destVoxels.ptr+dest);
+                ptr[0..values.length] = values;
+                dest += values.length*8;
+            }
+
+            /// [0]      M4Root
+            ///
+            /// [561748] L100BitsLength   (4 bytes)
+            /// [561752] NumUniqBranches  (4 bytes)
+
+            /// [561756] L100 bits          (L100BitsLength bytes)
+            ///          L100 popcounts     (L100BitsLength bytes)
+
+            ///          UniqBranches   (NumUniqBranches * 8 bytes)
+            ///          Branch Ptrs    (NumBrances * enc bits)
+
+            copy(0, M4_ROOT_SIZE); /// M4Root (561748 bytes)
+
+            expect(dest%4==0);
+            expect(M4Root.l7bits.offsetof%4==0);
+            expect(M4Root.l7popcounts.offsetof%4==0);
+
+            expect(dest==561748);
+            writeUint(L100Bits.length.as!uint);      /// L100BitsLength
+            writeUint(uniqBranches.length.as!uint);  /// NumUniqBranches
+
+
+            expect(dest==561756);
+            copyUbytes(L100Bits);   /// L100 bits
+
+            expect(dest==561756+L100Bits.length);
+            copyUints(L100Popcounts);       /// L100 popcounts
+
+
+            expect(dest==561756+L100Bits.length*2);
+            copyUlongs(uniqBranches);     /// UniqBranches
+
+
+            expect(dest==561756+L100Bits.length*2+uniqBranches.length*8);
+            copyUbytes(branchEncBytes);   /// Branch ptrs
         }
 
-        auto pixelCells = M4_CELLS_PER_CHUNK-airCellCount;
+        recurse();
+        adjustBitsLengths();
+        calculateBranchPtrs();
+        calculatePopcounts();
+        write();
 
-        auto distanceBytes = airCellCount*4;
-        auto pixelBytes = pixelCells*M4_PIXELS_SIZE;
-        auto totalBytes = distanceBytes + pixelBytes;
+        writefln("num cells    = %000,d", numCells);
+        writefln("num branches = %000,d", numBranches);
+        writefln("uniqBranches = %000,d (%s bits)", uniqBranchesMap.length, bitsRequiredToEncode(uniqBranchesMap.length));
 
-        totalDistanceBytes += distanceBytes;
-        totalPixelBytes    += pixelBytes;
+        static ulong TOTAL = 0;
+        TOTAL += dest;
+        writefln("TOTAL = %000,d", TOTAL);
 
-        writefln("\t#air cells   = %000,d", airCellCount);
-        writefln("\t#pixel cells = %000,d",  pixelCells);
-        writefln("\tair cells size    = %000,d", (airCellCount*4));
-        writefln("\tpixels cells size = %000,d", (pixelCells*M4_PIXELS_SIZE));
-        writefln("\tTotal bytes       = %000,d", totalBytes);
+        writefln("dest = %000,d", dest);
 
-        writefln("totalDistance : %000,d", totalDistanceBytes);
-        writefln("totalPixel    : %000,d", totalPixelBytes);
-
-        /// All cells are air -> switch to an air chunk
-        if(airCellCount==M4_CELLS_PER_CHUNK) {
-            srcRoot().flag = M4Root.Flag.AIR;
-            return cast(ubyte[])[M4Root.Flag.AIR, 0, 0,0,0,0,0,0];
-        }
-
-        return newVoxels[0..dest];
+        return destVoxels[0..dest];
     }
-    static ulong totalPixelBytes = 0;
-    static ulong totalDistanceBytes = 0;
 }

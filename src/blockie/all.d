@@ -67,7 +67,7 @@ import derelict.glfw3;
 
 import fonts.sdf;
 import resources : PNG, HGT;
-import logging : flushLog, log;
+import logging : flushLog, log, FileLogger;
 import resusage.memory : ProcessMemInfo, processMemInfo;
 import common :
     Allocator, Allocator_t, Archive, Array, Async, BitWriter, Comment, From,

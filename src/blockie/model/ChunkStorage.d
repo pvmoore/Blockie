@@ -13,6 +13,7 @@ private:
     IQueue!EventMsg messages;
     string directory;
     Chunk[chunkcoords] chunks;
+    FileLogger logger;
 
 public:
     ulong bytesWritten;
@@ -22,6 +23,8 @@ public:
     this(World w, Model model) {
         this.world         = w;
         this.model         = model;
+        this.logger        = new FileLogger(".logs/storage.log")
+            .setEagerFlushing(true);
         this.serialiser    = model.makeChunkSerialiser(w);
         this.directory     = "data/" ~ w.name ~ "/";
         this.msgSemaphore  = new Semaphore;
@@ -33,9 +36,9 @@ public:
     void destroy() {
         running = false;
         msgSemaphore.notify();
-        log("ChunkStorage: Waiting for message thread...");
+        logger.log("ChunkStorage: Waiting for message thread...");
         shutdownReady.wait();
-        log("ChunkStorage: Message thread finished");
+        logger.log("ChunkStorage: Message thread finished");
 
         auto airChunks = chunks.values
                                .filter!(it=>it.isAir)
@@ -43,7 +46,8 @@ public:
 
         serialiser.saveAirChunks(airChunks);
         serialiser.destroy();
-        log("ChunkStorage: Saved %s air chunks", airChunks.length);
+        logger.log("ChunkStorage: Saved %s air chunks", airChunks.length);
+        logger.close();
     }
     Chunk blockingGet(chunkcoords coords) {
         auto ptr = coords in chunks;
@@ -70,7 +74,7 @@ public:
     }
 private:
     void initialise() {
-        log("ChunkStorage: Initialising");
+        logger.log("ChunkStorage: Initialising");
         /// Start the message processing thread
         Thread t = new Thread(&loop);
         t.isDaemon = true;
@@ -91,28 +95,31 @@ private:
         foreach(ch; serialiser.loadAirChunks()) {
             chunks[ch.pos] = ch;
         }
-        log("ChunkStorage: Loaded %s air chunks", chunks.length);
+        logger.log("ChunkStorage: Loaded %s air chunks", chunks.length);
     }
     ///
     /// Runs on ChunkStorage thread.
     ///
     void loop() {
-        log("ChunkStorage: Message thread running");
+        logger.log("ChunkStorage: Message thread running");
 
         void fetchChunk(Chunk c) {
+            logger.log("Fetching chunk %s", c);
             ulong bytes = serialiser.load(c);
+            logger.log("bytes = %s", bytes);
             bytesRead += bytes;
             getDiskMonitor().setValue(0, bytesRead/MB);
             getEvents().fire(EventMsg(EventID.CHUNK_LOADED, c));
+            logger.log("done");
         }
         void saveChunk(Chunk c) {
-            log("ChunkStorage: Save chunk %s", c);
+            logger.log("ChunkStorage: Save chunk %s", c);
             ulong bytes = serialiser.save(c);
             bytesWritten += bytes;
             getDiskMonitor().setValue(1, bytesWritten/MB);
         }
         void handleMessage(EventMsg msg) {
-            //log("ChunkStorage: Processing event %s", msg);
+            logger.log("ChunkStorage: Processing event %s chunk:%s", msg.id, msg.get!Chunk);
             switch(msg.id) {
                 case EventID.CHUNK_ACTIVATED:
                     fetchChunk(msg.get!Chunk);
@@ -125,6 +132,7 @@ private:
                 default:
                     break;
             }
+            logger.log("end msg");
         }
 
         while(true) {
@@ -136,12 +144,12 @@ private:
                 handleMessage(msg);
 
             }catch(Throwable e) {
-                log("ChunkStorage: %s", e.toString);
+                logger.log("ChunkStorage: %s", e.toString);
             }
         }
 
-        log("ChunkStorage: Message thread closing down");
-        log("ChunkStorage: Processing remaining messages");
+        logger.log("ChunkStorage: Message thread closing down");
+        logger.log("ChunkStorage: Processing remaining messages");
         EventMsg[1000] msgs;
         uint num;
         do{

@@ -25,7 +25,7 @@ public:
         this.storage   = storage;
         this.views     = views;
         this.model     = storage.model;
-        this.fakeView  = new FakeEditView;
+        this.fakeView  = new FakeEditView(false);
 
         this.chunkMin = views.map!(it=>it.pos)
                              .fold!((a,b)=>a.min(b))(chunkcoords(int.max));
@@ -174,9 +174,14 @@ private:
         const int Y      = gridSize.x;
         const int Z      = gridSize.x * gridSize.y;
 
+        DFieldsBi getDistance(int index) {
+            expect(index>=0 && index<distances.length);
+            return distances[index];
+        }
+
         bool isAirX(int index, DFieldBi ysize, DFieldBi zsize) {
 
-            auto dist = distances[index];
+            auto dist = getDistance(index);
 
             if(!dist.y.canContain(ysize) ||
                !dist.z.canContain(zsize)) return false;
@@ -184,28 +189,28 @@ private:
             int i = index;
             for(int y=1; y<=ysize.up; y++) {
                 i += Y;
-                if(!distances[i].z.canContain(zsize)) return false;
+                if(!getDistance(i).z.canContain(zsize)) return false;
             }
             i = index;
             for(int y=1; y<=ysize.down; y++) {
                 i -= Y;
-                if(!distances[i].z.canContain(zsize)) return false;
+                if(!getDistance(i).z.canContain(zsize)) return false;
             }
             i = index;
             for(int z=1; z<=zsize.up; z++) {
                 i += Z;
-                if(!distances[i].y.canContain(ysize)) return false;
+                if(!getDistance(i).y.canContain(ysize)) return false;
             }
             i = index;
             for(int z=1; z<=zsize.down; z++) {
                 i -= Z;
-                if(!distances[i].y.canContain(ysize)) return false;
+                if(!getDistance(i).y.canContain(ysize)) return false;
             }
             return true;
         }
         bool isAirY(int index, DFieldBi xsize, DFieldBi zsize) {
 
-            auto dist = distances[index];
+            auto dist = getDistance(index);
 
             if(!dist.x.canContain(xsize) ||
                !dist.z.canContain(zsize)) return false;
@@ -213,28 +218,28 @@ private:
             int i = index;
             for(int x=1; x<=xsize.up; x++) {
                 i += X;
-                if(!distances[i].z.canContain(zsize)) return false;
+                if(!getDistance(i).z.canContain(zsize)) return false;
             }
             i = index;
             for(int x=1; x<=xsize.down; x++) {
                 i -= X;
-                if(!distances[i].z.canContain(zsize)) return false;
+                if(!getDistance(i).z.canContain(zsize)) return false;
             }
             i = index;
             for(int z=1; z<=zsize.up; z++) {
                 i += Z;
-                if(!distances[i].x.canContain(xsize)) return false;
+                if(!getDistance(i).x.canContain(xsize)) return false;
             }
             i = index;
             for(int z=1; z<=zsize.down; z++) {
                 i -= Z;
-                if(!distances[i].x.canContain(xsize)) return false;
+                if(!getDistance(i).x.canContain(xsize)) return false;
             }
             return true;
         }
         bool isAirZ(int index, DFieldBi xsize, DFieldBi ysize) {
 
-            auto dist = distances[index];
+            auto dist = getDistance(index);
 
             if(!dist.x.canContain(xsize) ||
                !dist.y.canContain(ysize)) return false;
@@ -242,22 +247,22 @@ private:
             int i = index;
             for(int x=1; x<=xsize.up; x++) {
                 i += X;
-                if(!distances[i].y.canContain(ysize)) return false;
+                if(!getDistance(i).y.canContain(ysize)) return false;
             }
             i = index;
             for(int x=1; x<=xsize.down; x++) {
                 i -= X;
-                if(!distances[i].y.canContain(ysize)) return false;
+                if(!getDistance(i).y.canContain(ysize)) return false;
             }
             i = index;
             for(int y=1; y<=ysize.up; y++) {
                 i += Y;
-                if(!distances[i].x.canContain(xsize)) return false;
+                if(!getDistance(i).x.canContain(xsize)) return false;
             }
             i = index;
             for(int y=1; y<=ysize.down; y++) {
                 i -= Y;
-                if(!distances[i].x.canContain(xsize)) return false;
+                if(!getDistance(i).x.canContain(xsize)) return false;
             }
             return true;
         }
@@ -267,7 +272,7 @@ private:
                  goyup = true, goydown = true,
                  gozup = true, gozdown = true;
 
-            auto limits = distances[index];
+            auto limits = getDistance(index);
 
             while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
                 /// expand X

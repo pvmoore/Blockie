@@ -22,7 +22,13 @@ interface ChunkEditView {
 /// Used by distance field calculations. Pretends to be an air chunk at infinite pos.
 ///
 final class FakeEditView : ChunkEditView {
-    bool isAir()              { return true; }
+private:
+    bool setToAir = false;
+public:
+    this(bool setToAir = true) {
+        this.setToAir = setToAir;
+    }
+    bool isAir()              { return setToAir; }
     bool isAirCell(uint cell) { return true; }
     chunkcoords pos()         { return chunkcoords(int.min); }
 
