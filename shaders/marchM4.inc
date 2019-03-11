@@ -21,6 +21,7 @@ uint NUM_UNIQ_BRANCHES;
 
 uint L100PopcountsOffset;
 uint uniqBranchesOffset;
+uint cellDistancesOffset;
 uint branchPtrsOffset;
 uint bitsPerBranch;
 
@@ -65,6 +66,11 @@ uint getCellOct(uvec3 upos) {
     uvec3 c = a << uvec3(0,7,14);
     return c.x + c.y + c.z;
 }
+uint getOctets(uvec3 upos, int bitOffset, int numBits) {
+    uvec3 a = bitfieldExtract(upos, bitOffset, numBits);
+    uvec3 c = a << uvec3(0,numBits,numBits+numBits);
+    return c.x + c.y + c.z;
+}
 /// Get 1 bit octet index (0-7)
 /// if shr==5 (and==1<<shr):
 /// x = 0_0010_0000 \
@@ -75,6 +81,7 @@ uint getOctet(uvec3 upos, int bitOffset) {
     uvec3 c = a << uvec3(0,1,2);
     return c.x + c.y + c.z;
 }
+
 /// Assumes offsets are in uints
 //bool isBitSet(uint bit, uint offset) {
 //    uint b = voxelsIn[offset + bit/32];
@@ -95,6 +102,10 @@ bool isAir(inout uvec3 p, inout uint size, uint level, uint offset) {
     size <<= uint(b);
     return b;
 }
+bool isAir2(uvec3 p, uint level, uint offset) {
+    uint bit = p.x | (p.y<<level) | (p.z<<(level+level));
+    return isBitZero(bit, offset);
+}
 ///
 /// Return air voxel air size (0 = we have hit something)
 ///
@@ -102,18 +113,27 @@ uint getAirVoxel(Position pos, uint voxels) {
     uvec3 upos   = pos.upos;
     uint cellOct = getCellOct(upos);
 
+//    if(isBitZero(getOctets(upos, 9, 1), voxels + BITS_L1/4)) return 512;
+//    if(isBitZero(getOctets(upos, 8, 2), voxels + BITS_L2/4)) return 256;
+//    if(isBitZero(getOctets(upos, 7, 3), voxels + BITS_L3/4)) return 128;
+//    if(isBitZero(getOctets(upos, 6, 4), voxels + BITS_L4/4)) return 64;
+//    if(isBitZero(getOctets(upos, 5, 5), voxels + BITS_L5/4)) return 32;
+
+    //if(isAirCell(cellOct, voxels)) return 8;
+
     if(isAirCell(cellOct, voxels)) {
         /// Scan higher level octets to get the volume of air
 
         uvec3 p   = uvec3(cellOct, cellOct, cellOct) >> uvec3(0, 7, 14) & 127u;
         uint size = 8;
 
-        bool r = isAir(p, size, 6, voxels+BITS_L6/4) &&
-                 isAir(p, size, 5, voxels+BITS_L5/4) &&
-                 isAir(p, size, 4, voxels+BITS_L4/4) &&
-                 isAir(p, size, 3, voxels+BITS_L3/4) &&
-                 isAir(p, size, 2, voxels+BITS_L2/4);// &&
-                 //isAir(p, size, 1, voxels+BITS_L1/4);
+        bool r = isAir(p, size, 6, voxels+BITS_L6/4)
+              //&& isAir(p, size, 5, voxels+BITS_L5/4)
+              //&& isAir(p, size, 4, voxels+BITS_L4/4)
+              //&& isAir(p, size, 3, voxels+BITS_L3/4)
+              //&& isAir(p, size, 2, voxels+BITS_L2/4)
+            //&& isAir(p, size, 1, voxels+BITS_L1/4)
+                ;
 
         return size;
     }

@@ -83,6 +83,10 @@ align(1) struct M4Root { align(1):
         const b = l7bits[cell/8];
         return (b & (1u<<(cell&7))) == 0;
     }
+    bool isAirCell(uint cell, uint level) {
+        expect(cell < (1<<level)^^3);
+        return (bits[BITS_OFFSET[level] + cell/8] & (1u<<(cell&7))) == 0;
+    }
     void setCellToAir(uint cell) {
         throw new Error("Implement me");
     }

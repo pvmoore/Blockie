@@ -15,6 +15,7 @@ private:
     uint numEdits;
 public:
     uint[uint] cellOffsets;     // key = cell
+    ushort[8^^M4_CELL_LEVEL] cellDistances;
 
     this() {
         this.allocator = new Allocator_t!uint(0);
@@ -36,8 +37,10 @@ public:
         convertToEditable();
     }
     override void voxelEditsCompleted() {
-        writefln("%s Edits completed. %s cells", pos, cellOffsets.length); flushConsole();
+       // writefln("%s Edits completed. %s cells", pos, cellOffsets.length); flushConsole();
         root().recalculateFlags();
+        root().calculateLevel1To6Bits();
+        root().calculateL7Popcounts();
     }
     override void commitTransaction() {
 
@@ -74,16 +77,21 @@ public:
         return root().isAir();
     }
     override bool isAirCell(uint cell) {
-        return root().isAirCell(cell);
+        return root().isAirCell(cell, M4_CELL_LEVEL);
     }
     override void setChunkDistance(DFieldsBi f) {
         root().distance.set(f);
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        throw new Error("There are no cell distances in this model");
+        cellDistances[cell] = (x | (y<<5) | (z<<10)).as!ushort;
+        //writefln("%s -> %s -> %s,%s,%s", cell, cellDistances[cell],
+        //    cellDistances[cell] & 31,
+        //    (cellDistances[cell]>>5) & 31,
+        //    (cellDistances[cell]>>10) & 31
+        //);
     }
     override void setCellDistance(uint cell, DFieldsBi f) {
-        throw new Error("There are no cell distances in this model");
+        throw new Error("BiDir cell distances not supported");
     }
     override string toString() {
         return "View %s".format(chunk.pos);

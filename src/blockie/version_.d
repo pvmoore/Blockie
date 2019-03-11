@@ -1,12 +1,13 @@
 module blockie.version_;
 
-const string version_ = "0.0.19";
+const string version_ = "0.0.20";
 
 /**===============================================================
     History
 
 Upcoming ... 0.0.21 - Add voxel de-optimiser code
-Upcoming ... 0.0.20 - Improvements to Model 4
+
+0.0.20 - Improvements to Model 4
 
 0.0.19 - Implement new Model 4 idea
 

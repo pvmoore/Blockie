@@ -10,6 +10,9 @@ protected:
             .generate()
             .getAddedViews();
 
+        new DistanceFieldsUniDirCell(views, 1<<M4_CELL_LEVEL, 31)
+            .generate();
+
         this.views ~= addedViews;
 
         writefln("\t%s views added to the transaction", addedViews.length);

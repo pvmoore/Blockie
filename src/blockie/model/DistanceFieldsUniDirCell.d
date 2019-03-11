@@ -6,8 +6,7 @@ final class DistanceFieldsUniDirCell {
 private:
     uint MAX;
     ChunkEditView[] views;
-    Model model;
-    int size, sizeSquared;
+    int size, sizeSquared, numRootBits;
     ChunkEditView fakeView;
     ChunkData fakeChunkData;
     StopWatch watch;
@@ -20,12 +19,14 @@ private:
     }
     ChunkData[chunkcoords] chunkMap;
 public:
-    this(ChunkEditView[] views, Model model, uint max) {
+    this(ChunkEditView[] views, uint cellsPerSide, uint max) {
         this.views       = views;
-        this.model       = model;
         this.MAX         = max;
-        this.size        = 1<<model.numRootBits();
+        this.size        = cellsPerSide;
         this.sizeSquared = size*size;
+        this.numRootBits = From!"core.bitop".bsf(cellsPerSide);
+
+        writefln("size=%s, numRootBits=%s", size, numRootBits);
 
         if(views.length>0) {
 
@@ -90,19 +91,22 @@ private:
         return cachedData;
     }
     uint getOctree(int3 p) {
+        /// root = 1 bits -> 2
+        /// root = 2 bits -> 4
+        /// root = 3 bits -> 8
         /// root = 4 bits -> 16
         /// root = 5 bits -> 32
-        assert(p.allLT(size) && p.allGTE(0));
+        expect(p.allLT(size) && p.allGTE(0));
         return p.dot(int3(1, size, sizeSquared));
     }
     /// In global cellcoords
     bool isAirCell(int3 cellCoords) {
-        auto chunkpos   = cellCoords>>model.numRootBits();
+        auto chunkpos   = cellCoords>>numRootBits;
         ChunkData data  = getChunkData(chunkpos);
         auto view       = data.view;
         if(view.isAir) return true;
 
-        int3 rem = cellCoords-(chunkpos<<model.numRootBits());
+        int3 rem = cellCoords-(chunkpos<<numRootBits);
         uint oct = getOctree(rem);
         return view.isAirCell(oct);
     }
@@ -112,7 +116,7 @@ private:
 
         int3 processCell(ChunkData data, int3 cellOffset, int xstart, int ystart, int zstart) {
             auto view      = data.view;
-            int3 cellCoord = (view.pos<<model.numRootBits())+cellOffset;
+            int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
             int x,y,z;
 
             /// x
@@ -187,7 +191,7 @@ private:
     /// In global cellcoords
     int3 getCell(int3 cellCoords) {
 
-        auto chunkpos   = cellCoords>>model.numRootBits();
+        auto chunkpos   = cellCoords>>numRootBits;
         ChunkData data  = getChunkData(chunkpos);
         auto view       = data.view;
 
@@ -195,7 +199,7 @@ private:
             return int3(MAX, MAX, MAX);
         }
 
-        int3 offset = cellCoords-(chunkpos<<model.numRootBits());
+        int3 offset = cellCoords-(chunkpos<<numRootBits);
         int oct     = getOctree(offset);
         return int3(data.x[oct], data.y[oct], data.z[oct]);
     }
@@ -293,7 +297,7 @@ private:
         int3 processCell(ChunkData data, int3 cellOffset, int3 field) {
 
             auto view      = data.view;
-            int3 cellCoord = (view.pos<<model.numRootBits())+cellOffset;
+            int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
             uint oct       = getOctree(cellOffset);
             int3 limit     = int3(data.x[oct], data.y[oct], data.z[oct]);
 

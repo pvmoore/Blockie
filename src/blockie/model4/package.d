@@ -21,7 +21,9 @@ const M4_OCTREE_ROOT_BITS = 7;
 const M4_ROOT_SIZE        = M4Root.sizeof.as!uint;
 const M4_CELLS_PER_CHUNK  = 128*128*128;   // 2,097,152
 
-pragma(msg, "M4_ROOT_SIZE = %000,d".format(M4_ROOT_SIZE));
+const M4_CELL_LEVEL       = 5;
+
+//pragma(msg, "M4_ROOT_SIZE = %000,d".format(M4_ROOT_SIZE));
 
 final class Model4 : Model {
     public:

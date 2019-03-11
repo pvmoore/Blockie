@@ -18,9 +18,6 @@ public:
 
         writefln("Optimiser: Processing %s", view);
 
-        view.root().calculateLevel1To6Bits();
-        view.root().calculateL7Popcounts();
-
         auto optVoxels = rewriteVoxels(voxels);
 
         writefln("\tOptimised chunk %s %000,d --> %000,d (%.2f%%)", view.getChunk.pos,
@@ -135,6 +132,11 @@ private:
                 writer.write(index, bitsPerBranch);
             }
             writer.flush();
+
+            /// Make length a multiple of 4 bytes
+            if(branchEncBytes.length%4!=0) {
+                branchEncBytes.length += (4-branchEncBytes.length%4);
+            }
         }
         void calculatePopcounts() {
             uint sum = 0;
@@ -166,19 +168,10 @@ private:
                 destVoxels[dest..dest+numBytes] = srcVoxels[src..src+numBytes];
                 dest += numBytes;
             }
-            void copyUbytes(ubyte[] values) {
-                destVoxels[dest..dest+values.length] = values;
-                dest += values.length;
-            }
-            void copyUints(uint[] values) {
-                auto ptr = cast(uint*)(destVoxels.ptr+dest);
+            void copyArray(T)(T[] values) {
+                auto ptr = cast(T*)(destVoxels.ptr+dest);
                 ptr[0..values.length] = values;
-                dest += values.length*4;
-            }
-            void copyUlongs(ulong[] values) {
-                auto ptr = cast(ulong*)(destVoxels.ptr+dest);
-                ptr[0..values.length] = values;
-                dest += values.length*8;
+                dest += values.length*T.sizeof;
             }
 
             /// [0]      M4Root
@@ -190,7 +183,10 @@ private:
             ///          L100 popcounts     (L100BitsLength bytes)
 
             ///          UniqBranches   (NumUniqBranches * 8 bytes)
+            ///          Cell distances (2 * (1<<M4_CELL_LEVEL) bytes)
             ///          Branch Ptrs    (NumBrances * enc bits)
+
+
 
             copy(0, M4_ROOT_SIZE); /// M4Root (561748 bytes)
 
@@ -204,18 +200,21 @@ private:
 
 
             expect(dest==561756);
-            copyUbytes(L100Bits);   /// L100 bits
+            copyArray!ubyte(L100Bits);   /// L100 bits
 
             expect(dest==561756+L100Bits.length);
-            copyUints(L100Popcounts);       /// L100 popcounts
+            copyArray!uint(L100Popcounts);       /// L100 popcounts
 
 
             expect(dest==561756+L100Bits.length*2);
-            copyUlongs(uniqBranches);     /// UniqBranches
-
+            copyArray!ulong(uniqBranches);     /// UniqBranches
 
             expect(dest==561756+L100Bits.length*2+uniqBranches.length*8);
-            copyUbytes(branchEncBytes);   /// Branch ptrs
+            copyArray!ushort(view.cellDistances);  /// cell distances
+
+            expect(dest==561756+L100Bits.length*2+uniqBranches.length*8 +
+                         view.cellDistances.length*ushort.sizeof);
+            copyArray!ubyte(branchEncBytes);   /// Branch ptrs
         }
 
         recurse();
