@@ -7,8 +7,7 @@ import blockie.all;
 final class DistanceFieldsBiDirCell {
 private:
     ChunkEditView[] views;
-    Model model;
-    int size, sizeSquared;
+    int size, sizeSquared, numRootBits;
     ChunkEditView fakeView;
     ChunkData fakeChunkData;
     StopWatch watch;
@@ -22,11 +21,14 @@ private:
     uint[16] DISTANCE_TABLE;
     uint MAX;
 public:
-    this(ChunkEditView[] views, Model model, uint max) {
+    this(ChunkEditView[] views,  uint cellsPerSide, uint max) {
         this.views       = views;
-        this.model       = model;
-        this.size        = 1<<model.numRootBits();
+        this.size        = cellsPerSide;
         this.sizeSquared = size*size;
+        this.numRootBits = From!"core.bitop".bsf(cellsPerSide);
+
+        writefln("size=%s, numRootBits=%s", size, numRootBits);
+
         this.fakeFields  = DFieldsBi(DFieldBi(MAX,MAX), DFieldBi(MAX,MAX), DFieldBi(MAX,MAX));
         this.MAX         = max;
 
@@ -90,12 +92,12 @@ private:
     }
     /// In global cellcoords
     bool isAirCell(int3 cellCoords) {
-        auto chunkpos  = cellCoords>>model.numRootBits();
+        auto chunkpos  = cellCoords>>numRootBits;
         ChunkData data = getChunkData(chunkpos);
         auto view      = data.view;
         if(view.isAir) return true;
 
-        int3 rem = cellCoords-(chunkpos<<model.numRootBits());
+        int3 rem = cellCoords-(chunkpos<<numRootBits);
         uint oct = getOctree(rem);
         return view.isAirCell(oct);
     }
@@ -109,7 +111,7 @@ private:
                               DFieldBi ystart)
         {
             auto view      = data.view;
-            int3 cellCoord = (view.pos<<model.numRootBits())+cellOffset;
+            int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
             DFieldsBi f;
 
             /// x
@@ -198,7 +200,7 @@ private:
     /// In global cellcoords
     DFieldsBi getDistance(int3 cellCoords) {
 
-        auto chunkpos   = cellCoords>>model.numRootBits();
+        auto chunkpos   = cellCoords>>numRootBits;
         ChunkData data  = getChunkData(chunkpos);
         auto view       = data.view;
 
@@ -206,7 +208,7 @@ private:
             return fakeFields;
         }
 
-        int3 offset = cellCoords-(chunkpos<<model.numRootBits());
+        int3 offset = cellCoords-(chunkpos<<numRootBits);
         int oct     = getOctree(offset);
         return data.f[oct];
     }
@@ -305,7 +307,7 @@ private:
         DFieldsBi processCell(ChunkData data, int3 cellOffset, DFieldsBi fields) {
 
             auto view             = data.view;
-            int3 cellCoord        = (view.pos<<model.numRootBits())+cellOffset;
+            int3 cellCoord        = (view.pos<<numRootBits)+cellOffset;
             uint oct              = getOctree(cellOffset);
             DFieldsBi limits = data.f[oct];
 

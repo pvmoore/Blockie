@@ -183,7 +183,7 @@ private:
             ///          L100 popcounts     (L100BitsLength bytes)
 
             ///          UniqBranches   (NumUniqBranches * 8 bytes)
-            ///          Cell distances (2 * (1<<M4_CELL_LEVEL) bytes)
+            ///          Cell distances (4 * (1<<M4_CELL_LEVEL) bytes)
             ///          Branch Ptrs    (NumBrances * enc bits)
 
 
@@ -210,10 +210,10 @@ private:
             copyArray!ulong(uniqBranches);     /// UniqBranches
 
             expect(dest==561756+L100Bits.length*2+uniqBranches.length*8);
-            copyArray!ushort(view.cellDistances);  /// cell distances
+            copyArray!uint(view.cellDistances);  /// cell distances
 
             expect(dest==561756+L100Bits.length*2+uniqBranches.length*8 +
-                         view.cellDistances.length*ushort.sizeof);
+                         view.cellDistances.length*uint.sizeof);
             copyArray!ubyte(branchEncBytes);   /// Branch ptrs
         }
 

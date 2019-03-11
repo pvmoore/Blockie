@@ -15,7 +15,7 @@ private:
     uint numEdits;
 public:
     uint[uint] cellOffsets;     // key = cell
-    ushort[8^^M4_CELL_LEVEL] cellDistances;
+    uint[8^^M4_CELL_LEVEL] cellDistances;
 
     this() {
         this.allocator = new Allocator_t!uint(0);
@@ -83,15 +83,20 @@ public:
         root().distance.set(f);
     }
     override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
-        cellDistances[cell] = (x | (y<<5) | (z<<10)).as!ushort;
-        //writefln("%s -> %s -> %s,%s,%s", cell, cellDistances[cell],
-        //    cellDistances[cell] & 31,
-        //    (cellDistances[cell]>>5) & 31,
-        //    (cellDistances[cell]>>10) & 31
-        //);
+        throw new Error("UniDir cell distances not supported");
     }
     override void setCellDistance(uint cell, DFieldsBi f) {
-        throw new Error("BiDir cell distances not supported");
+        /// 5 bits * 6 = 30 bits
+        cellDistances[cell] =
+            f.x.down       | (f.x.up<<5) |
+            (f.y.down<<10) | (f.y.up<<15) |
+            (f.z.down<<20) | (f.z.up<<25);
+
+        //writefln("%02d -> %08x -> %s..%s, %s..%s, %s..%s", cell, cellDistances[cell],
+        //    cellDistances[cell]&31,       (cellDistances[cell]>>5)&31,
+        //    (cellDistances[cell]>>10)&31, (cellDistances[cell]>>15)&31,
+        //    (cellDistances[cell]>>20)&31, (cellDistances[cell]>>25)&31
+        //);
     }
     override string toString() {
         return "View %s".format(chunk.pos);

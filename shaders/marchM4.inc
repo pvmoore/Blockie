@@ -102,10 +102,6 @@ bool isAir(inout uvec3 p, inout uint size, uint level, uint offset) {
     size <<= uint(b);
     return b;
 }
-bool isAir2(uvec3 p, uint level, uint offset) {
-    uint bit = p.x | (p.y<<level) | (p.z<<(level+level));
-    return isBitZero(bit, offset);
-}
 ///
 /// Return air voxel air size (0 = we have hit something)
 ///

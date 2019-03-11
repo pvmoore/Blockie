@@ -10,7 +10,7 @@ protected:
             .generate()
             .getAddedViews();
 
-        new DistanceFieldsBiDirCell(views, model, 15)
+        new DistanceFieldsBiDirCell(views, 1<<model.numRootBits(), 15)
             .generate();
 
         this.views ~= addedViews;
