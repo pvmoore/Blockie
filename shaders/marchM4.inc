@@ -41,10 +41,9 @@ uint getBits(uint byteIndex, uint bitOffset, int numBits) {
     int bitpos     = int(bitOffset + (uintRem*8));
     int numBits2   = max(0, numBits - (32-bitpos));
     numBits -= numBits2;
-    uint result = bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits);
-    uint add = numBits2 == 0 ? 0 :
-                (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
-    return result + add;
+
+    return bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits) +
+          (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
 }
 
 uint getImpliedIndex(uint bits, uint oct) {

@@ -18,23 +18,24 @@
 - Hash root cells if they are taking up too much memory
 
 ##### Vulkan
-    It might not be too much work (relatively) to convert to Vulkan.
+    It might not be too much work to convert to Vulkan.
 
 ##### Preprocess scene
     Run march pass on 1/4 or 1/9 of the pixels and store the distances. eg
     x . or . . .
     . .    . x .
            . . .
-    If nothing is hit then don't run full march pass on that block. If a distance is found then start at that distance
-    when running full pass on the rest of that block.
+           
+    If nothing is hit then don't run full march pass on the rest of that block. 
+    If a distance is found then start at that distance
+    minus a small amount when running full pass on the rest of that block.
     
 ##### Store static results
     If the camera does not move between frames than any static results can be re-used
     
 ##### Accuracy issues
-    Use doubles on any area that seems to be affected poorly by accuracy of floats. It doubles are used minimally
-    then speed should not be affected negatively (much). 
-    
+    Use doubles on any area that seems to be affected poorly by accuracy of floats. 
+    It doubles are used minimally then speed should not be affected negatively (much).   
     
  ===================================================================
 ##### Old Todo: These might no longer be relevant

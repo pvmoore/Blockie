@@ -12,10 +12,9 @@ uint getBits_voxelsIn(uint byteIndex, uint bitOffset, int numBits) {
     const int bitpos     = int(bitOffset + (uintRem*8));
     const int numBits2   = max(0, numBits - (32-bitpos));
     numBits -= numBits2;
-    const uint result = bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits);
-    const uint add = numBits2 == 0 ? 0 :
-               (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
-    return result + add;
+
+    return bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits) +
+          (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
 }
 
 /// get 1 bit octet index (0-7)
