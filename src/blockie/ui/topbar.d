@@ -41,8 +41,18 @@ public:
         this.world = world;
 
         /// Display world name
-        float x = world.camera.windowSize().width/2 - font.sdf.getDimension(world.name,FONT_SIZE).width/2;
-        textRenderer.replaceText(1, world.name, cast(int)x);
+        version(MODEL1) {
+            const model = 1;
+        } else version(MODEL2) {
+            const model = 2;
+        } else version(MODEL3) {
+            const model = 3;
+        } else {
+            const model = 4;
+        }
+        auto text = "%s (MODEL %s)".format(world.name, model);
+        float x = world.camera.windowSize().width/2 - font.sdf.getDimension(text,FONT_SIZE).width/2;
+        textRenderer.replaceText(1, text, cast(int)x);
     }
     void renderOptionsChanged() {
         /// Display RenderOptions

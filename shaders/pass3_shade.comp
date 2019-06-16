@@ -175,7 +175,7 @@ void main() {
     diffuse = mix(diffuse*0.25, diffuse, getBrightness(hitPos, normal));
 
     // noise
-    diffuse += clamp(40/(dist+0.1), 0, 0.2)*snoise(hitPos*5);
+    diffuse += clamp(40/(dist+0.1), 0.0, 0.2)*snoise(hitPos*5);
 
     #define FOG 1
     #if FOG

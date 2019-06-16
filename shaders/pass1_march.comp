@@ -175,7 +175,7 @@ void skipLOD(const float distance, inout float dist) {
     }
 }
 Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
-    Voxel voxel;
+    Voxel voxel      = Voxel(0,0,0,0);
     float distance   = 0;
     uint voxelsRoot  = chunkDataIn[pos.chunk];
     Flags flags      = Flags(voxelsIn[voxelsRoot/4], voxelsIn[voxelsRoot/4+1]);

@@ -205,7 +205,7 @@ void skipLOD(float distance, inout float dist) {
     }
 }
 Voxel march(Ray ray, inout Position pos) {
-    Voxel voxel;
+    Voxel voxel    = Voxel(0,0,0,0);
     float distance = 0;
     uint voxels    = chunkDataIn[pos.chunk] / 4;
     Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);

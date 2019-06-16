@@ -264,6 +264,7 @@ public:
         );
     }
     void setupCompute() {
+
         string[] defines = [
             "#define CHUNK_SIZE %s".format(CHUNK_SIZE),
             "#define CHUNK_SIZE_SHR %s".format(CHUNK_SIZE_SHR),
