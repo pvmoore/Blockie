@@ -26,7 +26,7 @@ public:
         this.sizeSquared = size*size;
         this.numRootBits = From!"core.bitop".bsf(cellsPerSide);
 
-        writefln("size=%s, numRootBits=%s", size, numRootBits);
+        //writefln("size=%s, numRootBits=%s", size, numRootBits);
 
         if(views.length>0) {
 
@@ -56,7 +56,10 @@ public:
     auto generate() {
         if(chunkMap.length==0) return this;
 
-        writefln("\nGenerating cell distances ..."); flushConsole();
+        writefln("Generating cell distances {"); flushConsole();
+
+        StopWatch totalTime;
+        totalTime.start();
 
         watch.start();
         calculateInitialDistances();
@@ -66,10 +69,13 @@ public:
 
         watch.reset(); watch.start();
         processVolumes();
-
         watch.stop();
         writefln("\tProcessing volumes took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
         flushConsole();
+
+        totalTime.stop();
+        writefln("\tTotal time to generate cell distances ... (%.2f seconds)", totalTime.peek().total!"nsecs"*1e-09);
+        writefln("}");
         return this;
     }
 private:
@@ -96,7 +102,7 @@ private:
         /// root = 3 bits -> 8
         /// root = 4 bits -> 16
         /// root = 5 bits -> 32
-        expect(p.allLT(size) && p.allGTE(0));
+        //expect(p.allLT(size) && p.allGTE(0));
         return p.dot(int3(1, size, sizeSquared));
     }
     /// In global cellcoords
@@ -112,9 +118,14 @@ private:
     }
     void calculateInitialDistances() {
 
-        int3 maxDistance = int3(0,0,0);
+        auto maxDistance = int3(0,0,0);
 
-        int3 processCell(ChunkData data, int3 cellOffset, int xstart, int ystart, int zstart) {
+        /**
+         * Set max air distance for cell (for each dimension, volumes are not considered)
+         *  eg.  x0x  = 0 distance (x direction)
+         *      x000x = 1 distance (x direction)
+         */
+        int3 _processCell(ChunkData data, int3 cellOffset, int xstart, int ystart, int zstart) {
             auto view      = data.view;
             int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
             int x,y,z;
@@ -152,9 +163,9 @@ private:
 
         int[] ystart = new int[size*size];
 
-        foreach(k,v; chunkMap) {
+        foreach(k,data; chunkMap) {
 
-            auto view = v.view;
+            auto view = data.view;
             if(!view.isAir) {
 
                 ystart[] = 1;
@@ -171,7 +182,7 @@ private:
                             auto p = int3(x,y,z);
 
                             if(view.isAirCell(getOctree(p))) {
-                                dist   = processCell(v, p, xstart, ystart[yoffset+x], 1);
+                                dist   = _processCell(data, p, xstart, ystart[yoffset+x], 1);
                                 xstart = max(1, dist.x-1);
                             } else {
                                 dist   = int3(1,1,1);
@@ -188,7 +199,7 @@ private:
         writefln("\tmaxDistance %s", maxDistance);
     }
 
-    /// In global cellcoords
+    /** In global cellcoords */
     int3 getCell(int3 cellCoords) {
 
         auto chunkpos   = cellCoords>>numRootBits;
@@ -210,9 +221,9 @@ private:
     //}
     void processVolumes() {
 
-        int3 maxDistance = int3(0,0,0);
+        auto maxDistance = int3(0,0,0);
 
-        bool isAirX(int3 coord, int ysize, int zsize) {
+        bool _isAirX(int3 coord, int ysize, int zsize) {
 
             int3 cell = getCell(coord);
             if(cell.y < ysize || cell.z < zsize) return false;
@@ -239,7 +250,7 @@ private:
             }
             return true;
         }
-        bool isAirY(int3 coord, int xsize, int zsize) {
+        bool _isAirY(int3 coord, int xsize, int zsize) {
 
             int3 cell = getCell(coord);
             if(cell.x < xsize || cell.z < zsize) return false;
@@ -266,7 +277,7 @@ private:
             }
             return true;
         }
-        bool isAirZ(int3 coord, int xsize, int ysize) {
+        bool _isAirZ(int3 coord, int xsize, int ysize) {
 
             int3 cell = getCell(coord);
             if(cell.x < xsize || cell.y < ysize) return false;
@@ -294,7 +305,7 @@ private:
             return true;
         }
 
-        int3 processCell(ChunkData data, int3 cellOffset, int3 field) {
+        int3 _processCell(ChunkData data, int3 cellOffset, int3 field) {
 
             auto view      = data.view;
             int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
@@ -306,8 +317,8 @@ private:
             while(gox || goy || goz) {
                 /// expand X
                 if(gox) {
-                    if(field.x<limit.x && isAirX(cellCoord + int3(field.x+1,0,0), field.y, field.z) &&
-                                          isAirX(cellCoord - int3(field.x+1,0,0), field.y, field.z))
+                    if(field.x<limit.x && _isAirX(cellCoord + int3(field.x+1,0,0), field.y, field.z) &&
+                                          _isAirX(cellCoord - int3(field.x+1,0,0), field.y, field.z))
                     {
                         field.x++;
                     }
@@ -315,8 +326,8 @@ private:
                 }
                 /// expand Y
                 if(goy) {
-                    if(field.y<limit.y && isAirY(cellCoord + int3(0,field.y+1,0), field.x, field.z) &&
-                                          isAirY(cellCoord - int3(0,field.y+1,0), field.x, field.z))
+                    if(field.y<limit.y && _isAirY(cellCoord + int3(0,field.y+1,0), field.x, field.z) &&
+                                          _isAirY(cellCoord - int3(0,field.y+1,0), field.x, field.z))
                     {
                         field.y++;
                     }
@@ -324,8 +335,8 @@ private:
                 }
                 /// expand Z
                 if(goz) {
-                    if(field.z<limit.z && isAirZ(cellCoord + int3(0,0,field.z+1), field.x, field.y) &&
-                                          isAirZ(cellCoord - int3(0,0,field.z+1), field.x, field.y))
+                    if(field.z<limit.z && _isAirZ(cellCoord + int3(0,0,field.z+1), field.x, field.y) &&
+                                          _isAirZ(cellCoord - int3(0,0,field.z+1), field.x, field.y))
                     {
                         field.z++;
                     }
@@ -340,7 +351,7 @@ private:
             return field;
         }
 
-        int i=0;
+        ulong volume = 0;
         foreach(k,v; chunkMap) {
             //writefln("\tChunk %s of %s", ++i, views.length); flushConsole();
 
@@ -361,7 +372,8 @@ private:
                             auto p = int3(x,y,z);
 
                             if(view.isAirCell(getOctree(p))) {
-                                prev = processCell(v, p, prev);
+                                prev    = _processCell(v, p, prev);
+                                volume += prev.hmul();
 
                                 if(prev.x==0) prev = int3(0,0,0); else prev.x--;
 
@@ -384,5 +396,6 @@ private:
             }
         }
         writefln("\tmaxDistance %s", maxDistance);
+        writefln("\tVolume = %000,s", volume);
     }
 }

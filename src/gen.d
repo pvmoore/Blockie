@@ -23,7 +23,7 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "8";
+        const auto num = "4b";
 
         SceneGenerator scene;
         switch(num) {

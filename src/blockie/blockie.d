@@ -87,7 +87,7 @@ public:
             // 8:  |  523 (1 MB)   |  662 (0 MB)   |  702 (1 MB)    |  674 (1 MB)
             //
             // GTX 1660 (+500Mhz mem overclock)
-            // 1:  | 1095 (2 MB)   | 1232 (0 MB)   | 1350 (0 MB)    | 1265 (2 MB)
+            // 1:  | 1100 (2 MB)   | 1232 (0 MB)   | 1350 (0 MB)    | 1265 (2 MB)
             // 2:  | 1520 (5 MB)   | 1900 (0 MB)   | 1970 (2 MB)    | 1900 (14 MB)
             // 3:  |  459 (8 MB)   |  664 (1 MB)   |  753 (5 MB)    |  573 (28 MB)
             // 4:  |  372 (242 MB) |  494 (247 MB) |  526 (286 MB)  |  425 (425 MB)
@@ -102,7 +102,7 @@ public:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.
 
-            string w = "1";
+            string w = "4b";
 
             World world;
             switch(w) {

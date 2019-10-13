@@ -27,7 +27,7 @@ public:
         this.sizeSquared = size*size;
         this.numRootBits = From!"core.bitop".bsf(cellsPerSide);
 
-        writefln("size=%s, numRootBits=%s", size, numRootBits);
+        //writefln("size=%s, numRootBits=%s", size, numRootBits);
 
         this.fakeFields  = DFieldsBi(DFieldBi(MAX,MAX), DFieldBi(MAX,MAX), DFieldBi(MAX,MAX));
         this.MAX         = max;
@@ -50,7 +50,7 @@ public:
     auto generate() {
         if(chunkMap.length==0) return this;
 
-        writefln("\nGenerating cell distances ... (max = %s)", MAX); flushConsole();
+        writefln("Generating cell distances (max = %s) {", MAX); flushConsole();
 
         watch.start();
         calculateInitialDistances();
@@ -63,6 +63,7 @@ public:
 
         watch.stop();
         writefln("\tProcessing volumes took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
+        writefln("}");
         flushConsole();
         return this;
     }

@@ -79,7 +79,7 @@ final class World {
     }
 
     override string toString() {
-        return "World[%s]".format(name);
+        return "World[\"%s\"]".format(name);
     }
 }
 

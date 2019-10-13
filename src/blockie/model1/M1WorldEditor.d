@@ -15,7 +15,7 @@ protected:
 
         this.views ~= addedViews;
 
-        writefln("\t%s views added to the transaction", addedViews.length);
+        writefln("%s views added to the transaction", addedViews.length);
     }
 public:
     this(World world, Model model) {

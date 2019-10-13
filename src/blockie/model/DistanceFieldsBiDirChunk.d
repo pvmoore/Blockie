@@ -9,7 +9,6 @@ private:
     const int RADIUS = 20;
     ChunkStorage storage;
     Model model;
-    StopWatch watch;
     ChunkEditView[] views;
     ChunkEditView[] addedViews;
     ChunkEditView[chunkcoords] map;
@@ -50,7 +49,7 @@ public:
     auto generate() {
         if(views.length==0) return this;
 
-        writefln("\nGenerating air chunks ...");
+        writefln("Generating air chunks {");
         writefln("\tmin          = %s", chunkMin);
         writefln("\tmax          = %s", chunkMax);
         writefln("\tsize         = %s", gridSize);
@@ -58,16 +57,27 @@ public:
         writefln("\tChunks in    = %s", views.length);
         flushConsole();
 
+        StopWatch totalTime;
+        totalTime.start();
+
+        StopWatch watch;
         watch.start();
-
         calculateInitialDistances();
-        processVolumes();
-
         watch.stop();
+        writefln("\tInitial distances took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
+        flushConsole();
+
+        watch.reset(); watch.start();
+        processVolumes();
+        watch.stop();
+        writefln("\tProcessing volumes took %.2f seconds", watch.peek().total!"nsecs"*1e-09);
+        flushConsole();
 
         writefln("\tChunk grid   = %s chunks", map.length);
 
-        writefln("\tTook (%.2f seconds)", watch.peek().total!"nsecs"*1e-09);
+        totalTime.stop();
+        writefln("\tTotal time to generate air chunks ... (%.2f seconds)", totalTime.peek().total!"nsecs"*1e-09);
+        writefln("}");
         return this;
     }
 private:

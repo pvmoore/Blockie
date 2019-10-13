@@ -10,6 +10,7 @@ struct DFieldBi {
     }
     string toString() { return "%s-%s".format(up, down); }
 }
+
 struct DFieldsBi {
     DFieldBi x,y,z;
 
