@@ -2,7 +2,7 @@
 	"fileVersion": 1,
 	"versions": {
 		"common": "~master",
-		"derelict-gl3": "2.0.0-beta.7",
+		"derelict-gl3": "2.0.0-beta.8",
 		"derelict-glfw3": "4.0.0-beta.1",
 		"derelict-util": "3.0.0-beta.2",
 		"events": "~master",

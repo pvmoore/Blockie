@@ -238,16 +238,16 @@ private:
                 a.y--;
                 if(!getDistance(a).z.canContain(zsize)) return false;
             }
-            a = coord;
-            for(int z=1; z<=zsize.up; z++) {
-                a.z++;
-                if(!getDistance(a).y.canContain(ysize)) return false;
-            }
-            a = coord;
-            for(int z=1; z<=zsize.down; z++) {
-                a.z--;
-                if(!getDistance(a).y.canContain(ysize)) return false;
-            }
+            // a = coord;
+            // for(int z=1; z<=zsize.up; z++) {
+            //     a.z++;
+            //     if(!getDistance(a).y.canContain(ysize)) return false;
+            // }
+            // a = coord;
+            // for(int z=1; z<=zsize.down; z++) {
+            //     a.z--;
+            //     if(!getDistance(a).y.canContain(ysize)) return false;
+            // }
             return true;
         }
         bool isAirY(int3 coord, DFieldBi xsize, DFieldBi zsize) {
@@ -265,16 +265,16 @@ private:
                 a.x--;
                 if(!getDistance(a).z.canContain(zsize)) return false;
             }
-            a = coord;
-            for(int z=1; z<=zsize.up; z++) {
-                a.z++;
-                if(!getDistance(a).x.canContain(xsize)) return false;
-            }
-            a = coord;
-            for(int z=1; z<=zsize.down; z++) {
-                a.z--;
-                if(!getDistance(a).x.canContain(xsize)) return false;
-            }
+            // a = coord;
+            // for(int z=1; z<=zsize.up; z++) {
+            //     a.z++;
+            //     if(!getDistance(a).x.canContain(xsize)) return false;
+            // }
+            // a = coord;
+            // for(int z=1; z<=zsize.down; z++) {
+            //     a.z--;
+            //     if(!getDistance(a).x.canContain(xsize)) return false;
+            // }
             return true;
         }
         bool isAirZ(int3 coord, DFieldBi xsize, DFieldBi ysize) {
@@ -292,16 +292,16 @@ private:
                 a.x--;
                 if(!getDistance(a).y.canContain(ysize)) return false;
             }
-            a = coord;
-            for(int y=1; y<=ysize.up; y++) {
-                a.y++;
-                if(!getDistance(a).x.canContain(xsize)) return false;
-            }
-            a = coord;
-            for(int y=1; y<=ysize.down; y++) {
-                a.y--;
-                if(!getDistance(a).x.canContain(xsize)) return false;
-            }
+            // a = coord;
+            // for(int y=1; y<=ysize.up; y++) {
+            //     a.y++;
+            //     if(!getDistance(a).x.canContain(xsize)) return false;
+            // }
+            // a = coord;
+            // for(int y=1; y<=ysize.down; y++) {
+            //     a.y--;
+            //     if(!getDistance(a).x.canContain(xsize)) return false;
+            // }
             return true;
         }
 

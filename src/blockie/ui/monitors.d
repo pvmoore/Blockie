@@ -19,12 +19,12 @@ shared static this() {
     cpuMonitor  = new CPUMonitor;
     memMonitor  = new MEMMonitor;
     diskMonitor = new MultiValueMonitor!double(2, "Disk (MB) ")
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("3.1f")
         .setValue(0,0,"Read ... ")
         .setValue(1,0,"Write .. ");
     gpuioMonitor = new MultiValueMonitor!double(5, "GPU (MB)")
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("4.2f")
         .setValue(0, 0, "Writes ........ ")
         .setValue(1, 0, "Used (vx) ... ")
@@ -32,26 +32,26 @@ shared static this() {
         .setValue(3, 0, "Cam updt .. ","ms")
         .setValue(4, 0, "Chk updt ... ","ms");
     chunksMonitor = new MultiValueMonitor!ulong(4, "Chunks")
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("u")
         .setValue(0, 0, "Total .........")
         .setValue(1, 0, "On GPU .....")
         .setValue(2, 0, "Ready .......")
         .setValue(3, 0, "Flyweight ..");
     fpsMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("4.2f")
         .setValue(0, 0, "FPS ....... ");
     updateTimeMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("4.2f")
         .setValue(0, 0, "Update .. ", "ms");
     frameTimeMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("4.2f")
         .setValue(0,0, "Frame ... ", "ms");
     computeMonitor = new MultiValueMonitor!double(2, "Compute")
-        .colour(WHITE*0.9)
+        .colour(WHITE*0.92)
         .formatting("5.2f")
         .setValue(0,0, "Render .....", "ms")
         .setValue(1,0, "Compute ..", "ms");
@@ -69,20 +69,20 @@ void destroyMonitors() {
     computeMonitor.destroy();
 }
 
-auto getCPUMonitor() { return cpuMonitor; }
-auto getMEMMonitor() { return memMonitor; }
-auto getDiskMonitor() { return diskMonitor; }
-auto getGPUIOMonitor() { return gpuioMonitor; }
-auto getChunksMonitor() { return chunksMonitor; }
-auto getFPSMonitor() { return fpsMonitor; }
+auto getCPUMonitor()        { return cpuMonitor; }
+auto getMEMMonitor()        { return memMonitor; }
+auto getDiskMonitor()       { return diskMonitor; }
+auto getGPUIOMonitor()      { return gpuioMonitor; }
+auto getChunksMonitor()     { return chunksMonitor; }
+auto getFPSMonitor()        { return fpsMonitor; }
 auto getUpdateTimeMonitor() { return updateTimeMonitor; }
-auto getFrameTimeMonitor() { return frameTimeMonitor; }
-auto getComputeMonitor() { return computeMonitor; }
+auto getFrameTimeMonitor()  { return frameTimeMonitor; }
+auto getComputeMonitor()    { return computeMonitor; }
 
 //=======================================================
 final class CPUMonitor {
 private:
-    const float FONT_SIZE = 16;
+    const float FONT_SIZE = 15;
     OpenGL gl;
     Camera2D camera;
     SDFFontRenderer textRenderer;
@@ -106,7 +106,7 @@ public:
         textRenderer
             .setColour(WHITE*1.1)
             .appendText("CPU")
-            .setColour(WHITE*0.9)
+            .setColour(WHITE*0.92)
             .appendText("");
 
         for(auto i=0; i<numCPUs; i++) {
@@ -136,7 +136,7 @@ public:
         foreach(i, d; cores) {
             textRenderer.replaceText(
                 cast(int)i+2,
-                "Core %s ...... %4.1f".format(i, d),
+                "Thread %s ...... %4.1f".format(i, d),
                 pos.x, y);
             y += 20;
         }
@@ -146,7 +146,7 @@ public:
 //========================================================
 final class MEMMonitor {
 private:
-    const float FONT_SIZE = 16;
+    const float FONT_SIZE = 15;
     const double MB = 1024*1024;
     OpenGL gl;
     Camera2D camera;
@@ -170,7 +170,7 @@ public:
         textRenderer
             .setColour(WHITE*1.1)
             .appendText("RAM (MB)")
-            .setColour(WHITE*0.9)
+            .setColour(WHITE*0.92)
             .appendText("")
             .appendText("");
 
@@ -203,7 +203,7 @@ public:
 //========================================================
 final class MultiValueMonitor(T) {
 private:
-    const float FONT_SIZE = 16;
+    const float FONT_SIZE = 15;
     OpenGL gl;
     Camera2D camera;
     SDFFontRenderer textRenderer;

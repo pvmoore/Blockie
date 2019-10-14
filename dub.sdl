@@ -1,7 +1,7 @@
 
 name "blockie"
 platforms "windows"
-	
+
 buildType "debug" {
     dflags "-color" platform="dmd"
 

@@ -4,7 +4,7 @@ import blockie.all;
 
 final class BottomBar {
 private:
-    const float FONT_SIZE = 16;
+    const float FONT_SIZE = 15;
     RenderView renderView;
     Camera2D camera;
     SDFFontRenderer textRenderer;

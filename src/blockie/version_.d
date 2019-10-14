@@ -1,11 +1,13 @@
 module blockie.version_;
 
-const string version_ = "0.0.20";
+const string version_ = "0.0.21";
 
 /**===============================================================
     History
 
-Upcoming ... 0.0.21 - Add voxel de-optimiser code
+Upcoming ... 0.0.22 - Add voxel de-optimiser code
+
+0.0.21 - Remove some redundant code in distance calculation.
 
 0.0.20 - Improvements to Model 4
 

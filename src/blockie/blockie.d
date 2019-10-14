@@ -90,7 +90,7 @@ public:
             // 1:  | 1100 (2 MB)   | 1232 (0 MB)   | 1350 (0 MB)    | 1265 (2 MB)
             // 2:  | 1520 (5 MB)   | 1900 (0 MB)   | 1970 (2 MB)    | 1900 (14 MB)
             // 3:  |  459 (8 MB)   |  664 (1 MB)   |  753 (5 MB)    |  573 (28 MB)
-            // 4:  |  372 (242 MB) |  494 (247 MB) |  526 (286 MB)  |  425 (425 MB)
+            // 4:  |  372 (242 MB) |  490 (247 MB) |  526 (286 MB)  |  425 (425 MB)
             // 4b: |  379 (54 MB)  |  509 (46 MB)  |  546 (56 MB)   |  473 (81 MB)
             // 4c: |  345 (79 MB)  |  486 (59 MB)  |  515 (68 MB)   |  455 (87 MB)
             // 5:  | 1405 (2 MB)   | 1580 (1 MB)   | 1660 (1 MB)    | 1605 (1 MB)
@@ -102,7 +102,7 @@ public:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.
 
-            string w = "4b";
+            string w = "1";
 
             World world;
             switch(w) {

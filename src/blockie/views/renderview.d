@@ -187,10 +187,8 @@ public:
             writefln("Collecting garbage");
         }
 
-
-
         if(moved) {
-            writefln("camera = %s", world.camera);
+            log("camera = %s", world.camera);
             skybox.setVP(world.camera);
         }
         glComputeSceneRenderer.afterUpdate(moved);

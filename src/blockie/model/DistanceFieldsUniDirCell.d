@@ -238,16 +238,16 @@ private:
                 a.y--;
                 if(getCell(a).z < zsize) return false;
             }
-            a = coord;
-            for(int z=1; z<=zsize; z++) {
-                a.z++;
-                if(getCell(a).y < ysize) return false;
-            }
-            a = coord;
-            for(int z=1; z<=zsize; z++) {
-                a.z--;
-                if(getCell(a).y < ysize) return false;
-            }
+            // a = coord;
+            // for(int z=1; z<=zsize; z++) {
+            //     a.z++;
+            //     if(getCell(a).y < ysize) return false;
+            // }
+            // a = coord;
+            // for(int z=1; z<=zsize; z++) {
+            //     a.z--;
+            //     if(getCell(a).y < ysize) return false;
+            // }
             return true;
         }
         bool _isAirY(int3 coord, int xsize, int zsize) {
@@ -265,16 +265,16 @@ private:
                 a.x--;
                 if(getCell(a).z < zsize) return false;
             }
-            a = coord;
-            for(int z=1; z<=zsize; z++) {
-                a.z++;
-                if(getCell(a).x < xsize) return false;
-            }
-            a = coord;
-            for(int z=1; z<=zsize; z++) {
-                a.z--;
-                if(getCell(a).x < xsize) return false;
-            }
+            // a = coord;
+            // for(int z=1; z<=zsize; z++) {
+            //     a.z++;
+            //     if(getCell(a).x < xsize) return false;
+            // }
+            // a = coord;
+            // for(int z=1; z<=zsize; z++) {
+            //     a.z--;
+            //     if(getCell(a).x < xsize) return false;
+            // }
             return true;
         }
         bool _isAirZ(int3 coord, int xsize, int ysize) {
@@ -292,25 +292,25 @@ private:
                 a.x--;
                 if(getCell(a).y < ysize) return false;
             }
-            a = coord;
-            for(int y=1; y<=ysize; y++) {
-                a.y++;
-                if(getCell(a).x < xsize) return false;
-            }
-            a = coord;
-            for(int y=1; y<=ysize; y++) {
-                a.y--;
-                if(getCell(a).x < xsize) return false;
-            }
+            // a = coord;
+            // for(int y=1; y<=ysize; y++) {
+            //     a.y++;
+            //     if(getCell(a).x < xsize) return false;
+            // }
+            // a = coord;
+            // for(int y=1; y<=ysize; y++) {
+            //     a.y--;
+            //     if(getCell(a).x < xsize) return false;
+            // }
             return true;
         }
 
         int3 _processCell(ChunkData data, int3 cellOffset, int3 field) {
 
-            auto view      = data.view;
-            int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
-            uint oct       = getOctree(cellOffset);
-            int3 limit     = int3(data.x[oct], data.y[oct], data.z[oct]);
+            auto view       = data.view;
+            const cellCoord = (view.pos<<numRootBits)+cellOffset;
+            const oct       = getOctree(cellOffset);
+            const limit     = int3(data.x[oct], data.y[oct], data.z[oct]);
 
             bool gox = true, goy = true, goz = true;
 
