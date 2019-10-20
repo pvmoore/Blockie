@@ -98,6 +98,18 @@ public:
             // 7:  |  483 (32 MB)  |  620 (28 MB)  |  674 (31 MB)   |    ? (243 MB)
             // 8:  |  790 (1 MB)   |  960 (0 MB)   | 1023 (1 MB)    | 1010 (1 MB)
 
+            // GTX 1660 (+500Mhz mem overclock + distance field optimisation)
+            // 1:  | 1110 (2 MB)   | 1235 (0 MB)   | 0000 (0 MB)    | 0000 (2 MB)
+            // 2:  | 1520 (5 MB)   | 1930 (0 MB)   | 0000 (2 MB)    | 0000 (14 MB)
+            // 3:  |  472 (8 MB)   |  685 (1 MB)   | 0000 (5 MB)    | 0000 (28 MB)
+            // 4:  |  378 (242 MB) |  501 (247 MB) | 0000 (286 MB)  | 0000 (425 MB)
+            // 4b: |  392 (54 MB)  |  510 (46 MB)  | 0000 (56 MB)   | 0000 (81 MB)
+            // 4c: |  358 (79 MB)  |  488 (59 MB)  | 0000 (68 MB)   | 0000 (87 MB)
+            // 5:  | 1405 (2 MB)   | 1580 (1 MB)   | 0000 (1 MB)    | 0000 (1 MB)
+            // 6:  |  766 (53 MB)  |  950 (41 MB)  | 0000 (42 MB)   | 0000 (36 MB)
+            // 7:  |  495 (32 MB)  |  630 (28 MB)  | 0000 (31 MB)   | 0000 (243 MB)
+            // 8:  |  800 (1 MB)   |  960 (0 MB)   | 0000 (1 MB)    | 0000 (1 MB)
+
             // Notes:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.

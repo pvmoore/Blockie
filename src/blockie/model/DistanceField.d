@@ -5,10 +5,13 @@ import blockie.all;
 struct DFieldBi {
     int up, down;
 
-    bool canContain(DFieldBi f) {
+    uint length() {
+        return (up+down) + 1;
+    }
+    bool canContain(DFieldBi f) const {
         return up >= f.up && down >= f.down;
     }
-    string toString() { return "%s-%s".format(up, down); }
+    string toString() { return "%s..%s".format(up, down); }
 }
 
 struct DFieldsBi {
@@ -20,6 +23,9 @@ struct DFieldsBi {
             DFieldBi(.max(y.up, f.y.up), .max(y.down, f.y.down)),
             DFieldBi(.max(z.up, f.z.up), .max(z.down, f.z.down))
         );
+    }
+    uint volume() {
+        return x.length() * y.length() * z.length();
     }
     string toString() { return "[(%s),(%s),(%s)]".format(x, y, z); }
 }

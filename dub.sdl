@@ -19,7 +19,7 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "GC_STATS" "MODEL1"
+versions "GC_STATS" "MODEL2"
 
 configuration "blockie" {
 	#mainSourceFile "src/main.d"

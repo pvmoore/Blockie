@@ -221,8 +221,6 @@ private:
 
     void processVolumes() {
 
-        DFieldsBi maxDistance = DFieldsBi();
-
         bool isAirX(int3 coord, DFieldBi ysize, DFieldBi zsize) {
 
             DFieldsBi dist = getDistance(coord);
@@ -238,16 +236,6 @@ private:
                 a.y--;
                 if(!getDistance(a).z.canContain(zsize)) return false;
             }
-            // a = coord;
-            // for(int z=1; z<=zsize.up; z++) {
-            //     a.z++;
-            //     if(!getDistance(a).y.canContain(ysize)) return false;
-            // }
-            // a = coord;
-            // for(int z=1; z<=zsize.down; z++) {
-            //     a.z--;
-            //     if(!getDistance(a).y.canContain(ysize)) return false;
-            // }
             return true;
         }
         bool isAirY(int3 coord, DFieldBi xsize, DFieldBi zsize) {
@@ -265,16 +253,6 @@ private:
                 a.x--;
                 if(!getDistance(a).z.canContain(zsize)) return false;
             }
-            // a = coord;
-            // for(int z=1; z<=zsize.up; z++) {
-            //     a.z++;
-            //     if(!getDistance(a).x.canContain(xsize)) return false;
-            // }
-            // a = coord;
-            // for(int z=1; z<=zsize.down; z++) {
-            //     a.z--;
-            //     if(!getDistance(a).x.canContain(xsize)) return false;
-            // }
             return true;
         }
         bool isAirZ(int3 coord, DFieldBi xsize, DFieldBi ysize) {
@@ -292,31 +270,23 @@ private:
                 a.x--;
                 if(!getDistance(a).y.canContain(ysize)) return false;
             }
-            // a = coord;
-            // for(int y=1; y<=ysize.up; y++) {
-            //     a.y++;
-            //     if(!getDistance(a).x.canContain(xsize)) return false;
-            // }
-            // a = coord;
-            // for(int y=1; y<=ysize.down; y++) {
-            //     a.y--;
-            //     if(!getDistance(a).x.canContain(xsize)) return false;
-            // }
             return true;
         }
 
-        DFieldsBi processCell(ChunkData data, int3 cellOffset, DFieldsBi fields) {
-
-            auto view             = data.view;
-            int3 cellCoord        = (view.pos<<numRootBits)+cellOffset;
-            uint oct              = getOctree(cellOffset);
-            DFieldsBi limits = data.f[oct];
+        DFieldsBi _processCellInner(ChunkData data,
+                                    const int3 cellOffset,
+                                    DFieldsBi fields,
+                                    const int order)
+        {
+            auto view       = data.view;
+            const cellCoord = (view.pos<<numRootBits)+cellOffset;
+            const oct       = getOctree(cellOffset);
+            const limits    = data.f[oct];
 
             bool goxup = true, goyup = true, gozup = true;
             bool goxdown = true, goydown = true, gozdown = true;
 
-            while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
-                /// expand X
+            void _expandX() {
                 if(goxup) {
                     if(fields.x.up < limits.x.up &&
                        isAirX(cellCoord + int3(fields.x.up+1,0,0), fields.y, fields.z))
@@ -333,8 +303,8 @@ private:
                     }
                     else goxdown = false;
                 }
-
-                /// expand Y
+            }
+            void _expandY() {
                 if(goyup) {
                     if(fields.y.up < limits.y.up &&
                        isAirY(cellCoord + int3(0,fields.y.up+1,0), fields.x, fields.z))
@@ -351,8 +321,8 @@ private:
                     }
                     else goydown = false;
                 }
-
-                /// expand Z
+            }
+            void _expandZ() {
                 if(gozup) {
                     if(fields.z.up < limits.z.up &&
                        isAirZ(cellCoord + int3(0,0,fields.z.up+1), fields.x, fields.y))
@@ -371,14 +341,71 @@ private:
                 }
             }
 
-            view.setCellDistance(oct, fields);
-
-            maxDistance = maxDistance.max(fields);
+            while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
+                switch(order) {
+                   case 0:
+                        _expandX();
+                        _expandY();
+                        _expandZ();
+                        break;
+                    case 1:
+                        _expandX();
+                        _expandZ();
+                        _expandY();
+                        break;
+                    case 2:
+                        _expandY();
+                        _expandX();
+                        _expandZ();
+                        break;
+                    case 3:
+                        _expandZ();
+                        _expandX();
+                        _expandY();
+                        break;
+                    case 4:
+                        _expandY();
+                        _expandZ();
+                        _expandX();
+                        break;
+                    default:
+                        _expandZ();
+                        _expandY();
+                        _expandX();
+                        break;
+                }
+            }
 
             return fields;
         }
 
-        int i=0;
+        auto maxDistance = DFieldsBi();
+        auto volume      = 0L;
+
+        DFieldsBi _processCell(ChunkData data, int3 cellOffset, DFieldsBi fields) {
+
+            DFieldsBi bestFields;
+            ulong bestVolume = 0;
+
+            for(auto i=0; i<6; i++) {
+
+                auto f = _processCellInner(data, cellOffset, fields, i);
+                auto v = f.volume();
+
+                if(v >= bestVolume) {
+                    bestVolume = v;
+                    bestFields = f;
+                }
+            }
+
+            const oct = getOctree(cellOffset);
+            data.view.setCellDistance(oct, bestFields);
+
+            maxDistance = maxDistance.max(bestFields);
+
+            return bestFields;
+        }
+
         foreach(k,v; chunkMap) {
 
             auto view = v.view;
@@ -398,7 +425,9 @@ private:
                             auto p = int3(x,y,z);
 
                             if(view.isAirCell(getOctree(p))) {
-                                prev = processCell(v, p, prev);
+
+                                prev    = _processCell(v, p, prev);
+                                volume += prev.volume();
 
                                 if(prev.x.up==0) prev = DFieldsBi(); else prev.x.up--;
 
@@ -420,6 +449,7 @@ private:
                 }
             }
         }
-        writefln("\tmaxDistance %s", maxDistance);
+        writefln("\tmaxDistance = %s", maxDistance);
+        writefln("\tVolume      = %000,s", volume);
     }
 }

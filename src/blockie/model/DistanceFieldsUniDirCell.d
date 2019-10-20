@@ -7,6 +7,8 @@ private:
     uint MAX;
     ChunkEditView[] views;
     int size, sizeSquared, numRootBits;
+    int3 minChunkPos, maxChunkPos;
+
     ChunkEditView fakeView;
     ChunkData fakeChunkData;
     StopWatch watch;
@@ -42,6 +44,9 @@ public:
             fakeChunkData.y[] = cast(ubyte)MAX;
             fakeChunkData.z[] = cast(ubyte)MAX;
 
+            this.minChunkPos = int3(int.max);
+            this.maxChunkPos = int3(int.min);
+
             foreach(v; views) {
                 chunkMap[v.pos] = ChunkData(
                     v,
@@ -49,8 +54,13 @@ public:
                     new ubyte[size*size*size],
                     new ubyte[size*size*size]
                 );
+
+                minChunkPos = minChunkPos.min(v.pos);
+                maxChunkPos = maxChunkPos.max(v.pos);
             }
             chunkMap.rehash();
+
+            writefln("minChunkPos = %s, maxChunkPos = %s", minChunkPos, maxChunkPos);
         }
     }
     auto generate() {
@@ -121,13 +131,13 @@ private:
         auto maxDistance = int3(0,0,0);
 
         /**
-         * Set max air distance for cell (for each dimension, volumes are not considered)
+         * Set max air distance for cell (for each dimension, volumes are not considered here)
          *  eg.  x0x  = 0 distance (x direction)
          *      x000x = 1 distance (x direction)
          */
         int3 _processCell(ChunkData data, int3 cellOffset, int xstart, int ystart, int zstart) {
-            auto view      = data.view;
-            int3 cellCoord = (view.pos<<numRootBits)+cellOffset;
+            auto view       = data.view;
+            const cellCoord = (view.pos<<numRootBits)+cellOffset;
             int x,y,z;
 
             /// x
@@ -198,10 +208,8 @@ private:
         }
         writefln("\tmaxDistance %s", maxDistance);
     }
-
     /** In global cellcoords */
-    int3 getCell(int3 cellCoords) {
-
+    int3 getDist(int3 cellCoords) {
         auto chunkpos   = cellCoords>>numRootBits;
         ChunkData data  = getChunkData(chunkpos);
         auto view       = data.view;
@@ -223,89 +231,103 @@ private:
 
         auto maxDistance = int3(0,0,0);
 
+        uint _volumeOf(int3 i) {
+            return (i*2+1).hmul();
+        }
         bool _isAirX(int3 coord, int ysize, int zsize) {
 
-            int3 cell = getCell(coord);
+            int3 cell = getDist(coord);
             if(cell.y < ysize || cell.z < zsize) return false;
 
             int3 a = coord;
             for(int y=1; y<=ysize; y++) {
                 a.y++;
-                if(getCell(a).z < zsize) return false;
+                if(getDist(a).z < zsize) return false;
             }
             a = coord;
             for(int y=1; y<=ysize; y++) {
                 a.y--;
-                if(getCell(a).z < zsize) return false;
+                if(getDist(a).z < zsize) return false;
             }
-            // a = coord;
-            // for(int z=1; z<=zsize; z++) {
-            //     a.z++;
-            //     if(getCell(a).y < ysize) return false;
-            // }
-            // a = coord;
-            // for(int z=1; z<=zsize; z++) {
-            //     a.z--;
-            //     if(getCell(a).y < ysize) return false;
-            // }
+
+            /* If we are outside the chunk range we default to a distance field of (max,max,max)
+               which means we need to double check ZY here to avoid artifacts. (Could also be fixed by
+               adding surrounding dummy views which we perform calculateInitialDistances() on) */
+            a = coord;
+            for(int z=1; z<=zsize; z++) {
+                a.z++;
+                if(getDist(a).y < ysize) return false;
+            }
+            a = coord;
+            for(int z=1; z<=zsize; z++) {
+                a.z--;
+                if(getDist(a).y < ysize) return false;
+            }
             return true;
         }
         bool _isAirY(int3 coord, int xsize, int zsize) {
 
-            int3 cell = getCell(coord);
+            int3 cell = getDist(coord);
             if(cell.x < xsize || cell.z < zsize) return false;
 
             int3 a = coord;
             for(int x=1; x<=xsize; x++) {
                 a.x++;
-                if(getCell(a).z < zsize) return false;
+                if(getDist(a).z < zsize) return false;
             }
             a = coord;
             for(int x=1; x<=xsize; x++) {
                 a.x--;
-                if(getCell(a).z < zsize) return false;
+                if(getDist(a).z < zsize) return false;
             }
-            // a = coord;
-            // for(int z=1; z<=zsize; z++) {
-            //     a.z++;
-            //     if(getCell(a).x < xsize) return false;
-            // }
-            // a = coord;
-            // for(int z=1; z<=zsize; z++) {
-            //     a.z--;
-            //     if(getCell(a).x < xsize) return false;
-            // }
+
+            /* If we are outside the chunk range we default to a distance field of (max,max,max)
+               which means we need to double check ZX here to avoid artifacts. (Could also be fixed by
+               adding surrounding dummy views which we perform calculateInitialDistances() on) */
+            a = coord;
+            for(int z=1; z<=zsize; z++) {
+                a.z++;
+                if(getDist(a).x < xsize) return false;
+            }
+            a = coord;
+            for(int z=1; z<=zsize; z++) {
+                a.z--;
+                if(getDist(a).x < xsize) return false;
+            }
             return true;
         }
         bool _isAirZ(int3 coord, int xsize, int ysize) {
 
-            int3 cell = getCell(coord);
+            int3 cell = getDist(coord);
             if(cell.x < xsize || cell.y < ysize) return false;
 
             int3 a = coord;
             for(int x=1; x<=xsize; x++) {
                 a.x++;
-                if(getCell(a).y < ysize) return false;
+                if(getDist(a).y < ysize) return false;
             }
             a = coord;
             for(int x=1; x<=xsize; x++) {
                 a.x--;
-                if(getCell(a).y < ysize) return false;
+                if(getDist(a).y < ysize) return false;
             }
-            // a = coord;
-            // for(int y=1; y<=ysize; y++) {
-            //     a.y++;
-            //     if(getCell(a).x < xsize) return false;
-            // }
-            // a = coord;
-            // for(int y=1; y<=ysize; y++) {
-            //     a.y--;
-            //     if(getCell(a).x < xsize) return false;
-            // }
+            /* If we are outside the chunk range we default to a distance field of (max,max,max)
+               which means we need to double check YX here to avoid artifacts. (Could also be fixed by
+               adding surrounding dummy views which we perform calculateInitialDistances() on) */
+            a = coord;
+            for(int y=1; y<=ysize; y++) {
+                a.y++;
+                if(getDist(a).x < xsize) return false;
+            }
+            a = coord;
+            for(int y=1; y<=ysize; y++) {
+                a.y--;
+                if(getDist(a).x < xsize) return false;
+            }
             return true;
         }
 
-        int3 _processCell(ChunkData data, int3 cellOffset, int3 field) {
+        int3 _processCellInner(ChunkData data, int3 cellOffset, int3 field, int order) {
 
             auto view       = data.view;
             const cellCoord = (view.pos<<numRootBits)+cellOffset;
@@ -314,41 +336,94 @@ private:
 
             bool gox = true, goy = true, goz = true;
 
+            void _expandX() {
+                if(!gox) return;
+                if(field.x<limit.x && _isAirX(cellCoord + int3(field.x+1,0,0), field.y, field.z) &&
+                                      _isAirX(cellCoord - int3(field.x+1,0,0), field.y, field.z))
+                {
+                    field.x++;
+                }
+                else gox = false;
+            }
+            void _expandY() {
+                if(!goy) return;
+                if(field.y<limit.y && _isAirY(cellCoord + int3(0,field.y+1,0), field.x, field.z) &&
+                                      _isAirY(cellCoord - int3(0,field.y+1,0), field.x, field.z))
+                {
+                    field.y++;
+                }
+                else goy = false;
+            }
+            void _expandZ() {
+                if(!goz) return;
+                if(field.z<limit.z && _isAirZ(cellCoord + int3(0,0,field.z+1), field.x, field.y) &&
+                                      _isAirZ(cellCoord - int3(0,0,field.z+1), field.x, field.y))
+                {
+                    field.z++;
+                }
+                else goz = false;
+            }
+
             while(gox || goy || goz) {
-                /// expand X
-                if(gox) {
-                    if(field.x<limit.x && _isAirX(cellCoord + int3(field.x+1,0,0), field.y, field.z) &&
-                                          _isAirX(cellCoord - int3(field.x+1,0,0), field.y, field.z))
-                    {
-                        field.x++;
-                    }
-                    else gox = false;
-                }
-                /// expand Y
-                if(goy) {
-                    if(field.y<limit.y && _isAirY(cellCoord + int3(0,field.y+1,0), field.x, field.z) &&
-                                          _isAirY(cellCoord - int3(0,field.y+1,0), field.x, field.z))
-                    {
-                        field.y++;
-                    }
-                    else goy = false;
-                }
-                /// expand Z
-                if(goz) {
-                    if(field.z<limit.z && _isAirZ(cellCoord + int3(0,0,field.z+1), field.x, field.y) &&
-                                          _isAirZ(cellCoord - int3(0,0,field.z+1), field.x, field.y))
-                    {
-                        field.z++;
-                    }
-                    else goz = false;
+                switch(order) {
+                    case 0:
+                        _expandX();
+                        _expandY();
+                        _expandZ();
+                        break;
+                    case 1:
+                        _expandX();
+                        _expandZ();
+                        _expandY();
+                        break;
+                    case 2:
+                        _expandY();
+                        _expandX();
+                        _expandZ();
+                        break;
+                    case 3:
+                        _expandZ();
+                        _expandX();
+                        _expandY();
+                        break;
+                    case 4:
+                        _expandY();
+                        _expandZ();
+                        _expandX();
+                        break;
+                    default:
+                        _expandZ();
+                        _expandY();
+                        _expandX();
+                        break;
                 }
             }
 
-            view.setCellDistance(oct, cast(ubyte)field.x,cast(ubyte)field.y,cast(ubyte)field.z);
-
-            maxDistance = maxDistance.max(field);
-
             return field;
+        }
+        int3 _processCell(ChunkData data, int3 cellOffset, int3 field) {
+
+            uint bestVolume = 0;
+            int3 bestField;
+            for(auto i=0; i<6; i++) {
+
+                auto f = _processCellInner(data, cellOffset, field, i);
+                auto v = _volumeOf(f);
+
+                if(v>=bestVolume) {
+                    bestVolume = v;
+                    bestField  = f;
+                }
+            }
+
+            const oct = getOctree(cellOffset);
+            data.view.setCellDistance(oct, cast(ubyte)bestField.x,
+                                           cast(ubyte)bestField.y,
+                                           cast(ubyte)bestField.z);
+
+            maxDistance = maxDistance.max(bestField);
+
+            return bestField;
         }
 
         ulong volume = 0;
@@ -372,8 +447,9 @@ private:
                             auto p = int3(x,y,z);
 
                             if(view.isAirCell(getOctree(p))) {
+
                                 prev    = _processCell(v, p, prev);
-                                volume += prev.hmul();
+                                volume += _volumeOf(prev);
 
                                 if(prev.x==0) prev = int3(0,0,0); else prev.x--;
 

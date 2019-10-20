@@ -176,174 +176,198 @@ private:
         writefln("\tnumAirChunks = %s", numAirChunks);
         flushConsole();
     }
+    DFieldsBi _getDistance(int index) {
+        expect(index>=0 && index<distances.length);
+        return distances[index];
+    }
+    bool _isAirX(const int index, const DFieldBi ysize, const DFieldBi zsize) {
+
+        const int Y = gridSize.x;
+        const dist  = _getDistance(index);
+
+        if(!dist.y.canContain(ysize) || !dist.z.canContain(zsize)) return false;
+
+        int i = index;
+        for(int y=1; y<=ysize.up; y++) {
+            i += Y;
+            if(!_getDistance(i).z.canContain(zsize)) return false;
+        }
+        i = index;
+        for(int y=1; y<=ysize.down; y++) {
+            i -= Y;
+            if(!_getDistance(i).z.canContain(zsize)) return false;
+        }
+        return true;
+    }
+    bool _isAirY(const int index, const DFieldBi xsize, const DFieldBi zsize) {
+
+        const int X = 1;
+        const dist  = _getDistance(index);
+
+        if(!dist.x.canContain(xsize) || !dist.z.canContain(zsize)) return false;
+
+        int i = index;
+        for(int x=1; x<=xsize.up; x++) {
+            i += X;
+            if(!_getDistance(i).z.canContain(zsize)) return false;
+        }
+        i = index;
+        for(int x=1; x<=xsize.down; x++) {
+            i -= X;
+            if(!_getDistance(i).z.canContain(zsize)) return false;
+        }
+        return true;
+    }
+    bool _isAirZ(const int index, const DFieldBi xsize, const DFieldBi ysize) {
+
+        const int X = 1;
+        const dist  = _getDistance(index);
+
+        if(!dist.x.canContain(xsize) || !dist.y.canContain(ysize)) return false;
+
+        int i = index;
+        for(int x=1; x<=xsize.up; x++) {
+            i += X;
+            if(!_getDistance(i).y.canContain(ysize)) return false;
+        }
+        i = index;
+        for(int x=1; x<=xsize.down; x++) {
+            i -= X;
+            if(!_getDistance(i).y.canContain(ysize)) return false;
+        }
+        return true;
+    }
+    DFieldsBi processCellInner(ChunkEditView view,
+                               const int index,
+                               DFieldsBi fields,
+                               const int order)
+    {
+        const int Y = gridSize.x;
+        const int Z = gridSize.x * gridSize.y;
+
+        bool goxup = true, goxdown = true,
+             goyup = true, goydown = true,
+             gozup = true, gozdown = true;
+
+        const limits = _getDistance(index);
+
+        void _expandX() {
+            if(goxup) {
+                if(fields.x.up < limits.x.up &&
+                    _isAirX(index+(fields.x.up+1), fields.y, fields.z))
+                {
+                    fields.x.up++;
+                }
+                else goxup = false;
+            }
+            if(goxdown) {
+                if(fields.x.down < limits.x.down &&
+                    _isAirX(index-(fields.x.down+1), fields.y, fields.z))
+                {
+                    fields.x.down++;
+                }
+                else goxdown = false;
+            }
+        }
+        void _expandY() {
+            if(goyup) {
+                if(fields.y.up < limits.y.up &&
+                    _isAirY(index+(fields.y.up+1)*Y, fields.x, fields.z))
+                {
+                    fields.y.up++;
+                }
+                else goyup = false;
+            }
+            if(goydown) {
+                if(fields.y.down < limits.y.down &&
+                    _isAirY(index-(fields.y.down+1)*Y, fields.x, fields.z))
+                {
+                    fields.y.down++;
+                }
+                else goydown = false;
+            }
+        }
+        void _expandZ() {
+            if(gozup) {
+                if(fields.z.up < limits.z.up &&
+                    _isAirZ(index+(fields.z.up+1)*Z, fields.x, fields.y))
+                {
+                    fields.z.up++;
+                }
+                else gozup = false;
+            }
+            if(gozdown) {
+                if(fields.z.down < limits.z.down &&
+                    _isAirZ(index-(fields.z.down+1)*Z, fields.x, fields.y))
+                {
+                    fields.z.down++;
+                }
+                else gozdown = false;
+            }
+        }
+
+        while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
+            switch(order) {
+                case 0:
+                    _expandX();
+                    _expandY();
+                    _expandZ();
+                    break;
+                case 1:
+                    _expandX();
+                    _expandZ();
+                    _expandY();
+                    break;
+                case 2:
+                    _expandY();
+                    _expandX();
+                    _expandZ();
+                    break;
+                case 3:
+                    _expandZ();
+                    _expandX();
+                    _expandY();
+                    break;
+                case 4:
+                    _expandY();
+                    _expandZ();
+                    _expandX();
+                    break;
+                default:
+                    _expandZ();
+                    _expandY();
+                    _expandX();
+                    break;
+            }
+        }
+
+        return fields;
+    }
+    DFieldsBi _processCell(ChunkEditView view, const int index, const DFieldsBi fields) {
+
+        DFieldsBi bestFields;
+        ulong bestVolume = 0;
+
+        for(auto i=0; i<6; i++) {
+
+            auto f   = processCellInner(view, index, fields, i);
+            auto vol = f.volume();
+
+            if(vol >= bestVolume) {
+                bestVolume = vol;
+                bestFields = f;
+            }
+        }
+
+        view.setChunkDistance(bestFields);
+
+        return bestFields;
+    }
     void processVolumes() {
         writefln("\tProcessing volumes"); flushConsole();
 
         auto maxDistance = DFieldsBi();
-        const int X      = 1;
-        const int Y      = gridSize.x;
-        const int Z      = gridSize.x * gridSize.y;
-
-        DFieldsBi getDistance(int index) {
-            expect(index>=0 && index<distances.length);
-            return distances[index];
-        }
-
-        bool isAirX(int index, DFieldBi ysize, DFieldBi zsize) {
-
-            auto dist = getDistance(index);
-
-            if(!dist.y.canContain(ysize) ||
-               !dist.z.canContain(zsize)) return false;
-
-            int i = index;
-            for(int y=1; y<=ysize.up; y++) {
-                i += Y;
-                if(!getDistance(i).z.canContain(zsize)) return false;
-            }
-            i = index;
-            for(int y=1; y<=ysize.down; y++) {
-                i -= Y;
-                if(!getDistance(i).z.canContain(zsize)) return false;
-            }
-            // i = index;
-            // for(int z=1; z<=zsize.up; z++) {
-            //     i += Z;
-            //     if(!getDistance(i).y.canContain(ysize)) return false;
-            // }
-            // i = index;
-            // for(int z=1; z<=zsize.down; z++) {
-            //     i -= Z;
-            //     if(!getDistance(i).y.canContain(ysize)) return false;
-            // }
-            return true;
-        }
-        bool isAirY(int index, DFieldBi xsize, DFieldBi zsize) {
-
-            auto dist = getDistance(index);
-
-            if(!dist.x.canContain(xsize) ||
-               !dist.z.canContain(zsize)) return false;
-
-            int i = index;
-            for(int x=1; x<=xsize.up; x++) {
-                i += X;
-                if(!getDistance(i).z.canContain(zsize)) return false;
-            }
-            i = index;
-            for(int x=1; x<=xsize.down; x++) {
-                i -= X;
-                if(!getDistance(i).z.canContain(zsize)) return false;
-            }
-            // i = index;
-            // for(int z=1; z<=zsize.up; z++) {
-            //     i += Z;
-            //     if(!getDistance(i).x.canContain(xsize)) return false;
-            // }
-            // i = index;
-            // for(int z=1; z<=zsize.down; z++) {
-            //     i -= Z;
-            //     if(!getDistance(i).x.canContain(xsize)) return false;
-            // }
-            return true;
-        }
-        bool isAirZ(int index, DFieldBi xsize, DFieldBi ysize) {
-
-            auto dist = getDistance(index);
-
-            if(!dist.x.canContain(xsize) ||
-               !dist.y.canContain(ysize)) return false;
-
-            int i = index;
-            for(int x=1; x<=xsize.up; x++) {
-                i += X;
-                if(!getDistance(i).y.canContain(ysize)) return false;
-            }
-            i = index;
-            for(int x=1; x<=xsize.down; x++) {
-                i -= X;
-                if(!getDistance(i).y.canContain(ysize)) return false;
-            }
-            // i = index;
-            // for(int y=1; y<=ysize.up; y++) {
-            //     i += Y;
-            //     if(!getDistance(i).x.canContain(xsize)) return false;
-            // }
-            // i = index;
-            // for(int y=1; y<=ysize.down; y++) {
-            //     i -= Y;
-            //     if(!getDistance(i).x.canContain(xsize)) return false;
-            // }
-            return true;
-        }
-
-        DFieldsBi processView(ChunkEditView view, int index, DFieldsBi fields) {
-            bool goxup = true, goxdown = true,
-                 goyup = true, goydown = true,
-                 gozup = true, gozdown = true;
-
-            auto limits = getDistance(index);
-
-            while(goxup || goxdown || goyup || goydown || gozup || gozdown) {
-                /// expand X
-                if(goxup) {
-                    if(fields.x.up < limits.x.up &&
-                       isAirX(index+(fields.x.up+1), fields.y, fields.z))
-                    {
-                        fields.x.up++;
-                    }
-                    else goxup = false;
-                }
-                if(goxdown) {
-                    if(fields.x.down < limits.x.down &&
-                       isAirX(index-(fields.x.down+1), fields.y, fields.z))
-                    {
-                        fields.x.down++;
-                    }
-                    else goxdown = false;
-                }
-                /// expand Y
-                if(goyup) {
-                    if(fields.y.up < limits.y.up &&
-                       isAirY(index+(fields.y.up+1)*Y, fields.x, fields.z))
-                    {
-                        fields.y.up++;
-                    }
-                    else goyup = false;
-                }
-                if(goydown) {
-                    if(fields.y.down < limits.y.down &&
-                       isAirY(index-(fields.y.down+1)*Y, fields.x, fields.z))
-                    {
-                        fields.y.down++;
-                    }
-                    else goydown = false;
-                }
-                /// expand Z
-                if(gozup) {
-                    if(fields.z.up < limits.z.up &&
-                       isAirZ(index+(fields.z.up+1)*Z, fields.x, fields.y))
-                    {
-                        fields.z.up++;
-                    }
-                    else gozup = false;
-                }
-                if(gozdown) {
-                    if(fields.z.down < limits.z.down &&
-                       isAirZ(index-(fields.z.down+1)*Z, fields.x, fields.y))
-                    {
-                        fields.z.down++;
-                    }
-                    else gozdown = false;
-                }
-            }
-
-            view.setChunkDistance(fields);
-
-            maxDistance = maxDistance.max(fields);
-
-            return fields;
-        }
+        ulong volume     = 0;
 
         /// Traverse all chunks including margin.
         int index  = 0;
@@ -361,7 +385,13 @@ private:
                     auto view = getView(int3(x,y,z));
 
                     if(view.isAir) {
-                        prev = processView(view, index, prev);
+
+                        prev = _processCell(view, index, prev);
+
+                        maxDistance = maxDistance.max(prev);
+
+                        volume += prev.volume();
+
                         if(prev.x.up==0) {
                             prev = DFieldsBi();
                         } else {
@@ -382,5 +412,7 @@ private:
                 }
             }
         }
+        writefln("\tmaxDistance = %s", maxDistance);
+        writefln("\tVolume      = %000,s", volume);
     }
 }

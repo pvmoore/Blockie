@@ -36,7 +36,7 @@ enum OctreeFlag : ubyte {
     AIR   = 1,
     MIXED = 2
 }
-align(1) final struct OctreeFlags { align(1):
+align(1) struct OctreeFlags { align(1):
     OctreeFlag flag;
     ubyte _reserved;
     Distance6 distance;
@@ -44,7 +44,7 @@ align(1) final struct OctreeFlags { align(1):
     static assert(OctreeFlags.sizeof==8);
 }
 
-final struct OctreeRoot {
+struct OctreeRoot {
     OctreeFlags flags;
     ubyte[M1_CELLS_PER_CHUNK/8] bits;
     OctreeIndex[M1_CELLS_PER_CHUNK] indexes;
@@ -138,7 +138,7 @@ final struct OctreeRoot {
 }
 // ----------------------------------------------------------
 static assert(OctreeTwig.sizeof==12);
-final struct OctreeTwig {
+struct OctreeTwig {
     ubyte bits;
     ubyte[3] baseIndex;
     ubyte[8] voxels;
@@ -154,7 +154,7 @@ final struct OctreeTwig {
 }
 // ----------------------------------------------------------
 static assert(OctreeBranch.sizeof==25);
-final struct OctreeBranch {
+struct OctreeBranch {
     ubyte bits;
     OctreeIndex[8] indexes;
 
@@ -194,7 +194,7 @@ final struct OctreeBranch {
 }
 // ----------------------------------------------------------
 static assert(OctreeLeaf.sizeof==8);
-final struct OctreeLeaf {
+struct OctreeLeaf {
     ubyte[8] voxels;
 
     ubyte getVoxel(uint oct) {
@@ -216,7 +216,7 @@ final struct OctreeLeaf {
 }
 // ----------------------------------------------------------
 static assert(OctreeIndex.sizeof==3);
-final struct OctreeIndex {
+struct OctreeIndex {
     ubyte[3] v;
 
     ubyte voxel() {

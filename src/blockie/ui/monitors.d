@@ -26,35 +26,35 @@ shared static this() {
     gpuioMonitor = new MultiValueMonitor!double(5, "GPU (MB)")
         .colour(WHITE*0.92)
         .formatting("4.2f")
-        .setValue(0, 0, "Writes ........ ")
-        .setValue(1, 0, "Used (vx) ... ")
+        .setValue(0, 0, "Writes ..... ")
+        .setValue(1, 0, "Used (vx) .. ")
         .setValue(2, 0, "Used (ch) .. ", "K")
-        .setValue(3, 0, "Cam updt .. ","ms")
+        .setValue(3, 0, "Cam updt ... ","ms")
         .setValue(4, 0, "Chk updt ... ","ms");
     chunksMonitor = new MultiValueMonitor!ulong(4, "Chunks")
         .colour(WHITE*0.92)
         .formatting("u")
-        .setValue(0, 0, "Total .........")
-        .setValue(1, 0, "On GPU .....")
-        .setValue(2, 0, "Ready .......")
-        .setValue(3, 0, "Flyweight ..");
+        .setValue(0, 0, "Total ...... ")
+        .setValue(1, 0, "On GPU ..... ")
+        .setValue(2, 0, "Ready ...... ")
+        .setValue(3, 0, "Flyweight .. ");
     fpsMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*0.92)
+        .colour(WHITE*1.1)
         .formatting("4.2f")
         .setValue(0, 0, "FPS ....... ");
     updateTimeMonitor = new MultiValueMonitor!double(1, null)
         .colour(WHITE*0.92)
         .formatting("4.2f")
-        .setValue(0, 0, "Update .. ", "ms");
+        .setValue(0, 0, "Update .... ", "ms");
     frameTimeMonitor = new MultiValueMonitor!double(1, null)
         .colour(WHITE*0.92)
         .formatting("4.2f")
-        .setValue(0,0, "Frame ... ", "ms");
+        .setValue(0,0, "Frame ..... ", "ms");
     computeMonitor = new MultiValueMonitor!double(2, "Compute")
         .colour(WHITE*0.92)
         .formatting("5.2f")
-        .setValue(0,0, "Render .....", "ms")
-        .setValue(1,0, "Compute ..", "ms");
+        .setValue(0,0, "Render ....", "ms")
+        .setValue(1,0, "Compute ...", "ms");
 }
 
 void destroyMonitors() {
@@ -82,7 +82,7 @@ auto getComputeMonitor()    { return computeMonitor; }
 //=======================================================
 final class CPUMonitor {
 private:
-    const float FONT_SIZE = 15;
+    const float FONT_SIZE = 14;
     OpenGL gl;
     Camera2D camera;
     SDFFontRenderer textRenderer;
@@ -92,13 +92,13 @@ private:
 public:
     auto initialise(OpenGL gl) {
         import std.parallelism : totalCPUs;
-        this.gl  = gl;
-        this.pos = pos;
-        this.pdh = new PDH(1000);
-        this.numCPUs = totalCPUs;
-        auto font = gl.getFont("segoe-ui-black");
+        this.gl           = gl;
+        this.pos          = pos;
+        this.pdh          = new PDH(1000);
+        this.numCPUs      = totalCPUs;
+        auto font         = gl.getFont("dejavusansmono-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, true);
-        this.camera = new Camera2D(gl.windowSize());
+        this.camera       = new Camera2D(gl.windowSize());
         textRenderer.setDropShadowColour(BLACK);
         textRenderer.setSize(FONT_SIZE);
         textRenderer.setVP(camera.VP);
@@ -106,8 +106,9 @@ public:
         textRenderer
             .setColour(WHITE*1.1)
             .appendText("CPU")
-            .setColour(WHITE*0.92)
-            .appendText("");
+            .setColour(WHITE*0.98)
+            .appendText("")
+            .setColour(WHITE*0.93);
 
         for(auto i=0; i<numCPUs; i++) {
             textRenderer.appendText("");
@@ -128,17 +129,18 @@ public:
         double total   = pdh.getCPUTotalPercentage();
         double[] cores = pdh.getCPUPercentagesByCore();
 
-        textRenderer.replaceText(1,
-            "Average ... %4.1f".format(total),
-            pos.x, pos.y+20);
+        string _fmt(double v) {
+            import std.math : round;
+            int a = cast(int)round(v/10);
+            return "O".repeat(a) ~ ".".repeat(10-a);
+        }
 
-        int y = pos.y+20+20;
+        textRenderer.replaceText(1, "Average  |%s|".format(_fmt(total)), pos.x, pos.y+16);
+
+        int y = pos.y+16+16;
         foreach(i, d; cores) {
-            textRenderer.replaceText(
-                cast(int)i+2,
-                "Thread %s ...... %4.1f".format(i, d),
-                pos.x, y);
-            y += 20;
+            textRenderer.replaceText(cast(int)i+2, "Thread %s |%s|".format(i, _fmt(d)), pos.x, y);
+            y += 16;
         }
         textRenderer.render();
     }
@@ -146,7 +148,7 @@ public:
 //========================================================
 final class MEMMonitor {
 private:
-    const float FONT_SIZE = 15;
+    const float FONT_SIZE = 14;
     const double MB = 1024*1024;
     OpenGL gl;
     Camera2D camera;
@@ -159,7 +161,7 @@ public:
         this.pos = pos;
 
         this.procMemInfo = processMemInfo();
-        auto font = gl.getFont("segoe-ui-black");
+        auto font = gl.getFont("dejavusansmono-bold");
 
         this.textRenderer = new SDFFontRenderer(gl, font, true);
         this.camera = new Camera2D(gl.windowSize());
@@ -189,13 +191,13 @@ public:
         //GC.minimize();
         procMemInfo.update();
 
-        textRenderer.replaceText(1, "Used ......... %6.1f".format(
+        textRenderer.replaceText(1, "Used ...... %6.1f".format(
          procMemInfo.usedRAM()/MB
-        ), pos.x, pos.y+20);
+        ), pos.x, pos.y+16);
 
         textRenderer.replaceText(2, "Reserved .. %6.1f".format(
          procMemInfo.usedVirtMem()/MB
-        ), pos.x, pos.y+20+20);
+        ), pos.x, pos.y+16+16);
 
         textRenderer.render();
     }
@@ -203,7 +205,7 @@ public:
 //========================================================
 final class MultiValueMonitor(T) {
 private:
-    const float FONT_SIZE = 15;
+    const float FONT_SIZE = 14;
     OpenGL gl;
     Camera2D camera;
     SDFFontRenderer textRenderer;
@@ -224,7 +226,7 @@ public:
     }
     auto initialise(OpenGL gl) {
         this.gl   = gl;
-        auto font = gl.getFont("segoe-ui-black");
+        auto font = gl.getFont("dejavusansmono-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, true);
         this.camera = new Camera2D(gl.windowSize());
         textRenderer.setDropShadowColour(BLACK);
@@ -287,7 +289,7 @@ public:
 
         if(label) {
             n++;
-            y += 20;
+            y += 16;
         }
 
         foreach(i, v; values) {
@@ -297,7 +299,7 @@ public:
                 pos.x,
                 y
             );
-            y += 20;
+            y += 16;
         }
 
         textRenderer.render();

@@ -98,7 +98,7 @@ public:
     }
     @Implements("IRenderer")
     void render() {
-        log("render");
+        //log("render");
         renderTiming.startFrame();
 
         glBeginQuery(GL_TIME_ELAPSED, timerQueries[flipFlop]);
@@ -146,8 +146,8 @@ public:
             renderTiming.average(2),
             computeTiming.average(2)
         );
-        log("render end");
-        flushLog();
+        //log("render end");
+        //flushLog();
     }
     @Implements("SceneChangeListener")
     void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {

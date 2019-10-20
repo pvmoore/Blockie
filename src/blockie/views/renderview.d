@@ -46,33 +46,35 @@ public:
 
         this.skybox = new SkyBox(gl, "/pvmoore/_assets/images/skyboxes/skybox1");
 
+        const Y = 22;
+
         getFPSMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,20)
+            ivec2(cast(int)gl.windowSize.width-180, Y)
         );
         getFrameTimeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,40)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*1)
         );
         getUpdateTimeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,60)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*2)
         );
         getComputeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,80)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*3)
         );
         getCPUMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,140)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*6)
         );
         getMEMMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,340)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*16)
         );
         getDiskMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,400)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*19)
         );
 
         getGPUIOMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,460)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*22)
         );
         getChunksMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-170,580)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*28)
         );
 
     }
