@@ -11,9 +11,11 @@ import blockie.model2.M2DeOptimiser;
 import blockie.model2.M2Optimiser;
 import blockie.model2.M2WorldEditor;
 
-///
-///
-///
+/**
+ * 
+ *
+ *
+ */
 
 const M2_OCTREE_ROOT_BITS = 4;
 const M2_ROOT_SIZE        = M2Root.sizeof.as!uint;

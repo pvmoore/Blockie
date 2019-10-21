@@ -1,12 +1,14 @@
 module blockie.version_;
 
-const string version_ = "0.0.22";
+const string version_ = "0.0.23";
 
 /**===============================================================
     History
 
 Upcoming ...
     - Add voxel de-optimiser code
+
+0.0.23 -
 
 0.0.22 - Use monospace font for on screen display. Reformat OSD.
          Distance field optimisation.

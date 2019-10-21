@@ -59,7 +59,7 @@ align(1) struct M4Root { align(1):
     static assert(l7bits.sizeof      == 262144);
     static assert(M4Root.sizeof      == 8 + 262144 + 262144 + 37452);
     //-----------------------------------------------------------------------------------
-    static immutable uint[] BITS_OFFSET = [
+    __gshared static immutable uint[] BITS_OFFSET = [
         uint.max,
         0,//0,      /// [1] = 2^^3   = 8 bits      (1 byte)
         4,//1,      /// [2] = 4^^3   = 64 bits     (8 bytes)
