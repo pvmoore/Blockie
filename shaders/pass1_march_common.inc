@@ -56,13 +56,13 @@ float getMinDistToEdge(Ray ray, Position pos, uint voxelSize) {
 //
 // @param radius : 8-bit up and down per axis
 //
-float getMinDistToEdge8BitsBiDirectional(Ray ray, Position pos, uvec3 radius) {
+float getMinDistToEdge8BitsBiDirectional(Ray ray, Position pos, uvec3 radius, uint voxelSize) {
     uvec3 upradius   = radius >> 8u;        // high 8 bits = up distance
     uvec3 downradius = radius & 0xffu;      // low  8 bits = down distance
 
     vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, CHUNK_SIZE) + downradius*CHUNK_SIZE;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*CHUNK_SIZE);
+    vec3 rem  = mod(p, voxelSize) + downradius*voxelSize;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*voxelSize);
     vec3 dist = size-rem;
 
     vec3 m    = dist * ray.invDirection;
@@ -74,14 +74,14 @@ float getMinDistToEdge8BitsBiDirectional(Ray ray, Position pos, uvec3 radius) {
 //
 // @param radius : 5-bit up and down per axis
 //
-float getMinDistToEdge5BitsBiDirectional(Ray ray, Position pos, uvec3 radius) {
+float getMinDistToEdge5BitsBiDirectional(Ray ray, Position pos, uvec3 radius, uint voxelSize) {
     // Extract distance values
     vec3 up   = radius >> 5;   // high 5 bits = up distance
     vec3 down = radius & 31;   // low  5 bits = down distance
 
     vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, CELL_SIZE) + down*CELL_SIZE;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*CELL_SIZE);
+    vec3 rem  = mod(p, voxelSize) + down*voxelSize;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*voxelSize);
     vec3 dist = size-rem;
 
     vec3 m    = dist * ray.invDirection;
@@ -93,17 +93,35 @@ float getMinDistToEdge5BitsBiDirectional(Ray ray, Position pos, uvec3 radius) {
 //
 // @param radius : 4-bit up and down per axis
 //
-float getMinDistToEdge4BitsBiDirectional(Ray ray, Position pos, uvec3 radius) {
+float getMinDistToEdge4BitsBiDirectional(Ray ray, Position pos, uvec3 radius, uint voxelSize) {
     // Extract distance values
     vec3 up   = radius >> 4;   // high 45 bits = up distance
     vec3 down = radius & 15;   // low  45 bits = down distance
 
     vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, CELL_SIZE) + down*CELL_SIZE;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*CELL_SIZE);
+    vec3 rem  = mod(p, voxelSize) + down*voxelSize;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*voxelSize);
     vec3 dist = size-rem;
 
     vec3 m    = dist * ray.invDirection;
     float res = min(m.x, min(m.y, m.z));
     return max(res, 0);
 }
+// void clampPositionToVoxelEntryPoint(Ray ray, Position pos, uint voxelSize, inout float distance) {
+
+//     vec3 dir    = -ray.direction;
+//     vec3 invDir = -ray.invDirection;
+
+//     vec3 p    = pos.fpos-WORLD_BB[0];
+//     vec3 rem  = mod(p, voxelSize);
+//     vec3 size = vec3(greaterThanEqual(dir, vec3(0))) * voxelSize;
+//     vec3 dist = size-rem;
+
+//     vec3 m    = dist * invDir;
+//     float res = min(m.x, min(m.y, m.z));
+//     float f   = max(res, 0);
+
+//     distance -= f;
+
+//     //updatePosition(pos, dir*f);
+// }

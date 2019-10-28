@@ -1,4 +1,4 @@
-#version 430 core
+#version 450 core
 
 /*
     Set by program:
@@ -64,24 +64,12 @@ struct Flags {
 #define CHUNK_DISTANCE_Z(f) (f.b >> 16)
 
 #include "useful_functions.comp"
+#include "pass1_march_common.inc"
 #include "marchM3.inc"
 #include "camera.inc"
 
 #line 1
 
-/// Return true if chunk changes
-bool updatePosition(inout Position pos, vec3 add) {
-    pos.fpos += add;
-    pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
-
-    uvec3 xyz = pos.upos >> CHUNK_SIZE_SHR;
-
-	bool outOfBounds = any(greaterThanEqual(xyz, WORLD_CHUNKS_XYZ));
-
-    int prevChunk = pos.chunk;
-    pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
-    return pos.chunk != prevChunk;
-}
 bool isAirChunk(Flags flags) {
     return CHUNK_FLAG(flags)==0;
 }
@@ -90,120 +78,7 @@ uvec3 getChunkDistanceField(Flags f) {
                  CHUNK_DISTANCE_Y(f),
                  CHUNK_DISTANCE_Z(f));
 }
-/// Unpacks x,y,z from 2nd,3rd and 4th ubyte of _val_
-vec3 getCellDistanceField(uint val) {
-    return unpackUnorm4x8(val).yzw * 255;
-}
-float getMinDistToEdge(Ray ray,
-                       Position pos,
-                       uint voxelSize)
-{
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, voxelSize);
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * voxelSize;
-    vec3 dist = size-rem;
 
-    vec3 m    = dist * ray.invDirection;
-    float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-//
-// Directional distance field stored in radius
-//
-float getMinDistToEdgeOfChunkDistanceField(Ray ray,
-                                           Position pos,
-                                           uvec3 radius)
-{
-    uvec3 upradius   = radius >> 8u;        // high 8 bits = up distance
-    uvec3 downradius = radius & 0xffu;      // low  8 bits = down distance
-
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, CHUNK_SIZE) + downradius*CHUNK_SIZE;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*CHUNK_SIZE);
-    vec3 dist = size-rem;
-
-    vec3 m    = dist * ray.invDirection;
-    float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-//
-// Directional distance field stored in radius
-//
-float getMinDistToEdgeOfCellDistanceField(Ray ray, Position pos, vec3 radius)
-{
-    // Extract distance values
-    vec3 up   = floor(radius/16);  // high 8 bits = up distance
-    vec3 down = mod(radius, 16);   // low  8 bits = down distance
-
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, CELL_SIZE) + down*CELL_SIZE;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*CELL_SIZE);
-    vec3 dist = size-rem;
-
-    vec3 m    = dist * ray.invDirection;
-    float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-/// Estimate surface normal of hit position
-/// 0 =  1, 0, 0
-/// 1 = -1, 0, 0
-/// 2 =  0, 1, 0
-/// 3 =  0,-1, 0
-/// 4 =  0, 0, 1
-/// 5 =  0, 0,-1
-//uint getEstimatedNormal(vec3 hitPos, float voxelSize) {
-//    vec3 p   = hitPos-WORLD_BB[0];
-//    vec3 rem = mod(p, voxelSize);
-//    vec3 dir = rem-(voxelSize/2);
-//
-//    vec3 a = abs(dir);
-//
-//    uint b = a.x>=a.y && a.x>=a.z ? (0 + (dir.x<0 ? 1 : 0)) :
-//             a.y>=a.z ?             (2 + (dir.y<0 ? 1 : 0)) :
-//                                    (4 + (dir.z<0 ? 1 : 0));
-//    return b;
-//}
-void clampPositionToVoxelEntryPoint(Ray ray, Position pos, uint voxelSize, inout float distance) {
-
-    vec3 dir    = -ray.direction;
-    vec3 invDir = -ray.invDirection;
-
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, voxelSize);
-    vec3 size = vec3(greaterThanEqual(dir, vec3(0))) * voxelSize;
-    vec3 dist = size-rem;
-
-    vec3 m    = dist * invDir;
-    float res = min(m.x, min(m.y, m.z));
-    float f   = max(res, 0);
-
-    distance -= f;
-
-    //updatePosition(pos, dir*f);
-}
-///
-/// Skip dist a little bit depending on how near to the camera
-/// the ray is. This is necessary in the pathological case
-/// where the ray is parallel to and on the edge of a voxel box.
-/// Also, a small bump greatly improves speed without compromising
-/// quality (much). Adjust these values appropriately depending on the scene.
-///
-void skipLOD(float distance, inout float dist) {
-    float bump = (distance+0.00001)/1500;
-
-    // handle pathological case
-    if(dist<0.0001) {
-        //dist += clamp(bump, 0.005, 0.5);
-        dist += clamp(bump, 0.001, 2.0); // 0.001, 2.0
-    } else {
-        // skip a bit based on distance to camera
-        //dist += clamp(bump, 0.0001, 15);
-        /// The higher this value, the less accurate the results
-        //dist += clamp(bump, 0.0001, 0.5);
-
-        dist += smoothstep(0.00001, 1.5, bump); // 0.0001, 0.5
-    }
-}
 Voxel march(Ray ray, inout Position pos) {
     Voxel voxel    = Voxel(0,0,0,0);
     float distance = 0;
@@ -217,22 +92,11 @@ Voxel march(Ray ray, inout Position pos) {
         float dist;
 
         if(isAirChunk(flags)) {
-            dist = getMinDistToEdgeOfChunkDistanceField(ray, pos, getChunkDistanceField(flags));
+            dist = getMinDistToEdge8BitsBiDirectional(ray, pos, getChunkDistanceField(flags), CHUNK_SIZE);
         } else {
-
-//            if(RENDER_OPTS[0]) {
-//                voxel.value = 1;
-//                break;
-//            }
 
             if(!getAirVoxel(pos, voxel, distance, voxels)) {
                 /// We have hit something
-
-//                if(RENDER_OPTS[0]) {
-//                    clampPositionToVoxelEntryPoint(ray, pos, voxel.size, distance);
-//                }
-
-                //voxel.normal = getEstimatedNormal(pos.fpos, voxel.size);
                 break;
             }
 
@@ -241,10 +105,14 @@ Voxel march(Ray ray, inout Position pos) {
             bool isCell = (voxel.size == CELL_SIZE);
 
             if(isCell) {
-                uint cell       = voxelsIn[voxels + 2 + voxel.oct];
-                vec3 distances  = getCellDistanceField(cell);
+                uint cell = voxelsIn[voxels + 2 + voxel.oct];
 
-                dist = getMinDistToEdgeOfCellDistanceField(ray, pos, distances);
+                // 4 bit per dir per axis cell distances
+                uvec3 distances = uvec3((cell>>8) & 0xff,   // up,down x
+                                        (cell>>16) & 0xff,  // up,down y
+                                        (cell>>24) & 0xff); // up,down z
+
+                dist = getMinDistToEdge4BitsBiDirectional(ray, pos, distances, CELL_SIZE);
             } else {
                 dist = getMinDistToEdge(ray, pos, voxel.size);
             }

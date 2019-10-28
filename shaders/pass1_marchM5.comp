@@ -88,7 +88,7 @@ Voxel march(Ray ray, inout Position pos) {
         float dist;
 
         if(isAirChunk(flags)) {
-            dist = getMinDistToEdge8BitsBiDirectional(ray, pos, getChunkDistanceField(flags));
+            dist = getMinDistToEdge8BitsBiDirectional(ray, pos, getChunkDistanceField(flags), CHUNK_SIZE);
         } else {
 
             if(!getAirVoxel(pos, voxel, distance, voxels)) {
@@ -107,7 +107,7 @@ Voxel march(Ray ray, inout Position pos) {
                                         (packedDF>>10) & 1023,  // up,down y
                                         (packedDF>>20) & 1023); // up,down z
 
-                dist = getMinDistToEdge5BitsBiDirectional(ray, pos, distances);
+                dist = getMinDistToEdge5BitsBiDirectional(ray, pos, distances, CELL_SIZE);
             } else {
                 dist = getMinDistToEdge(ray, pos, voxel.size);
             }

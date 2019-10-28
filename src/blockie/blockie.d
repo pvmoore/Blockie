@@ -97,26 +97,13 @@ public:
             // 5:  | 1475 (2 MB)   | 1660 (1 MB)   | 1760 (1 MB)    | 1700 (1 MB)   |
             // 6:  |  817 (53 MB)  | 1007 (41 MB)  | 1100 (42 MB)   | 1000 (36 MB)  |
             // 7:  |  525 (32 MB)  |  665 (30 MB)  |  745 (31 MB)   |  672 (243 MB) |
-            // 8:  |  852 (1 MB)   | 1010 (1 MB)   | 1070 (1 MB)    | 1077 (1 MB)   |
+            // 8:  |  852 (1 MB)   | 1010 (1 MB)   | 1080 (1 MB)    | 1077 (1 MB)   |
 
             // Notes:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.
 
-            // Model 5 variations
-            //     | 4,2,2,1,1   | 5,2,2,1
-            // 1:  | 
-            // 2:  |
-            // 3:  |
-            // 4:  |
-            // 4b: | 560 (89 MB) |
-            // 4c: |
-            // 5:  |
-            // 6:  |
-            // 7:  |
-            // 8:  | 
-
-            string w = "1";
+            string w = "8";
 
             World world;
             switch(w) {
