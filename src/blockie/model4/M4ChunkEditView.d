@@ -44,7 +44,8 @@ public:
     }
     override void commitTransaction() {
 
-        auto optVoxels = optimiser.optimise(voxels[0..allocator.offsetOfLastAllocatedByte+1]);
+        auto length    = allocator.offsetOfLastAllocatedByte+1;
+        auto optVoxels = optimiser.optimise(voxels[0..length], length);
 
         /// Write voxels back to chunk
         uint ver = chunk.atomicUpdate(version_, optVoxels);
@@ -82,7 +83,7 @@ public:
     override void setChunkDistance(DFieldsBi f) {
         root().distance.set(f);
     }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
+    override void setCellDistance(uint cell, uint x, uint y, uint z) {
         throw new Error("UniDir cell distances not supported");
     }
     override void setCellDistance(uint cell, DFieldsBi f) {

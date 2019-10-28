@@ -135,10 +135,9 @@ align(1) struct M4Root { align(1):
     string toString() { return "Root(%s)".format(isAir?"AIR":"OCTREE"); }
 }
 //---------------------------------------------------------------------------------
-align(1)  struct M4Cell { align(1):
+align(1)  struct M4Cell { static assert(M4Cell.sizeof==5); align(1):
     ubyte bits;
     Offset4 offset;
-    static assert(M4Cell.sizeof==5);
 
     bool isAir()            { return bits==0; }
     //bool isSolid()          { return bits==0xff && offset.get()==0xff_ffff; } /// special flag
@@ -159,10 +158,9 @@ align(1)  struct M4Cell { align(1):
     }
 }
 //---------------------------------------------------------------------------------
-align(1) struct M4Branch { align(1):
+align(1) struct M4Branch { static assert(M4Branch.sizeof==5); align(1):
     ubyte bits;
     Offset4 offset; /// point to 0..8 contiguous M4Leafs
-    static assert(M4Branch.sizeof==5);
 
     bool isAir()     { return bits==0; }
     //bool isSolid()   { return bits==0xff && offset.get()==0xffff_ffff; } /// special flag
@@ -214,12 +212,12 @@ align(1) struct M4Branch { align(1):
     }
 }
 //------------------------------------------------------------------------------------
-align(1) struct M4Leaf { align(1):
+align(1) struct M4Leaf { static assert(M4Leaf.sizeof==1); align(1):
     ubyte bits;   /// 1 bit per voxel
-    static assert(M4Leaf.sizeof==1);
 
-    bool isSolid() const { return bits==0xff; }
-
+    bool isSolid() const {
+        return bits==0xff;
+    }
     void setToAir() {
         bits = 0;
     }

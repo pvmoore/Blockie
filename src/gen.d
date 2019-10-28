@@ -23,7 +23,7 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "8";
+        const auto num = "1";
 
         SceneGenerator scene;
         switch(num) {
@@ -66,6 +66,11 @@ final class Generator {
                 remove(name);
             }
             generateModel4(scene, world);
+        } else version(MODEL5) {
+            foreach(string name; dirEntries(dirName, "M5*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel5(scene, world);
         } else assert(false);
 
         writefln("\nFinished OK");
@@ -124,37 +129,20 @@ final class Generator {
         scope(exit) editor.destroy();
 
         sceneGenerator.build(editor);
+    }
+    void generateModel5(SceneGenerator sceneGenerator, World world) {
+        writefln("\n=========================================");
+        writefln("Generating Model5 %s", world);
+        writefln("=========================================\n");
 
-        //editor.startTransaction();
-        //editor.setVoxel(worldcoords(0,0,0), 1);
-        //editor.setVoxel(worldcoords(7,7,7), 1);
-        //editor.commitTransaction();
+        auto editor = new M5WorldEditor(world, new Model5);
+        scope(exit) editor.destroy();
 
-        //writefln("testing...");
-        //
-        //uint3 p = uint3(
-        //    63,
-        //    63,
-        //    63
-        //);
-        //uint3 b   = p << uint3(0,7,14);
-        //uint cell = b.x | b.y | b.z;
-        //writefln("pos  = %s", p);
-        //writefln("bits = %07b, %07b, %07b", p.z, p.y, p.x);
-        //writefln("cell = %s", cell);
-        //
-        //uint3 c = (p<<1) << uint3(0,6,12);
-        //uint d = c.x | c.y | c.z;
-        //writefln("d=%s", d);
-        //
-        //M4Root root;
-        //root.setCellToNonAir(cell);
-        //root.calculateLevel1To6Bits();
-        //writefln("bits[1]=%08b", root.bits[0]);
-        //
-        //writef("bits[2]="); foreach(i; 4..12) writef("%08b ", root.bits[i]); writefln("");
-        //writef("bits[3]="); foreach(i; 12..76) writef("%08b ", root.bits[i]); writefln("");
+        sceneGenerator.build(editor);
 
-        //uint bit = root.bits[4 + ]
+        // editor.startTransaction();
+        // editor.setVoxel(worldcoords(0,0,0), 1);
+        // editor.setVoxel(worldcoords(7,7,7), 1);
+        // editor.commitTransaction();
     }
 }

@@ -40,6 +40,7 @@ import blockie.model1;
 import blockie.model2;
 import blockie.model3;
 import blockie.model4;
+import blockie.model5;
 
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;
@@ -70,7 +71,7 @@ import resources : PNG, HGT;
 import logging : flushLog, log, FileLogger;
 import resusage.memory : ProcessMemInfo, processMemInfo;
 import common :
-    Allocator, Allocator_t, Archive, Array, Async, BitWriter, Comment, From,
+    Allocator, Allocator_t, Archive, Array, Async, BitWriter, BufferBitWriter, Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
     as, dbg, expect, flushConsole, isZeroMem, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, toInt;

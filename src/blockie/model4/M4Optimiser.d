@@ -2,14 +2,14 @@ module blockie.model4.M4Optimiser;
 
 import blockie.all;
 
-final class M4Optimiser {
+final class M4Optimiser : Optimiser {
 private:
     M4ChunkEditView view;
 public:
     this(M4ChunkEditView view) {
         this.view = view;
     }
-    ubyte[] optimise(ubyte[] voxels) {
+    override ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
 
         /// This chunk is AIR. Nothing to do
         if(view.isAir) {
@@ -176,17 +176,15 @@ private:
 
             /// [0]      M4Root
             ///
-            /// [561748] L100BitsLength   (4 bytes)
-            /// [561752] NumUniqBranches  (4 bytes)
+            /// [561748] L100BitsLength     (4 bytes)
+            /// [561752] NumUniqBranches    (4 bytes)
 
             /// [561756] L100 bits          (L100BitsLength bytes)
             ///          L100 popcounts     (L100BitsLength bytes)
 
-            ///          UniqBranches   (NumUniqBranches * 8 bytes)
-            ///          Cell distances (4 * (1<<M4_CELL_LEVEL) bytes)
-            ///          Branch Ptrs    (NumBrances * enc bits)
-
-
+            ///          UniqBranches       (NumUniqBranches * 8 bytes)
+            ///          Cell distances     (4 * (1<<M4_CELL_LEVEL) bytes)
+            ///          Branch Ptrs        (NumBrances * enc bits)
 
             copy(0, M4_ROOT_SIZE); /// M4Root (561748 bytes)
 

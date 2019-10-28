@@ -60,21 +60,20 @@ public:
         getComputeMonitor().move(
             ivec2(cast(int)gl.windowSize.width-180, Y+16*3)
         );
-        getCPUMonitor().move(
+        getMEMMonitor().move(
             ivec2(cast(int)gl.windowSize.width-180, Y+16*6)
         );
-        getMEMMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*16)
-        );
         getDiskMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*19)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*9)
         );
-
         getGPUIOMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*22)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*12)
         );
         getChunksMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*28)
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*18)
+        );
+        getCPUMonitor().move(
+            ivec2(cast(int)gl.windowSize.width-180, Y+16*23)
         );
 
     }

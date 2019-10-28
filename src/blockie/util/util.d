@@ -19,3 +19,12 @@ uint bitsRequiredToEncode(ulong count) {
 uint bitsRequiredToEncode2(ulong value) {
     return value<3 ? 1 : bsr(value-1)+1;
 }
+
+pragma(inline, true) void ASSERT(bool b, string file=__FILE__, int line=__LINE__) {
+    // If we are in debug
+    assert(b, "Woops %s:%s".format(file, line));
+
+    version(RELEASE_ASSERT) {
+        if(!b) throw new Error("Assertion failed");
+    }
+}

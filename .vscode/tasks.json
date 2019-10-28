@@ -28,5 +28,19 @@
             },
             "problemMatcher": []
         }
+        ,
+        {
+            "label": "**** Generate DEBUG ****",
+            "type": "shell",
+            "windows": {
+                "command": "dub run --build=debug --config=generate --compiler=dmd --arch=x86_64",
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
     ]
 }

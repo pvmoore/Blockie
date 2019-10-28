@@ -1,0 +1,145 @@
+#version 450 core
+
+#define GROUP_SIZE_X 8
+#define GROUP_SIZE_Y 8
+layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
+
+#include "header.inc"
+
+#define CELL_SIZE (CHUNK_SIZE>>4)  // 64
+
+layout(binding = 0, std430) readonly buffer I0 {
+    // voxel data in ubytes
+	uint voxelsIn[];
+};
+layout(binding = 1, std430) readonly buffer I1 {
+    // chunk data in uints
+	uint chunkDataIn[];
+};
+layout(binding = 2, std430) writeonly buffer O0 {
+	MarchOut dataOut[];
+};
+//layout(binding = 2, rgba32f)
+//uniform writeonly image2D imageOut;
+
+layout(binding = 3, std430) writeonly buffer O1 {
+	uint debugOut[];
+};
+//=======================================================================================
+
+uniform ivec2 SIZE;             // Render window size
+uniform uvec3 WORLD_CHUNKS_XYZ; // (25, 8, 25)
+uniform vec3  WORLD_BB[2];      // world bounding box in worldcoords
+
+uniform vec3  CAMERA_POS;       // in worldcoords
+uniform vec3  SCREEN_MIDDLE;    // for calculating Ray
+uniform vec3  SCREEN_XDELTA;    // for calculating Ray
+uniform vec3  SCREEN_YDELTA;    // for calculating Ray
+
+uniform bool RENDER_OPTS[2];
+
+//uniform mat4 VIEW;
+//uniform mat4 INVVIEW;
+//uniform float TANFOV2;
+//=======================================================================================
+//
+//vec2 ASPECT_RATIO = SIZE / SIZE.y;
+
+ivec2 pixel     = ivec2(gl_GlobalInvocationID.xy);
+uint g_index    = gl_GlobalInvocationID.x +
+                  gl_GlobalInvocationID.y*SIZE.x;
+vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
+
+struct Flags {
+    uint a;
+    uint b;
+};
+#define CHUNK_FLAG(f)       (f.a & 0xffu)
+#define CHUNK_DISTANCE_X(f) (f.a >> 16)
+#define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
+#define CHUNK_DISTANCE_Z(f) (f.b >> 16)
+
+#include "useful_functions.comp"
+#include "pass1_march_common.inc"
+#include "marchM5.inc"
+#include "camera.inc"
+
+#line 1
+
+bool isAirChunk(Flags flags) {
+    return CHUNK_FLAG(flags)==0;
+}
+uvec3 getChunkDistanceField(Flags f) {
+    return uvec3(CHUNK_DISTANCE_X(f),
+                 CHUNK_DISTANCE_Y(f),
+                 CHUNK_DISTANCE_Z(f));
+}
+
+Voxel march(Ray ray, inout Position pos) {
+    Voxel voxel    = Voxel(0,0,0,0);
+    float distance = 0;
+    uint voxels    = chunkDataIn[pos.chunk] / 4;
+    Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+
+    // Assume:
+    //      1) pos.chunk will always start with a valid chunk
+
+    while(true) {
+        float dist;
+
+        if(isAirChunk(flags)) {
+            dist = getMinDistToEdge8BitsBiDirectional(ray, pos, getChunkDistanceField(flags));
+        } else {
+
+            if(!getAirVoxel(pos, voxel, distance, voxels)) {
+                /// We have hit something
+                break;
+            }
+
+            // /// We are inside an air voxel of some size
+
+            bool isCell = (voxel.size == CELL_SIZE);
+
+            if(isCell) {
+                // 5 bit per dir per axis cell distances
+                uint packedDF   = voxelsIn[voxels + 2 + (voxel.oct*3)+2];
+                uvec3 distances = uvec3(packedDF & 1023,        // up,down x
+                                        (packedDF>>10) & 1023,  // up,down y
+                                        (packedDF>>20) & 1023); // up,down z
+
+                dist = getMinDistToEdge5BitsBiDirectional(ray, pos, distances);
+            } else {
+                dist = getMinDistToEdge(ray, pos, voxel.size);
+            }
+        }
+
+        skipLOD(distance, dist);
+
+        distance += dist;
+
+        bool chunkChanged = updatePosition(pos, ray.direction*dist);
+
+        if(chunkChanged) {
+            if(pos.chunk==-1) {
+                /// We ran out of scenery
+                voxel.value=0;
+                break;
+            }
+            voxels = chunkDataIn[pos.chunk] / 4;
+            flags  = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+        }
+	}
+
+	voxel.distance = distance;
+	return voxel;
+}
+
+void main() {
+    Ray ray      = generateRay();
+    Position pos = Position(uvec3(0), ray.start, -1);
+    updatePosition(pos, vec3(0));
+
+    Voxel voxel = march(ray, pos);
+
+    dataOut[g_index] = MarchOut(voxel.distance, voxel.value);
+}

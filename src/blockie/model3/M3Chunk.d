@@ -25,18 +25,20 @@ public:
 
     M3Root* root() { return cast(M3Root*)voxels.ptr; }
 }
-//------------------------------------------------------------------------------------
+
 enum M3Flag : ubyte { AIR=0, MIXED }
 
-align(1) struct M3Root { align(1):
+align(1):
+
+struct M3Root {
+    static assert(M3Root.sizeof==2 + Distance6.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
+align(1):
     M3Flag flag;
     ubyte _reserved;
-    Distance6 distance;    /// if flag==AIR
+    Distance6 distance;    // if flag==AIR
 
-    /// If flag==AIR/SOLID this is not present
-    M3Cell[M3_CELLS_PER_CHUNK] cells;
-
-    static assert(M3Root.sizeof==2 + Distance6.sizeof + M3_CELLS_PER_CHUNK*M3Cell.sizeof);
+    M3Cell[M3_CELLS_PER_CHUNK] cells;   // If flag==AIR/SOLID this is not present
+    //-----------------------------------------------------------------------------------
 
     bool isAir() const   { return flag==M3Flag.AIR; }
     bool isMixed() const { return flag==M3Flag.MIXED; }
@@ -64,16 +66,15 @@ private:
         return true;
     }
 }
-//------------------------------------------------------------------------------------
-align(1) struct M3Cell { align(1):
+
+struct M3Cell { static assert(M3Cell.sizeof==4); align(1):
     ubyte bits;
     union {
-        Distance3 distance;/// if isAir
-        Offset3 offset;    /// if bits!=0
-        /// point to 0 to 8 contiguous M3Branches
-        /// (if bits==0xff and offset==0xffffff then cell is solid)
+        Distance3 distance; // if isAir
+        Offset3 offset;     // if bits!=0 point to 0 to 8 contiguous M3Branches
+        // (if bits==0xff and offset==0xffffff then cell is solid)
     }
-    static assert(M3Cell.sizeof==4);
+    //-----------------------------------------------------------------------------------
 
     bool isAir() const             { return bits==0; }
     bool isSolid() const           { return bits==0xff && offset.get()==0xff_ffff; } /// special flag
@@ -118,12 +119,11 @@ align(1) struct M3Cell { align(1):
         return "%08b @ %s".format(bits, offset);
     }
 }
-//------------------------------------------------------------------------------------
-align(1) struct M3Branch { align(1):
-    ubyte bits;
-    Offset3 offset; /// point to 0 to 8 contiguous M3Branches
 
-    static assert(M3Branch.sizeof==4);
+struct M3Branch { static assert(M3Branch.sizeof==4); align(1):
+    ubyte bits;
+    Offset3 offset; // point to 0 to 8 contiguous M3Branches
+    //-----------------------------------------------------------------------------------
 
     bool isAir() const             { return bits==0; }
     bool isSolid() const           { return bits==0xff && offset.get()==0xff_ffff; } /// special flag
@@ -156,7 +156,6 @@ align(1) struct M3Branch { align(1):
         return true;
     }
 
-
     void setToAir() {
         bits = 0;
     }
@@ -185,13 +184,14 @@ align(1) struct M3Branch { align(1):
         return "%08b @ %s".format(bits, offset);
     }
 }
-//------------------------------------------------------------------------------------
-align(1) struct M3Leaf { align(1):
-    ubyte bits;   /// 1 bit per voxel
-    static assert(M3Leaf.sizeof==1);
 
-    bool isSolid() const { return bits==0xff; }
+struct M3Leaf { static assert(M3Leaf.sizeof==1); align(1):
+    ubyte bits;   // 1 bit per voxel
+    //-----------------------------------------------------------------------------------
 
+    bool isSolid() const {
+        return bits==0xff;
+    }
     void setToAir() {
         bits = 0;
     }
@@ -205,4 +205,3 @@ align(1) struct M3Leaf { align(1):
     }
     string toString() const { return "%08b".format(bits); }
 }
-//------------------------------------------------------------------------------------

@@ -15,7 +15,7 @@ final class M3ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*512;
     Allocator_t!uint allocator;
-    M3Optimiser optimiser;
+    Optimiser optimiser;
 
     M3Chunk chunk;
     ubyte[] voxels;
@@ -62,7 +62,8 @@ public:
     }
     override void commitTransaction() {
 
-        auto optVoxels = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
+        auto length    = allocator.offsetOfLastAllocatedByte+1;
+        auto optVoxels = optimiser.optimise(voxels, length);
 
         allocator.freeAll();
 
@@ -97,16 +98,14 @@ public:
     override void setChunkDistance(DFieldsBi f) {
         root().distance.set(f);
     }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
+    override void setCellDistance(uint cell, uint x, uint y, uint z) {
         assert(cell<M3_CELLS_PER_CHUNK);
 
         auto c = root().getCell(voxels.ptr, cell);
         assert(!isAir);
         assert(voxels.length>4, "voxels.length=%s".format(voxels.length));
         assert(c.isAir, "oct=%s bits=%s".format(cell, c.bits));
-        c.distance.x = x;
-        c.distance.y = y;
-        c.distance.z = z;
+        c.distance.set(x,y,z);
     }
     override void setCellDistance(uint cell, DFieldsBi f) {
 
@@ -114,9 +113,9 @@ public:
         int convert(int v) { return min(v, 15); }
 
         setCellDistance(cell,
-            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
-            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
-            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
+            (convert(f.x.up)<<4) | convert(f.x.down),
+            (convert(f.y.up)<<4) | convert(f.y.down),
+            (convert(f.z.up)<<4) | convert(f.z.down)
         );
     }
 

@@ -91,25 +91,23 @@ public:
     override void setChunkDistance(DFieldsBi f) {
         root().distance.set(f);
     }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
+    override void setCellDistance(uint cell, uint x, uint y, uint z) {
         assert(cell<M2_CELLS_PER_CHUNK);
         auto c = root().getCell(voxels.ptr, cell);
         assert(!isAir);
         assert(voxels.length>4, "voxels.length=%s".format(voxels.length));
         assert(c.isAir,         "oct=%s bits=%s".format(cell, c.bits));
 
-        c.distance.x = x;
-        c.distance.y = y;
-        c.distance.z = z;
+        c.distance.set(x,y,z);
     }
     override void setCellDistance(uint cell, DFieldsBi f) {
         // Max = 15
         int convert(int v) { return min(v, 15); }
 
         setCellDistance(cell,
-            cast(ubyte)((convert(f.x.up)<<4) | convert(f.x.down)),
-            cast(ubyte)((convert(f.y.up)<<4) | convert(f.y.down)),
-            cast(ubyte)((convert(f.z.up)<<4) | convert(f.z.down))
+            (convert(f.x.up)<<4) | convert(f.x.down),
+            (convert(f.y.up)<<4) | convert(f.y.down),
+            (convert(f.z.up)<<4) | convert(f.z.down)
         );
     }
 

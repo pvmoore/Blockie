@@ -5,7 +5,7 @@ module blockie.model3.M3Optimiser;
  */
 import blockie.all;
 
-final class M3Optimiser {
+final class M3Optimiser : Optimiser {
 private:
     M3ChunkEditView view;
     ubyte[] voxels;
@@ -15,7 +15,7 @@ public:
     this(M3ChunkEditView view) {
         this.view = view;
     }
-    ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
+    override ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
         this.voxels       = voxels;
         this.voxelsLength = voxelsLength;
 

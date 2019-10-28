@@ -8,7 +8,10 @@ const string version_ = "0.0.23";
 Upcoming ...
     - Add voxel de-optimiser code
 
-0.0.23 -
+
+0.0.23 - Move CPU info to bottom of on screen display.
+         Add Model 5.
+         Fix small bug in Model2/3 chunk optimisation.
 
 0.0.22 - Use monospace font for on screen display. Reformat OSD.
          Distance field optimisation.

@@ -14,7 +14,7 @@ interface ChunkEditView {
     bool isAir();
     bool isAirCell(uint cellIndex);
     void setChunkDistance(DFieldsBi f);
-    void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z);
+    void setCellDistance(uint cell, uint x, uint y, uint z);
     void setCellDistance(uint cell, DFieldsBi f);
 }
 
@@ -38,6 +38,6 @@ public:
     void commitTransaction() { throw new Error("Abstract"); }
     void setVoxel(uint3 offset, ubyte value) { throw new Error("Abstract"); }
     void setChunkDistance(DFieldsBi f) { throw new Error("Abstract"); }
-    void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) { throw new Error("Abstract"); }
+    void setCellDistance(uint cell, uint x, uint y, uint z) { throw new Error("Abstract"); }
     void setCellDistance(uint cell, DFieldsBi df) { throw new Error("Abstract"); }
 }

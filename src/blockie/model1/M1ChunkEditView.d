@@ -64,16 +64,16 @@ final class M1ChunkEditView : ChunkEditView {
     override void setChunkDistance(DFieldsBi f) {
         root.flags.distance.set(f);
     }
-    override void setCellDistance(uint cell, ubyte x, ubyte y, ubyte z) {
+    override void setCellDistance(uint cell, uint x, uint y, uint z) {
         expect(cell<M1_CELLS_PER_CHUNK);
         expect(isAirCell(cell));
 
         /// We only have 5 bits per axis (uni-directional)
-        x = min(31, x).as!ubyte;
-        y = min(31, y).as!ubyte;
-        z = min(31, z).as!ubyte;
+        x = min(31, x);
+        y = min(31, y);
+        z = min(31, z);
 
-        root.cellDistances[cell].set(x,y,z);
+        root.cellDistances[cell].set(x.as!ubyte, y.as!ubyte, z.as!ubyte);
     }
     override void setCellDistance(uint cell, DFieldsBi df) {
         throw new Error("Not implemented");

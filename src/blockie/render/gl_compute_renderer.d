@@ -275,12 +275,11 @@ public:
 
         version(MODEL1) {
             marchProgram.loadCompute(
-                "pass1_march.comp",
+                "pass1_marchM1.comp",
                 ["shaders/",
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
-
             shadeProgram.loadCompute(
                 "pass3_shade.comp",
                 ["shaders/",
@@ -295,7 +294,6 @@ public:
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
-
             shadeProgram.loadCompute(
                 "pass3_shadeM2.comp",
                 ["shaders/",
@@ -309,9 +307,8 @@ public:
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
-
             shadeProgram.loadCompute(
-                "pass3_shadeM3.comp",
+                "pass3_shadeM2.comp",
                 ["shaders/",
                 "C:/pvmoore/_assets/shaders/"],
                 defines
@@ -323,9 +320,21 @@ public:
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
-
             shadeProgram.loadCompute(
-                "pass3_shadeM3.comp",
+                "pass3_shadeM2.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+        } else version(MODEL5) {
+            marchProgram.loadCompute(
+                "pass1_marchM5.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+            shadeProgram.loadCompute(
+                "pass3_shadeM2.comp",
                 ["shaders/",
                 "C:/pvmoore/_assets/shaders/"],
                 defines

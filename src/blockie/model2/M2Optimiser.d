@@ -2,7 +2,7 @@ module blockie.model2.M2Optimiser;
 
 import blockie.all;
 
-final class M2Optimiser {
+final class M2Optimiser : Optimiser {
 private:
     M2ChunkEditView view;
     ubyte[] voxels;
@@ -12,7 +12,7 @@ public:
     this(M2ChunkEditView view) {
         this.view = view;
     }
-    ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
+    override ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
         this.voxels       = voxels;
         this.voxelsLength = voxelsLength;
 
@@ -132,10 +132,10 @@ private:
             numLeaves++;
             ulong n;
             for(auto i=0; i<8; i++) {
+                 n <<= 8;
                 if(br.isBranch(i)) {
                     n |= br.getLeaf(voxels.ptr, i).bits;
                 }
-                n <<= 8;
             }
             uint offset = cast(uint)(cast(ulong)br-cast(ulong)voxels.ptr);
             auto p = n in map;
