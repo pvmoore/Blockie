@@ -48,7 +48,7 @@ private:
      *  They are each 512 x 512 x ushort (little-endian).
      */
     void loadBunny(WorldEditor edit) {
-        string directory = "/temp/bunny/";
+        string directory = "/work/data/bunny/";
 
         int y = 1;
         ushort[512*512] data;
@@ -75,6 +75,7 @@ private:
         while(y<=361) {
             loadSlice();
             y++;
+            writefln("%s / %s", y, 361); flushConsole();
         }
     }
 }

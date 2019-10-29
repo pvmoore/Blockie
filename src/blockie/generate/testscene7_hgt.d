@@ -44,7 +44,7 @@ private:
      *  Each cell is ushort (big-endian)
      */
     void loadHGT(WorldEditor edit) {
-        auto hgt = HGT.read("/temp/heightmaps/N47E006.hgt");
+        auto hgt = HGT.read("/work/data/heightmaps/N47E006.hgt");
         expect(hgt.inches==3);
         expect(hgt.data.length==3601*3601);
 
