@@ -19,7 +19,7 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "GC_STATS" "MODEL3" "RELEASE_ASSERT"
+versions "GC_STATS" "MODEL1" "RELEASE_ASSERT"
 
 configuration "blockie" {
 	#mainSourceFile "src/main.d"

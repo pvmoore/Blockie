@@ -1,4 +1,13 @@
 
+uint getImpliedIndex_8bit(const uint bits, const uint oct) {
+    const uint and = 0x7f >> (7-oct);
+    return bitCount(bits & and);
+}
+uint getImpliedIndex_16bit(const uint bits, const uint oct) {
+    const uint and = 0x7fff >> (15-oct);
+    return bitCount(bits & and);
+}
+
 /// Return true if chunk changes
 bool updatePosition(inout Position pos, vec3 add) {
     pos.fpos += add;
@@ -105,6 +114,28 @@ float getMinDistToEdge4BitsBiDirectional(Ray ray, Position pos, uvec3 radius, ui
 
     vec3 m    = dist * ray.invDirection;
     float res = min(m.x, min(m.y, m.z));
+    return max(res, 0);
+}
+
+float getMinDistToEdgeUniDirectional(
+    const Ray ray,
+    const Position pos,
+    const vec3 radius,
+    const uint sideSize)    // CHUNK_SIZE or CELL_SIZE
+{
+    // radius = 0 = 1 air chunk  (r=0,    r2=0)
+    //        = 1 = 3 air chunks (r=512,  r2=1024)
+    //        = 2 = 5 air chunks (r=1024, r2 = 2048)
+    //          etc...
+    const vec3 r    = radius*sideSize;
+    const vec3 r2   = r*2;
+    const vec3 p    = pos.fpos-WORLD_BB[0];
+    const vec3 rem  = mod(p, sideSize) + r;
+    const vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * (sideSize+r2);
+    const vec3 dist = size-rem;
+
+    const vec3 m    = dist * ray.invDirection;
+    const float res = min(m.x, min(m.y, m.z));
     return max(res, 0);
 }
 // void clampPositionToVoxelEntryPoint(Ray ray, Position pos, uint voxelSize, inout float distance) {

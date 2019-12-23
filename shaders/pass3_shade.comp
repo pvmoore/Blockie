@@ -38,20 +38,14 @@ uint g_index = gl_GlobalInvocationID.x +
 //#include "perlin_noise.comp"
 #include "simplex_noise_3d.comp"
 #include "camera.inc"
+#include "pass3_shade_common.inc"
 
 #line 1
 #define V_EARTH1 (10)
 #define V_ROCK1 (11)
 #define V_GRASS1 (12)
 
-/// Calculate the hit pos given a screen pixel
-vec3 getHitPos(ivec2 pos) {
-    uint i     = pos.x + (pos.y*SIZE.x);
-    vec3 dir   = getRayDirForPixel(pos);
-    float dist = dataIn[i].distance;
-    return CAMERA_POS + (dir*dist);
-}
-
+// Would this be faster if it was in a storage buffer?
 const vec3 uint_to_pixel[] = vec3[](
     // volumetric
 	vec3(0,0, 0.25),	 // [0] V_AIR (space)
@@ -78,29 +72,6 @@ vec3 getDiffuse(uint voxel) {
     return uint_to_pixel[voxel];
 }
 
-vec3 calculateNormal(vec3 pos) {
-    ivec2 i = pixel;
-    ivec2 U = i+ivec2(0,-1);
-    ivec2 L = i+ivec2(-1,0);
-    ivec2 R = i+ivec2(1,0);
-    ivec2 D = i+ivec2(0,1);
-
-    const vec3 up    = getHitPos(U);
-    const vec3 left  = getHitPos(L);
-    const vec3 right = getHitPos(R);
-    const vec3 down  = getHitPos(D);
-
-    const vec3 n1 = cross(normalize(up-pos), normalize(left-pos));
-    const vec3 n2 = cross(normalize(down-pos), normalize(right-pos));
-
-    return normalize(n1+n2);
-}
-float getBrightness(const vec3 hitPos, const vec3 normal) {
-    const vec3 lightPos = SUN_POS;
-    const vec3 toLight  = normalize(lightPos-hitPos);
-    const float NdotL      = dot(normal, toLight);
-    return max(NdotL, 0);
-}
 vec3 getDiffuseColour(const uint voxel) {
     return getDiffuse(voxel);
 }
@@ -116,43 +87,9 @@ vec3 getDiffuseColour(const uint voxel) {
 //
 //    return vec4((pixel*0.70f) + (pixel*0.30f * brightness), 1);
 //}
-vec3 applyFog(vec3  rgb,      // original color of the pixel
-              float distance) // camera to point distance
-{
-    const float density = 0.00015;
-    const float fogAmount = 1.0 - exp( -distance*density );
-    const vec3  fogColor  = vec3(0.5,0.6,0.7);
-    return mix(rgb, fogColor, fogAmount);
-}
-vec3 applyFogWithSunScattering(
-    vec3  rgb,      // original color of the pixel
-    float distance, // camera to point distance
-    vec3  rayDir,   // camera to point vector
-    vec3  sunDir)   // sun light direction
-{
-    const float density = 0.00015;
-    float fogAmount = 1.0 - exp( -distance*density );
-    float sunAmount = max( dot( rayDir, sunDir ), 0.0);
-    vec3  fogColor  = mix( vec3(0.5,0.6,0.7), // bluish
-                           vec3(1.0,0.9,0.7), // yellowish
-                           pow(sunAmount,8.0) );
-    return mix( rgb, fogColor, fogAmount );
-}
-vec3 applyGroundFog(
-    vec3  rgb,      // original color of the pixel
-    float distance, // camera to point distance
-    vec3  rayOri,   // camera position
-    vec3  rayDir)   // camera to point vector
-{
-    const float b = 0.0001;
-    const float c = 1;
-    const float fogAmount = c * exp(-rayOri.y*b) * (1.0-exp( -distance*rayDir.y*b ))/rayDir.y;
-    const vec3  fogColor  = vec3(0.5,0.6,0.7);
-    return mix( rgb, fogColor, fogAmount );
-}
 void main() {
     uint voxelInfo = dataIn[g_index].voxel;
-    uint voxelSize = (voxelInfo>>8)&0xffu;
+    //uint voxelSize = (voxelInfo>>8)&0xffu;
     uint voxel     = voxelInfo&0xffu;
 
     if(voxel==0) {

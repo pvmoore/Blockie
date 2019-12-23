@@ -1,16 +1,9 @@
 
 #line 1 5
 
+// 8 bytes for flags
 #define FLAGS_SIZE (8)
 
-uint getImpliedIndex_8bit(const uint bits, const uint oct) {
-    const uint and = 0x7f >> (7-oct);
-    return bitCount(bits & and);
-}
-uint getImpliedIndex_16bit(const uint bits, const uint oct) {
-    const uint and = 0x7fff >> (15-oct);
-    return bitCount(bits & and);
-}
 bool isSolidRoot(
     const uvec3 upos,
     const uint branchesOffset,
@@ -144,13 +137,13 @@ bool getAirVoxel(
     const uint voxelsRoot)
 {
 /*
-    voxelsIn[voxelsRoot/4 + 0] = flags
-    voxelsIn[voxelsRoot/4 + 1] = twigsOffset;
-    voxelsIn[voxelsRoot/4 + 2] = l2TwigsOffset;
-    voxelsIn[voxelsRoot/4 + 3] = leavesOffset;
-    voxelsIn[voxelsRoot/4 + 4] = l2IndexOffset;
-    voxelsIn[voxelsRoot/4 + 5] = leafIndexOffset;
-    voxelsIn[voxelsRoot/4 + 6] = (leafEncodeBits | (l2EncodeBits<<8));
+    voxelsIn[voxelsRoot/4 + 0] = flags (8 bytes)
+    voxelsIn[voxelsRoot/4 + 2] = twigsOffset;
+    voxelsIn[voxelsRoot/4 + 3] = l2TwigsOffset;
+    voxelsIn[voxelsRoot/4 + 4] = leavesOffset;
+    voxelsIn[voxelsRoot/4 + 5] = l2IndexOffset;
+    voxelsIn[voxelsRoot/4 + 6] = leafIndexOffset;
+    voxelsIn[voxelsRoot/4 + 7] = (leafEncodeBits | (l2EncodeBits<<8));
 */
     const uint offsets = voxelsRoot/4;
 

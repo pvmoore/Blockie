@@ -16,6 +16,19 @@
             }
         },
         {
+            "label": "**** Run ****",
+            "type": "shell",
+            "windows": {
+                "command": "dub run --build=debug --config=blockie --compiler=dmd --arch=x86_64",
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "**** Generate ****",
             "type": "shell",
             "windows": {

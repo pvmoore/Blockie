@@ -103,9 +103,8 @@ public:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.
 
-            string w = "7";
+            string w = "1";
 
-            World world;
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;
                 case "2" : world = World.load("Test Scene 2"); break;
@@ -124,6 +123,7 @@ public:
             version(MODEL2) pragma(msg, "MODEL2");
             version(MODEL3) pragma(msg, "MODEL3");
             version(MODEL4) pragma(msg, "MODEL4");
+            version(MODEL5) pragma(msg, "MODEL5");
 
 
             world.camera.resize(gl.windowSize);

@@ -66,25 +66,13 @@ struct Flags {
 #define CHUNK_DISTANCE_Z(f) (f.b >> 16)
 
 #include "useful_functions.comp"
+#include "pass1_march_common.inc"
 #include "getoctet.inc"
 #include "marchM1.inc"
 #include "camera.inc"
 
 #line 1
 
-/// Return true if chunk changes
-bool updatePosition(inout Position pos, vec3 add) {
-    pos.fpos += add;
-    pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
-
-    uvec3 xyz = pos.upos >> CHUNK_SIZE_SHR;
-
-	bool outOfBounds = any(greaterThanEqual(xyz, WORLD_CHUNKS_XYZ));
-
-    const int prevChunk = pos.chunk;
-    pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
-    return pos.chunk != prevChunk;
-}
 bool isAirChunk(Flags flags) {
     return CHUNK_FLAG(flags)==1;
 }
@@ -96,84 +84,7 @@ uvec3 airChunkDistanceField(Flags flags) {
 vec3 airCellDistanceField(const uint v) {
     return vec3(v & 31u, (v>>5) & 31u, (v>>10) & 31u);
 }
-float getMinDistToEdge(
-    const Ray ray,
-    const Position pos,
-    const uint voxelSize)
-{
-    const vec3 p    = pos.fpos-WORLD_BB[0];
-    const vec3 rem  = mod(p, voxelSize);
-    const vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * voxelSize;
-    const vec3 dist = size-rem;
 
-    const vec3 m    = dist * ray.invDirection;
-    const float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-float getMinDistToEdgeOfDistanceField(
-    const Ray ray,
-    const Position pos,
-    const vec3 radius,
-    const uint sideSize)    // CHUNK_SIZE or CELL_SIZE
-{
-    // radius = 0 = 1 air chunk  (r=0,    r2=0)
-    //        = 1 = 3 air chunks (r=512,  r2=1024)
-    //        = 2 = 5 air chunks (r=1024, r2 = 2048)
-    //          etc...
-    const vec3 r    = radius*sideSize;
-    const vec3 r2   = r*2;
-    const vec3 p    = pos.fpos-WORLD_BB[0];
-    const vec3 rem  = mod(p, sideSize) + r;
-    const vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * (sideSize+r2);
-    const vec3 dist = size-rem;
-
-    const vec3 m    = dist * ray.invDirection;
-    const float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-//
-// Bi-directional distance field stored in radius
-//
-float getMinDistToEdgeOfDistanceField2(Ray ray,
-                                       Position pos,
-                                       uvec3 radius,
-                                       uint side)    // CHUNK_SIZE or CELL_SIZE
-{
-    uvec3 upradius   = radius >> 8u;        // high 8 bits = up distance
-    uvec3 downradius = radius & 0xffu;      // low  8 bits = down distance
-
-    vec3 p    = pos.fpos-WORLD_BB[0];
-    vec3 rem  = mod(p, side) + downradius*side;
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*side);
-    vec3 dist = size-rem;
-
-    vec3 m    = dist * ray.invDirection;
-    float res = min(m.x, min(m.y, m.z));
-    return max(res, 0);
-}
-/**
- *  Skip dist a little bit depending on how near to the camera
- *  the ray is. This is necessary in the pathological case
- *  where the ray is parallel to and on the edge of a voxel box.
- *  Also, a small bump greatly improves speed without compromising
- *  quality (much). Adjust these values appropriately depending on the scene.
- */
-void skipLOD(const float distance, inout float dist) {
-    const float bump = (distance+0.00001)/1500;
-
-    // handle pathological case
-    if(dist<0.0001) {
-        //dist += clamp(bump, 0.005, 0.5);
-        dist += clamp(bump, 0.001, 2.0); // 0.001, 2.0
-    } else {
-        // skip a bit based on distance to camera
-        //dist += clamp(bump, 0.0001, 15);
-        /// The higher this value, the less accurate the results
-        //dist += clamp(bump, 0.0001, 0.5);
-
-        dist += smoothstep(0.00001, 1.5, bump); // 0.0001, 0.5
-    }
-}
 Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
     Voxel voxel      = Voxel(0,0,0,0);
     float distance   = 0;
@@ -188,7 +99,7 @@ Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
         float dist;
 
         if(isAirChunk(flags)) {
-            dist = getMinDistToEdgeOfDistanceField2(ray, pos, airChunkDistanceField(flags), CHUNK_SIZE);
+            dist = getMinDistToEdge8BitsBiDirectional(ray, pos, airChunkDistanceField(flags), CHUNK_SIZE);
         } else {
 
             if(!getAirVoxel(pos, voxel, distance, voxelsRoot)) break;
@@ -197,7 +108,7 @@ Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
 
             if(isRoot) {
                 uint dfield = GETUSHORT(voxelsIn, ((voxelsRoot+DFIELD_OFFSET)>>1) + voxel.oct);
-                dist = getMinDistToEdgeOfDistanceField(ray, pos, airCellDistanceField(dfield), CELL_SIZE);
+                dist = getMinDistToEdgeUniDirectional(ray, pos, airCellDistanceField(dfield), CELL_SIZE);
             } else {
                 dist = getMinDistToEdge(ray, pos, voxel.size);
             }
@@ -228,5 +139,6 @@ void main() {
 
     Voxel voxel = march(ray, pos, MAX_DISTANCE);
 
-    dataOut[g_index] = MarchOut(voxel.distance, (voxel.size<<8) + voxel.value);
+    //dataOut[g_index] = MarchOut(voxel.distance, (voxel.size<<8) + voxel.value);
+    dataOut[g_index] = MarchOut(voxel.distance, voxel.value);
 }

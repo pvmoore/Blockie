@@ -49,9 +49,9 @@ uint g_index = gl_GlobalInvocationID.x +
 #include "simplex_noise_3d.comp"
 #include "camera.inc"
 
-#define V_EARTH1 (10)
-#define V_ROCK1 (11)
-#define V_GRASS1 (12)
+// #define V_EARTH1 (10)
+// #define V_ROCK1 (11)
+// #define V_GRASS1 (12)
 
 #line 1
 
