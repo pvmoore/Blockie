@@ -10,7 +10,7 @@ bool isSolidRoot(
     inout uint voxelsPtr,
     inout Voxel v)
 {
-    const uint oct = getOctetRoot_1111(upos);
+    const uint oct = getOctet_1111000000(upos);
     const uint BB  = 512;    // 512 bytes for bits
 
     const uint BITS_OFFSET = FLAGS_SIZE + 6*4; // octree flag + offset bytes
@@ -68,7 +68,7 @@ bool isSolidBranch2AboveLeaf(
     inout uint voxelsPtr,
     inout Voxel v)
 {
-    const uint oct   = getOctet_1_3(upos);
+    const uint oct   = getOctet_0000000100(upos);
     const uint data  = voxelsIn[voxelsPtr/4];
     const bool solid =
         //distance>3000 ||
@@ -97,7 +97,7 @@ bool isSolidBranch1AboveLeaf(
     inout uint voxelsPtr,
     inout Voxel v)
 {
-    const uint oct   = getOctet_1_2(upos);
+    const uint oct   = getOctet_0000000010(upos);
     const uint data  = voxelsIn[voxelsPtr/4];
     const bool solid =
         //distance>2000 ||
@@ -121,7 +121,7 @@ void gavLeaf(const uvec3 upos,
              const uint voxelsPtr,
              inout Voxel v)
 {
-    const uint oct = getOctet_1_1(upos);
+    const uint oct = getOctet_0000000001(upos);
 
     v.size  = 1;
     v.value = GETBYTE(voxelsIn, voxelsPtr+oct);

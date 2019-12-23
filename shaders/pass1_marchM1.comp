@@ -67,7 +67,6 @@ struct Flags {
 
 #include "useful_functions.comp"
 #include "pass1_march_common.inc"
-#include "getoctet.inc"
 #include "marchM1.inc"
 #include "camera.inc"
 

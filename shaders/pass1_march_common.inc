@@ -7,6 +7,21 @@ uint getImpliedIndex_16bit(const uint bits, const uint oct) {
     const uint and = 0x7fff >> (15-oct);
     return bitCount(bits & and);
 }
+/**
+ *  Assumes numBits is between 1 and 32.
+ */
+uint getBits_voxelsIn(uint byteIndex, uint bitOffset, int numBits) {
+    byteIndex += bitOffset/8;
+    bitOffset &= 7u;
+    const uint uintIndex = byteIndex/4;
+    const uint uintRem   = byteIndex&3u;
+    const int bitpos     = int(bitOffset + (uintRem*8));
+    const int numBits2   = max(0, numBits - (32-bitpos));
+    numBits -= numBits2;
+
+    return bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits) +
+          (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
+}
 
 /// Return true if chunk changes
 bool updatePosition(inout Position pos, vec3 add) {
@@ -156,3 +171,50 @@ float getMinDistToEdgeUniDirectional(
 
 //     //updatePosition(pos, dir*f);
 // }
+
+/// (0-4095)
+uint getOctet_1111000000(const uvec3 inXYZ) {
+    // 11_1100_0000 -> zzzz_yyyyxxxx
+    const uvec3 a = bitfieldExtract(inXYZ, 6, 4);
+    const uvec3 c = a << uvec3(0,4,8);
+    return c.x + c.y + c.z;
+}
+/// (0-7)
+uint getOctet_0000000010(const uvec3 inXYZ) {
+	// x = 0000_0010 \
+	// y = 0000_0010  >  oct = 00000zyx
+	// z = 0000_0010 /
+	const uvec3 a = bitfieldExtract(inXYZ, 1, 1);
+	const uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+/// (0-7)
+uint getOctet_0000000100(const uvec3 inXYZ) {
+	// x = 0000_0100 \
+	// y = 0000_0100  >  oct = 00000zyx
+	// z = 0000_0100 /
+	const uvec3 a = bitfieldExtract(inXYZ, 2, 1);
+    const uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+/// (0-7)
+uint getOctet_1_n(const uvec3 inXYZ, const uint and) {
+    // if and==32:
+	// x = 0_0010_0000 \
+	// y = 0_0010_0000  >  oct = 00000zyx
+	// z = 0_0010_0000 /
+	const int SHR = findLSB(and);
+	const uvec3 a = bitfieldExtract(inXYZ, SHR, 1);
+    const uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+/// (0-7)
+uint getOctet_0000000001(const uvec3 inXYZ) {
+	// x = 0000_0001 \
+	// y = 0000_0001  >  oct = 00000zyx
+	// z = 0000_0001 /
+	//const uvec3 a = inXYZ & 1u;
+	const uvec3 a = bitfieldExtract(inXYZ, 0, 1);
+	const uvec3 c = a << uvec3(0,1,2);
+	return c.x + c.y + c.z;
+}
