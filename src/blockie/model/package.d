@@ -15,7 +15,6 @@ import blockie.model.DistanceFieldsBiDirCell;
 import blockie.model.DistanceFieldsBiDirChunk;
 import blockie.model.DistanceFieldsUniDirCell;
 import blockie.model.event;
-import blockie.model.getoctet;
 import blockie.model.Offset;
 import blockie.model.Optimiser;
 import blockie.model.voxel;

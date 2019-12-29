@@ -117,6 +117,51 @@ private:
         branches.length = 0;
         leaves.length   = 0;
     }
+    /// get 4 bit octet index (0-4095)
+    uint getOctetRoot_1111(const uint X,
+                           const uint Y,
+                           const uint Z,
+                           uint level) nothrow
+    {
+        const uint and = 0b1111 << (level-4);
+        const uint x   = X & and;
+        const uint y   = Y & and;
+        const uint z   = Z & and;
+
+        switch(level) {
+        case 6:
+            // 00000000_00111100 -> 0000zzzz_yyyyxxxx
+            return (x>>>2) | (y<<2) | (z<<6);
+        case 7:
+            // 00000000_01111000 -> 0000zzzz_yyyyxxxx
+            return (x>>>3) | (y<<1) | (z<<5);
+        case 8:
+            // 00000000_11110000 -> 0000zzzz_yyyyxxxx
+            return (x>>>4) | y | (z<<4);
+        case 9:
+            // 00000001_11100000 -> 0000zzzz_yyyyxxxx
+            return (x>>>5) | (y>>>1) | (z<<3);
+        case 10:
+            // 00000011_11000000 -> 0000zzzz_yyyyxxxx
+            return (x>>>6) | (y>>>2) | (z<<2);
+        default:
+            assert(false);
+        }
+    }
+    /// get 1 bit octet index (0-7)
+    uint getOctet_1(const uint X,
+                    const uint Y,
+                    const uint Z,
+                    const uint and) nothrow
+    {
+        // x = 1000_0000 \
+        // y = 1000_0000  >  oct = 00000zyx
+        // z = 1000_0000 /
+        const uint x = (X & and) == and;
+        const uint y = (Y & and) == and;
+        const uint z = (Z & and) == and;
+        return x | (y << 1) | (z << 2);
+    }
     void setOctreeVoxel(ubyte v, uint x, uint y, uint z) {
         //writefln("setOctreeVoxel(%s, %s,%s,%s)", v, x,y,z);
 

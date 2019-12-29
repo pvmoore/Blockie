@@ -51,6 +51,11 @@ final class Generator {
                 remove(name);
             }
             generateModel1(scene, world);
+        } else version(MODEL1A) {
+            foreach(string name; dirEntries(dirName, "M1A*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel1A(scene, world);
         } else version(MODEL2) {
             foreach(string name; dirEntries(dirName, "M2*", SpanMode.shallow)) {
                 remove(name);
@@ -81,6 +86,16 @@ final class Generator {
         writefln("=========================================\n");
 
         auto editor = new M1WorldEditor(world, new Model1);
+        scope(exit) editor.destroy();
+
+        sceneGenerator.build(editor);
+    }
+    void generateModel1A(SceneGenerator sceneGenerator, World world) {
+        writefln("\n=========================================");
+        writefln("Generating MODEL1A %s", world);
+        writefln("=========================================\n");
+
+        auto editor = new M1aWorldEditor(world, new Model1);
         scope(exit) editor.destroy();
 
         sceneGenerator.build(editor);

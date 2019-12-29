@@ -41,6 +41,7 @@ import blockie.model2;
 import blockie.model3;
 import blockie.model4;
 import blockie.model5;
+import blockie.model.model1a;
 
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;
@@ -70,12 +71,13 @@ import fonts.sdf;
 import resources : PNG, HGT;
 import logging : flushLog, log, FileLogger;
 import resusage.memory : ProcessMemInfo, processMemInfo;
-import common :
-    Allocator, Allocator_t, Archive, Array, Async, BitWriter, BufferBitWriter, Comment, From,
-    IQueue, Implements, PDH, Set, Stack, Timing,
-    as, dbg, expect, flushConsole, isZeroMem, onlyContains,
-    makeSPSCQueue, nextHighestPowerOf2, repeat, toInt;
-import events : initEvents, getEvents, EventMsg;
 import maths.noise;
 import maths.camera;
 import maths;
+import events : initEvents, getEvents, EventMsg;
+import common :
+    Allocator, Allocator_t, Archive, Array, Async, BitWriter, BufferBitWriter,
+    Comment, From,
+    IQueue, Implements, PDH, Set, Stack, Timing,
+    as, dbg, expect, flushConsole, isZeroMem, onlyContains,
+    makeSPSCQueue, nextHighestPowerOf2, repeat, toInt, todo;
