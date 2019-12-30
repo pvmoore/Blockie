@@ -95,10 +95,14 @@ final class Generator {
         writefln("Generating MODEL1A %s", world);
         writefln("=========================================\n");
 
-        auto editor = new M1aWorldEditor(world, new Model1);
+        auto editor = new M1aWorldEditor(world, new Model1a);
         scope(exit) editor.destroy();
 
-        sceneGenerator.build(editor);
+        editor.startTransaction();
+        editor.setVoxel(worldcoords(0,0,0), 1);
+        //editor.commitTransaction();
+
+        //sceneGenerator.build(editor);
     }
     void generateModel2(SceneGenerator sceneGenerator, World world) {
         writefln("\nGenerating Model2 %s", world);

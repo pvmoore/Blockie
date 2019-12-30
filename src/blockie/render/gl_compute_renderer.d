@@ -286,6 +286,21 @@ public:
                 "C:/pvmoore/_assets/shaders/"],
                 defines
             );
+        } else version(MODEL1A) {
+            todo("fixme");
+
+            marchProgram.loadCompute(
+                "pass1_marchM1.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+            shadeProgram.loadCompute(
+                "pass3_shade.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
         } else version(MODEL2) {
 
             marchProgram.loadCompute(

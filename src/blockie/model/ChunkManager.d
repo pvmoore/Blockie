@@ -80,6 +80,8 @@ public:
             this.storage  = new ChunkStorage(world, new Model4);
         } else version(MODEL5) {
             this.storage  = new ChunkStorage(world, new Model5);
+        } else version(MODEL1A) {
+            this.storage  = new ChunkStorage(world, new Model1a);
         } else assert(false);
 
         getEvents().subscribe("ChunkManager", EventID.CHUNK_LOADED | EventID.CHUNK_EDITED, messages);
