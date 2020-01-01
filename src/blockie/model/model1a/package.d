@@ -11,8 +11,11 @@ import blockie.model.model1a.M1aDeoptimiser;
 import blockie.model.model1a.M1aOptimiser;
 import blockie.model.model1a.M1aWorldEditor;
 
-enum M1a_ROOT_BITS       = 5;
-enum M1a_CELLS_PER_CHUNK = 32*32*32; // 32768
+enum M1a_ROOT_BITS       = 4;
+enum M1a_CELLS_PER_CHUNK = 16*16*16; // 4096
+
+//enum M1a_ROOT_BITS       = 5;
+//enum M1a_CELLS_PER_CHUNK = 32*32*32; // 32768
 
 final class Model1a : Model {
 public:

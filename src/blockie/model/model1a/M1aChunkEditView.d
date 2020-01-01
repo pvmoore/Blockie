@@ -8,10 +8,12 @@ import blockie.model.model1a;
 
     M1aRoot
 
-    11_1110_0000 - cell oct     | M1aEditCell   | 32^3
-    00_0001_0000 - branch 3 oct | M1aEditBranch | 16^8
+
+    11_1100_0000 - cell oct     | M1aEditCell   | 64^3
+    00_0010_0000 - branch 0 oct | M1aEditBranch | 32^8
+    00_0001_0000 - branch 1 oct | M1aEditBranch | 16^8
     00_0000_1000 - branch 2 oct | M1aEditBranch | 8^8
-    00_0000_0100 - branch 1 oct | M1aEditBranch | 4^8
+    00_0000_0100 - branch 3 oct | M1aEditBranch | 4^8
     00_0000_0010 - leaf oct     | M1aEditLeaf   | 2^8
     00_0000_0001 - voxel oct    | Voxel         | 1^8
 */
@@ -46,18 +48,22 @@ struct M1aEditRoot { static assert(M1aEditRoot.sizeof==M1aFlags.sizeof +
         return "Root(%s)".format(s);
     }
 }
-struct M1aEditCell { static assert(M1aEditCell.sizeof==4); align(1):
+struct M1aEditCell { static assert(M1aEditCell.sizeof==5); align(1):
+    ubyte flag;             ///
     ubyte bits;             /// Each bit: 0 = voxel, 1 = mixed
     union {
-        ubyte voxel;        /// if isSolid() && !isAir()
-        Distance3 distance; /// if isAir()
-        Offset3 offset;     /// if !isAir()
-                            /// points to 8*M1aEditBranch
+        ubyte voxel;        /// if !isAir && isSolid()
+        Distance3 distance; /// if isAir
+        Offset3 offset;     /// if !isAir && !isSolid()
+                            /// points to !isAllBranches() ? (8*ubyte voxels) + (8*M1aEditBranch)
+                            ///            isAllBranches() ? (8*M1aEditBranch)
     }
 
-    bool isAir()       { return isSolid() && voxel==0; }
-    bool isSolid()     { return bits==0; }
-    uint numBranches() { return popcnt(bits); }
+    bool isAir()         { return flag==0; }
+    bool isSolid()       { return bits==0; }
+    bool isAllBranches() { return bits==0xff; }
+    uint numBranches()   { return popcnt(bits); }
+
 
     // void setToSolid(ubyte v) {
     //     bits  = 0;
@@ -78,20 +84,22 @@ struct M1aEditCell { static assert(M1aEditCell.sizeof==4); align(1):
         return cast(M1aEditBranch*)(ptr+(offset.get()*4)+(oct*M1aEditBranch.sizeof));
     }
     string toString() {
-        auto s = isAir() ? "AIR" : isSolid() ? "SOLID" : "MIXED";
+        auto s = isAir() ? "AIR" : isSolid() ? "SOLID %s".format(voxel) : "MIXED";
         return "Cell(%s:%08b)".format(s,bits);
     }
 }
 struct M1aEditBranch { static assert(M1aEditBranch.sizeof==4); align(1):
     ubyte bits;
     union {
-        ubyte voxel;    /// if isSolid() && !isAir()
-        Offset3 offset; /// points to 8*M1aEditBranch or 8*M1aEditLeaf
+        ubyte voxel;    /// if isSolid()
+        Offset3 offset; /// points to !isAllBranches() ? (8*ubyte voxels) + (8*M1aEditBranch or 8*M1aEditLeaf)
+                        ///            isAllBranches() ? (8*M1aEditBranch or 8*M1aEditLeaf)
     }
 
-    bool isAir()       { return isSolid() && voxel==0; }
-    bool isSolid()     { return bits==0; }
-    uint numBranches() { return popcnt(bits); }
+    //bool isAir()         { return isSolid() && voxel==0; }
+    bool isSolid()       { return bits==0; }
+    bool isAllBranches() { return bits==0xff; }
+    uint numBranches()   { return popcnt(bits); }
 
     void setToSolid(ubyte v) {
         bits  = 0;
@@ -113,6 +121,10 @@ struct M1aEditBranch { static assert(M1aEditBranch.sizeof==4); align(1):
     M1aEditLeaf* getLeaf(ubyte* ptr, uint oct) {
         ASSERT(oct<8);
         return cast(M1aEditLeaf*)(ptr+(offset.get()*4)+(oct*M1aEditLeaf.sizeof));
+    }
+    string toString() {
+        string s = isSolid() ? "SOLID %s".format(voxel) : "MIXED";
+        return "Branch(%s:%08b)".format(s,bits);
     }
 }
 struct M1aEditLeaf { static assert(M1aEditLeaf.sizeof==8); align(1):
@@ -137,6 +149,7 @@ struct M1aEditLeaf { static assert(M1aEditLeaf.sizeof==8); align(1):
     void setAllVoxels(ubyte v) {
         voxels[] = v;
     }
+    string toString() { return "Leaf(%s)".format(voxels); }
 }
 
 //================================================================================================
@@ -239,8 +252,14 @@ private:
         root().flags.flag = M1aFlag.AIR;
         root().flags.distance.clear();
     }
+    void chat(A...)(lazy string fmt, lazy A args) {
+        //if(chunk.pos==int3(0,0,0) && numEdits==0) {
+            // writefln(format(fmt, args));
+            // flushConsole();
+        //}
+    }
     uint alloc(uint numBytes) {
-        chat("  alloc(%s)", numBytes);
+        //chat("  alloc(%s)", numBytes);
         int offset = allocator.alloc(numBytes, 4);
         if(offset==-1) {
             auto oldSize = voxels.length;
@@ -250,7 +269,7 @@ private:
             ASSERT(allocator.length==newSize);
             ASSERT(voxels.length==newSize);
 
-            chat("  resize to %s (from %s)", newSize, oldSize);
+            //chat("  resize to %s (from %s)", newSize, oldSize);
 
             offset = allocator.alloc(numBytes, 4);
 
@@ -258,32 +277,36 @@ private:
         }
         ASSERT(offset < voxels.length);
         ASSERT((offset%4)==0);
-        chat("  offset=%s", offset);
+        //chat("  offset=%s", offset);
 
         /* Set to zeroes */
         voxels[offset..offset+numBytes] = 0;
 
         return offset;
     }
-    void dealloc(uint offset, uint numBytes) {
-        allocator.free(offset, numBytes);
-    }
-    void chat(A...)(lazy string fmt, lazy A args) {
-        if(chunk.pos==int3(0,0,0) && numEdits==0) {
-            writefln(format(fmt, args));
-            flushConsole();
-        }
-    }
-    // (5 bits : 0..32767)
-    uint getOctet_11_1110_0000(uint3 pos) {
-        uint3 p = pos & 0b_000_0011_1110_0000;
-        /// x =            000_0000_0001_1111 \
-        /// y =            000_0011_1110_0000  > = zzz_zzyy_yyyx_xxxx
-        /// z =            111_1100_0000_0000 /
-        auto oct = (p.x>>>5) | (p.y) | (p.z<<5);
-        ASSERT(oct<32768);
+    // void dealloc(uint offset, uint numBytes) {
+    //     allocator.free(offset, numBytes);
+    // }
+    // (4 bits : 0..4095)
+    uint getOctet_11_1100_0000(uint3 pos) {
+        uint3 p = pos & 0b_0011_1100_0000;
+        /// x =            0000_0000_1111 \
+        /// y =            0000_1111_0000  > = zzzz_yyyy_xxxx
+        /// z =            1111_0000_0000 /
+        auto oct = (p.x>>>6) | (p.y>>>2) | (p.z<<2);
+        ASSERT(oct<4096);
         return oct;
     }
+    // (5 bits : 0..32767)
+    // uint getOctet_11_1110_0000(uint3 pos) {
+    //     uint3 p = pos & 0b_000_0011_1110_0000;
+    //     /// x =            000_0000_0001_1111 \
+    //     /// y =            000_0011_1110_0000  > = zzz_zzyy_yyyx_xxxx
+    //     /// z =            111_1100_0000_0000 /
+    //     auto oct = (p.x>>>5) | (p.y) | (p.z<<5);
+    //     ASSERT(oct<32768);
+    //     return oct;
+    // }
     /// (1 bit : 0..7)
     /// bitpos: 0..31
     uint getOctet(uint3 pos, uint bitpos) {
@@ -292,7 +315,7 @@ private:
         /// y =            0000_0000_0010  > = 0000_0000_0zyx
         /// z =            0000_0000_0100 /
         auto oct = p.x | (p.y<<1) | (p.z<<2);
-        ASSERT(oct<7);
+        ASSERT(oct<8);
         return oct;
     }
     uint toUint(void* c) {
@@ -356,6 +379,10 @@ private:
     }
     void setVoxelInner(uint3 offset, ubyte voxel) {
 
+        chat("===========================");
+        chat("setVoxel %s to %s", offset, voxel);
+        chat("===========================");
+
         // thread locals
         // static Stack!(M1aEditBranch*) nodes;
         // static Stack!uint octs;
@@ -367,7 +394,7 @@ private:
         //     octs.clear();
         // }
 
-        M1aEditBranch*[3] branches;
+
 
         if(root().isAir()) {
             // Allocate cells
@@ -384,57 +411,89 @@ private:
 
         chat("root = %s", root().toString());
 
-        // 11_1110_0000 - Cell
-        // 00_0001_0000 - Branch3
+        // 11_1100_0000 - Cell
+        // 00_0010_0000 - Branch0
+        // 00_0001_0000 - Branch1
         // 00_0000_1000 - Branch2
-        // 00_0000_0100 - Branch1
+        // 00_0000_0100 - Branch3
         // 00_0000_0010 - Leaf
         // 00_0000_0001 - Voxel
 
-        uint cellOct    = getOctet_11_1110_0000(offset);
+        // M1aEditBranch*[4] branches;
+        // uint[4] octs;
+
+        // Cell -> Branch0
+        uint cellOct    = getOctet_11_1100_0000(offset);
         auto cell       = root().getCell(voxels.ptr, cellOct);
-        uint branch3oct = getOctet(offset, 4);
+        uint branch0oct = getOctet(offset, 5);
 
         chat("cell       = %s (cellOct=%s)", cell.toString(), cellOct);
-        chat("branch3oct = %s", branch3oct);
+        chat("branch0oct = %s", branch0oct);
 
         if(cell.isSolid()) {
             ubyte v = cell.voxel;
+            if(v==voxel) return; // if it's the same then we are done
 
-            // if it's the same then we are done
-            if(v==voxel) return;
-
-            // expand downwards
-            cell = expandCell(cell, branch3oct, v);
+            cell = expandCell(cell, branch0oct, v);
         }
-        auto branch3 = cell.getBranch(voxels.ptr, branch3oct);
 
+        // Branch0 -> branch1
+        auto branch0    = cell.getBranch(voxels.ptr, branch0oct);
+        uint branch1oct = getOctet(offset, 4);
+        chat("branch1oct = %s", branch1oct);
 
+        if(branch0.isSolid()) {
+            ubyte v = branch0.voxel;
+            if(v==voxel) return; // if it's the same then we are done
+
+            branch0 = expandBranch(branch0, branch1oct, v, false);
+        }
+
+        // Branch1 -> Branch2
+        auto branch1    = branch0.getBranch(voxels.ptr, branch1oct);
         uint branch2oct = getOctet(offset, 3);
         chat("branch2oct = %s", branch2oct);
 
-        if(branch3.isSolid()) {
-            ubyte v = branch3.voxel;
+        if(branch1.isSolid()) {
+            ubyte v = branch1.voxel;
+            if(v==voxel) return; // if it's the same then we are done
 
-            // if it's the same then we are done
-            if(v==voxel) return;
-
-            // it is different so expand downwards
-            branch3 = expandBranch(branch3, branch2oct, v, false);
+            branch1 = expandBranch(branch1, branch2oct, v, false);
         }
-        auto branch2 = branch3.getBranch(voxels.ptr, branch2oct);
 
-        uint branch1oct = getOctet(offset, 2);
-        chat("branch1oct = %s", branch1oct);
+        // Branch2 -> Branch3
+        auto branch2    = branch1.getBranch(voxels.ptr, branch2oct);
+        uint branch3oct = getOctet(offset, 2);
+        chat("branch3oct = %s", branch3oct);
 
+        if(branch2.isSolid()) {
+            ubyte v = branch2.voxel;
+            if(v==voxel) return; // if it's the same then we are done
 
+            branch2 = expandBranch(branch2, branch3oct, v, false);
+        }
+
+        // Branch3 -> Leaf
+        auto branch3 = branch2.getBranch(voxels.ptr, branch3oct);
         uint leafOct = getOctet(offset, 1);
         chat("leafOct = %s", leafOct);
 
+        if(branch3.isSolid()) {
+            ubyte v = branch3.voxel;
+            if(v==voxel) return; // if it's the same then we are done
 
+            branch3 = expandBranch(branch3, leafOct, v, true);
+        }
+
+        auto leaf     = branch3.getLeaf(voxels.ptr, leafOct);
         uint voxelOct = getOctet(offset, 0);
         chat("voxelOct = %s", voxelOct);
 
+        ubyte v = leaf.getVoxel(voxelOct);
+        if(v==voxel) return;
 
+        leaf.setVoxel(voxelOct, voxel);
+
+        chat("%s", leaf.toString());
     }
 }

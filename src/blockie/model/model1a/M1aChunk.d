@@ -32,6 +32,5 @@ public:
         return optRoot().flags.flag==M1aFlag.AIR;
     }
 
-    M1aEditRoot* editRoot() { return cast(M1aEditRoot*)voxels.ptr; }
     M1aOptRoot* optRoot()   { return cast(M1aOptRoot*)voxels.ptr; }
 }
