@@ -2,6 +2,191 @@ module blockie.model1.M1ChunkEditView;
 
 import blockie.all;
 
+/**
+ * CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
+ * 11_1100_0000  cell
+ *      10_0000  branch
+ *       1_0000  branch
+ *         1000  branch
+ *          100  branch
+ *           10  leaf
+ *            1  voxel index
+ */
+align(1):
+
+struct OctreeRoot { static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+512+OctreeIndex.sizeof*4096+
+                                  Distance3.sizeof*M1_CELLS_PER_CHUNK); align(1):
+    OctreeFlags flags;                              /// 8 bytes
+    ubyte[M1_CELLS_PER_CHUNK/8] bits;               /// 512 bytes
+    OctreeIndex[M1_CELLS_PER_CHUNK] indexes;        /// 4096 * 3 bytes
+    Distance3[M1_CELLS_PER_CHUNK] cellDistances;    /// 4096 * 3 bytes
+
+
+    bool isAirCell(uint cell) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        return isSolidCell(cell) && getVoxel(cell)==0;
+    }
+    bool isSolidCell(uint cell) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        return getBit(cell)==0;
+    }
+
+    uint numOffsets() {
+        uint count = 0;
+        foreach(b; bits) count += popcnt(b);
+        return count;
+    }
+    bool getBit(uint cell) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        const byteIndex = cell>>3;
+        const bitIndex  = cell&7;
+        return (bits[byteIndex] & (1<<bitIndex)) !=0;
+    }
+    void setBit(uint cell, bool value) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        const byteIndex = cell>>3;
+        const bitIndex  = cell&7;
+
+        if(value) {
+            bits[byteIndex] |= cast(ubyte)(1<<bitIndex);
+        } else {
+            bits[byteIndex] &= cast(ubyte)~(1<<bitIndex);
+        }
+    }
+    ubyte getVoxel(uint cell) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        return indexes[cell].getVoxel();
+    }
+    void setVoxel(uint cell, ubyte v) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        // set to solid voxel
+        setBit(cell, false);
+        indexes[cell].setVoxel(v);
+    }
+    uint getOffset(uint cell) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        return indexes[cell].offset;
+    }
+    void setOffset(uint cell, uint offset) {
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        // set to index
+        setBit(cell, true);
+        indexes[cell].offset = offset;
+    }
+    bool bitsIsZero() {
+        return isZeroMem(bits.ptr, bits.length);
+    }
+
+    bool isSolid() {
+        if(!bitsIsZero()) return false;
+        ubyte v = indexes[0].getVoxel();
+        return onlyContains(indexes.ptr, indexes.length*OctreeIndex.sizeof, v);
+    }
+    bool isSolidAir() {
+        return flags.flag==OctreeFlag.AIR;
+    }
+    void setToSolid(ubyte v) {
+        bits[] = 0;
+        foreach(ref i; indexes) {
+            i.setVoxel(v);
+        }
+    }
+    void recalculateFlags() {
+        if(indexes[0].getVoxel()==V_AIR && bitsIsZero() && isSolid()) {
+            flags.flag = OctreeFlag.AIR;
+        } else {
+            flags.flag = OctreeFlag.MIXED;
+        }
+    }
+}
+struct OctreeBranch { static assert(OctreeBranch.sizeof==25); align(1):
+    ubyte bits;
+    OctreeIndex[8] indexes;
+
+    uint numOffsets() {
+        return popcnt(bits);
+    }
+    bool isSolid() {
+        if(bits!=0) return false;
+        ubyte v = getVoxelAt(0);
+        for(auto i=1;i<8;i++) if(indexes[i].getVoxel()!=v) return false;
+        return true;
+    }
+    void setToSolid(ubyte v) {
+        bits = 0;
+        foreach(ref i; indexes) {
+            i.setVoxel(v);
+        }
+    }
+
+    ubyte getVoxelAt(uint oct) {
+        ASSERT(oct<8);
+        return indexes[oct].getVoxel();
+    }
+    void setVoxelAt(uint oct, ubyte v) {
+        ASSERT(oct<8);
+        bits &= cast(ubyte)~(1<<oct);
+        indexes[oct].setVoxel(v);
+    }
+    // uint getOffsetAt(uint oct) {
+    //     ASSERT(oct<8);
+    //     return indexes[oct].offset;
+    // }
+    void setOffsetAt(uint oct, uint offset) {
+        ASSERT(oct<8);
+        bits |= cast(ubyte)(1<<oct);
+        indexes[oct].offset = offset;
+    }
+    bool isSolidAt(uint oct) {
+        return 0==(bits & (1<<oct));
+    }
+
+}
+struct OctreeIndex { static assert(OctreeIndex.sizeof==3); align(1):
+    ubyte[3] v;
+
+    ubyte getVoxel() {
+        return v[0];
+    }
+    void setVoxel(ubyte voxel) {
+        v[0] = voxel;
+        v[1] = 0;
+        v[2] = OctreeFlag.NONE;
+    }
+    uint offset() {
+        return (v[2]<<16) | (v[1]<<8) | v[0];
+    }
+    void offset(uint o) {
+        v[0] = cast(ubyte)(o&0xff);
+        v[1] = cast(ubyte)(o>>8)&0xff;
+        v[2] = cast(ubyte)(o>>16)&0xff;
+    }
+}
+struct OctreeLeaf { static assert(OctreeLeaf.sizeof==8); align(1):
+    ubyte[8] voxels;
+
+    bool isSolid() {
+        ubyte v = getVoxelAt(0);
+        for(auto i=1; i<voxels.length; i++) {
+            if(getVoxelAt(i)!=v) return false;
+        }
+        return true;
+    }
+    ubyte getVoxelAt(uint oct) {
+        ASSERT(oct<8);
+        return voxels[oct];
+    }
+    void setVoxelAt(uint oct, ubyte v) {
+        ASSERT(oct<8);
+        voxels[oct] = v;
+    }
+    void setAllVoxelsTo(ubyte v) {
+        voxels[] = v;
+    }
+}
+
+//==========================================================================================
+
 final class M1ChunkEditView : ChunkEditView {
     M1Chunk chunk;
     OctreeRoot root;
@@ -28,7 +213,7 @@ final class M1ChunkEditView : ChunkEditView {
         return chunk.pos;
     }
     override void beginTransaction(Chunk chunk) {
-        assert(chunk !is null);
+        ASSERT(chunk !is null);
 
         this.chunk = cast(M1Chunk)chunk;
 
@@ -57,7 +242,7 @@ final class M1ChunkEditView : ChunkEditView {
         return root.flags.flag==OctreeFlag.AIR;
     }
     override bool isAirCell(uint cell) {
-        expect(cell<M1_CELLS_PER_CHUNK);
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
 
         return root.isAirCell(cell);
     }
@@ -65,8 +250,8 @@ final class M1ChunkEditView : ChunkEditView {
         root.flags.distance.set(f);
     }
     override void setCellDistance(uint cell, uint x, uint y, uint z) {
-        expect(cell<M1_CELLS_PER_CHUNK);
-        expect(isAirCell(cell));
+        ASSERT(cell<M1_CELLS_PER_CHUNK);
+        ASSERT(isAirCell(cell));
 
         /// We only have 5 bits per axis (uni-directional)
         x = min(31, x);
@@ -109,7 +294,7 @@ private:
 
         this.version_ = chunk.getVersion();
 
-        expect(chunk.isAir);
+        ASSERT(chunk.isAir);
 
         root            = OctreeRoot();
         root.flags.flag = OctreeFlag.AIR;
@@ -118,48 +303,30 @@ private:
         leaves.length   = 0;
     }
     /// get 4 bit octet index (0-4095)
-    uint getOctetRoot_1111(const uint X,
-                           const uint Y,
-                           const uint Z,
-                           uint level) nothrow
+    uint getOctet_11_1100_0000(uint X,
+                               uint Y,
+                               uint Z)
     {
-        const uint and = 0b1111 << (level-4);
-        const uint x   = X & and;
-        const uint y   = Y & and;
-        const uint z   = Z & and;
+        uint and = 0b11_1100_0000;
+        uint x   = X & and;
+        uint y   = Y & and;
+        uint z   = Z & and;
 
-        switch(level) {
-        case 6:
-            // 00000000_00111100 -> 0000zzzz_yyyyxxxx
-            return (x>>>2) | (y<<2) | (z<<6);
-        case 7:
-            // 00000000_01111000 -> 0000zzzz_yyyyxxxx
-            return (x>>>3) | (y<<1) | (z<<5);
-        case 8:
-            // 00000000_11110000 -> 0000zzzz_yyyyxxxx
-            return (x>>>4) | y | (z<<4);
-        case 9:
-            // 00000001_11100000 -> 0000zzzz_yyyyxxxx
-            return (x>>>5) | (y>>>1) | (z<<3);
-        case 10:
-            // 00000011_11000000 -> 0000zzzz_yyyyxxxx
-            return (x>>>6) | (y>>>2) | (z<<2);
-        default:
-            assert(false);
-        }
+        // 11_1100_0000 -> zzzz_yyyyxxxx
+        return (x>>>6) | (y>>>2) | (z<<2);
     }
     /// get 1 bit octet index (0-7)
-    uint getOctet_1(const uint X,
-                    const uint Y,
-                    const uint Z,
-                    const uint and) nothrow
+    uint getOctet_1(uint X,
+                    uint Y,
+                    uint Z,
+                    uint and)
     {
         // x = 1000_0000 \
-        // y = 1000_0000  >  oct = 00000zyx
+        // y = 1000_0000  >  oct = 0000_0zyx
         // z = 1000_0000 /
-        const uint x = (X & and) == and;
-        const uint y = (Y & and) == and;
-        const uint z = (Z & and) == and;
+        uint x = (X & and) == and;
+        uint y = (Y & and) == and;
+        uint z = (Z & and) == and;
         return x | (y << 1) | (z << 2);
     }
     void setOctreeVoxel(ubyte v, uint x, uint y, uint z) {
@@ -222,13 +389,13 @@ private:
             if(isParentOfLeaf()) {
                 // add leaf node
                 auto leaf = getFreeLeaf();
-                br.setOffset(oct, toIndex(leaf));
+                br.setOffsetAt(oct, toIndex(leaf));
 
-                leaf.setAllVoxels(oldValue);
+                leaf.setAllVoxelsTo(oldValue);
             } else {
                 // add branch node
                 auto newBranch = getFreeBranch();
-                br.setOffset(oct, toIndex(newBranch));
+                br.setOffsetAt(oct, toIndex(newBranch));
 
                 newBranch.setToSolid(oldValue);
             }
@@ -244,7 +411,7 @@ private:
                 root.setVoxel(oct, v);
             } else {
                 // branch
-                br.setVoxel(oct, v);
+                br.setVoxelAt(oct, v);
 
                 if(br.isSolid) {
                     freeBranches.push(toIndex(br));
@@ -254,24 +421,14 @@ private:
         }
 
         // octree root
-        //static if(OCTREE_ROOT_BITS==1) {
-        //    uint oct = getOctet_1(x,y,z, and);
-        //} else static if(OCTREE_ROOT_BITS==2) {
-        //    uint oct = getOctetRoot_11(x,y,z, CHUNK_SIZE_SHR);
-        //} else static if(OCTREE_ROOT_BITS==3) {
-        //    uint oct = getOctetRoot_111(x,y,z, CHUNK_SIZE_SHR);
-        //} else static if(OCTREE_ROOT_BITS==4) {
-        uint oct = getOctetRoot_1111(x,y,z, CHUNK_SIZE_SHR);
-        //} else static if(OCTREE_ROOT_BITS==5) {
-        //    uint oct = getOctetRoot_11111(x,y,z, CHUNK_SIZE_SHR);
-        //} else static assert(false);
+        uint oct = getOctet_11_1100_0000(x,y,z);
 
-        auto root  = &root;                 // ? wtf
+        auto root  = &this.root;
         auto index = &root.indexes[oct];
 
-        if(root.isSolid(oct)) {
+        if(root.isSolidCell(oct)) {
             //writefln("root isSolid");
-            ubyte v2 = index.voxel;
+            ubyte v2 = index.getVoxel();
             // if it's the same then we are done
             if(v2==v) return;
             // it is different so expand downwards
@@ -293,9 +450,9 @@ private:
             oct   = getOctet_1(x,y,z,and);
             index = &branch.indexes[oct];
 
-            if(branch.isSolid(oct)) {
+            if(branch.isSolidAt(oct)) {
                 //writefln("branch is solid");
-                ubyte v2 = index.voxel;
+                ubyte v2 = index.getVoxel();
                 // if it's the same then we are done
                 if(v2==v) return;
                 // it is different so expand downwards
@@ -311,11 +468,11 @@ private:
         //writefln("leaf oct = %s", oct);
         //writefln("leaf index = %s", index.offset);
         auto leaf = toLeafPtr(index.offset);//cast(OctreeLeaf*)branch;
-        ubyte v2  = leaf.getVoxel(oct);
+        ubyte v2  = leaf.getVoxelAt(oct);
         // no change
         if(v2==v) return;
         // change the voxel
-        leaf.setVoxel(oct, v);
+        leaf.setVoxelAt(oct, v);
         if(leaf.isSolid) {
             //writefln("leaf is solid");
 

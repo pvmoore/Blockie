@@ -23,7 +23,7 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
-        const auto num = "1";
+        const auto num = "8";
 
         SceneGenerator scene;
         switch(num) {
@@ -90,24 +90,24 @@ final class Generator {
 
         sceneGenerator.build(editor);
     }
-    void generateModel1A(SceneGenerator sceneGenerator, World world) {
-        writefln("\n=========================================");
-        writefln("Generating MODEL1A %s", world);
-        writefln("=========================================\n");
+    // void generateModel1A(SceneGenerator sceneGenerator, World world) {
+    //     writefln("\n=========================================");
+    //     writefln("Generating MODEL1A %s", world);
+    //     writefln("=========================================\n");
 
-        auto editor = new M1aWorldEditor(world, new Model1a);
-        scope(exit) editor.destroy();
+    //     auto editor = new M1aWorldEditor(world, new Model1a);
+    //     scope(exit) editor.destroy();
 
-        // editor.startTransaction();
-        // editor.setVoxel(worldcoords(0,0,0), 1);
-        // editor.setVoxel(worldcoords(1,0,0), 1);
-        // editor.setVoxel(worldcoords(0,1,0), 1);
-        // editor.setVoxel(worldcoords(1,1,0), 1);
-        // editor.setVoxel(worldcoords(2,0,0), 1);
-        // editor.commitTransaction();
+    //     // editor.startTransaction();
+    //     // editor.setVoxel(worldcoords(0,0,0), 1);
+    //     // editor.setVoxel(worldcoords(1,0,0), 1);
+    //     // editor.setVoxel(worldcoords(0,1,0), 1);
+    //     // editor.setVoxel(worldcoords(1,1,0), 1);
+    //     // editor.setVoxel(worldcoords(2,0,0), 1);
+    //     // editor.commitTransaction();
 
-        sceneGenerator.build(editor);
-    }
+    //     sceneGenerator.build(editor);
+    // }
     void generateModel2(SceneGenerator sceneGenerator, World world) {
         writefln("\nGenerating Model2 %s", world);
 

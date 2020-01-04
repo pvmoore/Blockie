@@ -103,7 +103,7 @@ public:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.
 
-            string w = "1";
+            string w = "8";
 
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;

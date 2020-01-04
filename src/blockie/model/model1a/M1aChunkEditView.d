@@ -6,8 +6,7 @@ import blockie.model.model1a;
 /*
     M1aEditView
 
-    M1aRoot
-
+    M1aEditRoot
 
     11_1100_0000 - cell oct     | M1aEditCell   | 64^3
     00_0010_0000 - branch 0 oct | M1aEditBranch | 32^8
@@ -52,12 +51,12 @@ struct M1aEditCell { static assert(M1aEditCell.sizeof==5); align(1):
     ubyte flag;             ///
     ubyte bits;             /// Each bit: 0 = voxel, 1 = mixed
     union {
-        ubyte voxel;        /// if !isAir && isSolid()
-        Distance3 distance; /// if isAir
-        Offset3 offset;     /// if !isAir && !isSolid()
-                            /// points to !isAllBranches() ? (8*ubyte voxels) + (8*M1aEditBranch)
-                            ///            isAllBranches() ? (8*M1aEditBranch)
+        ubyte voxel;        /// if !isAir() && isSolid()
+        Distance3 distance; /// if isAir()
+        Offset3 offset;     /// if !isAir() && !isSolid()
+                            /// points to (8*M1aEditBranch)
     }
+
 
     bool isAir()         { return flag==0; }
     bool isSolid()       { return bits==0; }
@@ -74,7 +73,7 @@ struct M1aEditCell { static assert(M1aEditCell.sizeof==5); align(1):
         ASSERT(oct<8);
         bits |= cast(ubyte)(1<<oct);
     }
-    // void setAsAirAt(uint oct) {
+    // void setAsSolidAt(uint oct) {
     //     ASSERT(oct<8);
     //     bits &= cast(ubyte)~(1<<oct);
     // }
@@ -92,11 +91,10 @@ struct M1aEditBranch { static assert(M1aEditBranch.sizeof==4); align(1):
     ubyte bits;
     union {
         ubyte voxel;    /// if isSolid()
-        Offset3 offset; /// points to !isAllBranches() ? (8*ubyte voxels) + (8*M1aEditBranch or 8*M1aEditLeaf)
+        Offset3 offset; /// points to !isAllBranches() ? (8*ubyte voxels) + (8*M1aEditBranch or 8*M1aLeaf)
                         ///            isAllBranches() ? (8*M1aEditBranch or 8*M1aEditLeaf)
     }
 
-    //bool isAir()         { return isSolid() && voxel==0; }
     bool isSolid()       { return bits==0; }
     bool isAllBranches() { return bits==0xff; }
     uint numBranches()   { return popcnt(bits); }
@@ -109,7 +107,7 @@ struct M1aEditBranch { static assert(M1aEditBranch.sizeof==4); align(1):
         ASSERT(oct<8);
         bits |= cast(ubyte)(1<<oct);
     }
-    // void setAsAirAt(uint oct) {
+    // void setAsSolidAt(uint oct) {
     //     ASSERT(oct<8);
     //     bits &= cast(ubyte)~(1<<oct);
     // }
@@ -118,38 +116,14 @@ struct M1aEditBranch { static assert(M1aEditBranch.sizeof==4); align(1):
         ASSERT(oct<8);
         return cast(M1aEditBranch*)(ptr+(offset.get()*4)+(oct*M1aEditBranch.sizeof));
     }
-    M1aEditLeaf* getLeaf(ubyte* ptr, uint oct) {
+    M1aLeaf* getLeaf(ubyte* ptr, uint oct) {
         ASSERT(oct<8);
-        return cast(M1aEditLeaf*)(ptr+(offset.get()*4)+(oct*M1aEditLeaf.sizeof));
+        return cast(M1aLeaf*)(ptr+(offset.get()*4)+(oct*M1aLeaf.sizeof));
     }
     string toString() {
         string s = isSolid() ? "SOLID %s".format(voxel) : "MIXED";
         return "Branch(%s:%08b)".format(s,bits);
     }
-}
-struct M1aEditLeaf { static assert(M1aEditLeaf.sizeof==8); align(1):
-    ubyte[8] voxels;
-
-    ubyte getVoxel(uint oct) {
-        ASSERT(oct<8);
-        return voxels[oct];
-    }
-    // If all the voxels are the same then solid is true
-    bool isSolid() {
-        ubyte v = getVoxel(0);
-        for(auto i=1; i<voxels.length; i++) {
-            if(getVoxel(i)!=v) return false;
-        }
-        return true;
-    }
-    void setVoxel(uint oct, ubyte v) {
-        ASSERT(oct<8);
-        voxels[oct] = v;
-    }
-    void setAllVoxels(ubyte v) {
-        voxels[] = v;
-    }
-    string toString() { return "Leaf(%s)".format(voxels); }
 }
 
 //================================================================================================
@@ -327,8 +301,8 @@ private:
     M1aEditBranch* toBranch(uint o) {
         return cast(M1aEditBranch*)(voxels.ptr+o);
     }
-    M1aEditLeaf* toLeaf(uint o) {
-        return cast(M1aEditLeaf*)(voxels.ptr+o);
+    M1aLeaf* toLeaf(uint o) {
+        return cast(M1aLeaf*)(voxels.ptr+o);
     }
     M1aEditCell* expandCell(M1aEditCell* cell, uint oct4, ubyte oldValue) {
         ASSERT(cell.numBranches()<8);
@@ -353,7 +327,7 @@ private:
     M1aEditBranch* expandBranch(M1aEditBranch* branch, uint oct, ubyte oldValue, bool isAboveLeaf) {
         ASSERT(branch.numBranches()<8);
 
-        auto elementSize = isAboveLeaf ? M1aEditLeaf.sizeof : M1aEditBranch.sizeof;
+        auto elementSize = isAboveLeaf ? M1aLeaf.sizeof : M1aEditBranch.sizeof;
 
         /// If this is the first branch then alloc space
         if(branch.numBranches()==0) {

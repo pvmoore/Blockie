@@ -11,7 +11,7 @@ import blockie.all;
  *      uint    leavesOffset
  *      uint    l2IndexOffset
  *      uint    leafIndexOffset
- *      uint    (leafEncodeBits | (l2EncodeBits<<8))
+ *      uint    encodeBits (leafEncodeBits | (l2EncodeBits<<8))
  *
  *      uint[256] root bits and popcounts interleaved (4096/16)
  *
@@ -31,51 +31,7 @@ import blockie.all;
  * LeafIndexes: (leafEncodeBits bits each)
  *      Indexes into leavesOffset
  */
-align(1) struct OptimisedRoot { align(1):
-    OctreeFlags flags;  // 8 bytes
-    uint twigsOffset;
-    uint l2TwigsOffset;
-    uint leavesOffset;
-    uint l2IndexOffset;
-    uint leafIndexOffset;
-    uint encodeBits;    // (leafEncodeBits | (l2EncodeBits<<8))
 
-    uint[M1_CELLS_PER_CHUNK/16] bitsAndPopcnts;
-    ubyte[M1_CELLS_PER_CHUNK] voxels;
-    ushort[M1_CELLS_PER_CHUNK] dfields;
-
-    static assert(OptimisedRoot.sizeof==13344);
-    static assert(OptimisedRoot.bitsAndPopcnts.offsetof%4==0);
-    static assert(OptimisedRoot.voxels.offsetof%4==0);
-    static assert(OptimisedRoot.dfields.offsetof%4==0);
-
-    bool isSolid(uint oct) {
-        auto uintIndex = oct>>4;
-        auto bitIndex  = oct&15;
-        uint bits      = bitsAndPopcnts[uintIndex] & 0xffff;
-        return (bits & (1<<bitIndex))==0;
-    }
-    bool isAir(uint oct) {
-        return isSolid(oct) && voxels[oct]==0;
-    }
-    uint getOctree(uint x, uint y, uint z) {
-        return x | (y<<M1_OCTREE_ROOT_BITS) | (z<<(M1_OCTREE_ROOT_BITS*2));
-    }
-    uint getOctree(ivec3 i) {
-        return getOctree(i.x, i.y, i.z);
-    }
-    void setDField(uint oct, uint x, uint y, uint z) {
-        //expect(oct<OCTREE_ROOT_INDEXES_LENGTH);
-
-        /// We only have 5 bits per axis
-        x = min(31, x);
-        y = min(31, y);
-        z = min(31, z);
-
-        dfields[oct] = cast(ushort)(x | (y<<5) | (z<<10));
-    }
-}
-//=======================================================================================
 __gshared ulong maxBranches;
 __gshared ulong maxLeaves;
 __gshared ulong maxVoxelsLength;
@@ -161,14 +117,14 @@ private:
             } else {
                 auto branch = view.toBranchPtr(index);
                 foreach(uint oct, ref idx2; branch.indexes) {
-                    if(!branch.isSolid(oct)) {
+                    if(!branch.isSolidAt(oct)) {
                         recurse(idx2, toLevel-1);
                     }
                 }
             }
         }
         foreach(uint oct, ref idx; view.root.indexes) {
-            if(!view.root.isSolid(oct)) {
+            if(!view.root.isSolidCell(oct)) {
                 recurse(idx, CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS);
             }
         }
@@ -196,7 +152,7 @@ private:
         view.leaves = tup[0];
         view.freeLeaves.clear();
 
-        // Assuming CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
+        // CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
         // 11_1100_0000  toLevel=6
         //      10_0000  6
         //       1_0000  5
@@ -214,14 +170,14 @@ private:
             } else {
                 auto branch = view.toBranchPtr(index);
                 foreach(uint oct, ref idx2; branch.indexes) {
-                    if(!branch.isSolid(oct)) {
+                    if(!branch.isSolidAt(oct)) {
                         recurse(idx2, toLevel-1);
                     }
                 }
             }
         }
         foreach(uint oct, ref idx; view.root.indexes) {
-            if(!view.root.isSolid(oct)) {
+            if(!view.root.isSolidCell(oct)) {
                 recurse(idx, CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS);
             }
         }
@@ -263,7 +219,7 @@ private:
 
             if(!pointingToLeaf) {
                 foreach(uint oct, ref idx; branch.indexes) {
-                    if(!branch.isSolid(oct)) {
+                    if(!branch.isSolidAt(oct)) {
                         recurseBranch(idx, view.toBranchPtr(idx.offset), level-1);
                     }
                 }
@@ -274,7 +230,7 @@ private:
             count = 0;
             map.clear();
             foreach(uint oct, ref idx; view.root.indexes) {
-                if(!view.root.isSolid(oct)) {
+                if(!view.root.isSolidCell(oct)) {
                     recurseBranch(
                         idx,
                         view.toBranchPtr(idx.offset),
@@ -331,14 +287,14 @@ private:
             twig.setBaseIndex(leafIndexesWritten);
 
             foreach(uint oct, ref idx; branch.indexes) {
-                if(!branch.isSolid(oct)) {
+                if(!branch.isSolidAt(oct)) {
 
                     leafIndexBitWriter.write(idx.offset, leafEncodeBits);
                     leafIndexesWritten++;
 
                     twig.voxels[oct] = getAverageVoxel(view.leaves[idx.offset].voxels);
                 } else {
-                    twig.voxels[oct] = branch.getVoxel(oct);
+                    twig.voxels[oct] = branch.getVoxelAt(oct);
                 }
             }
             l2twigVoxels[l2BranchIndex] = getAverageVoxel(twig.voxels);
@@ -349,7 +305,7 @@ private:
             twigs[ti].setBaseIndex(l2IndexesWritten);
 
             foreach(uint oct, ref idx; branch.indexes) {
-                if(!branch.isSolid(oct)) {
+                if(!branch.isSolidAt(oct)) {
                     auto b = view.toL2BranchPtr(idx.offset);
 
                     l2IndexBitWriter.write(idx.offset, l2EncodeBits);
@@ -357,7 +313,7 @@ private:
 
                     twigs[ti].voxels[oct] = recurseL2Branch(b, idx.offset);
                 } else {
-                    twigs[ti].voxels[oct] = branch.getVoxel(oct);
+                    twigs[ti].voxels[oct] = branch.getVoxelAt(oct);
                 }
             }
             return getAverageVoxel(twigs[ti].voxels);
@@ -381,7 +337,7 @@ private:
             twigIndex += numSubBranches;
 
             foreach(uint oct, ref idx; branch.indexes) {
-                if(!branch.isSolid(oct)) {
+                if(!branch.isSolidAt(oct)) {
                     auto b = view.toBranchPtr(idx.offset);
                     ubyte lodvox;
                     if(level==4) {
@@ -391,7 +347,7 @@ private:
                     }
                     twigs[ti].voxels[oct] = lodvox;
                 } else {
-                    twigs[ti].voxels[oct] = branch.getVoxel(oct);
+                    twigs[ti].voxels[oct] = branch.getVoxelAt(oct);
                 }
             }
             return getAverageVoxel(twigs[ti].voxels);
@@ -406,7 +362,7 @@ private:
         twigIndex  += view.root.numOffsets();
 
         foreach(uint oct, ref idx; view.root.indexes) {
-            if(!view.root.isSolid(oct)) {
+            if(!view.root.isSolidCell(oct)) {
                 /// Points to an octree
                 auto b       = view.toBranchPtr(idx.offset);
                 ubyte lodvox = recurseBranch(b, tindex, CHUNK_SIZE_SHR-M1_OCTREE_ROOT_BITS);
