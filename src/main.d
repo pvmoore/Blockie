@@ -11,12 +11,14 @@ int WinMain(HINSTANCE theHInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
 	int result = 0;
 	Blockie app;
 	Throwable exception;
+
 	try{
 		Runtime.initialize();
 
 		app = new Blockie();
 		app.initialise();
 		app.run();
+
 	}catch(Throwable e) {
 	    exception = e;
 		log("exception: %s", e.msg);

@@ -19,7 +19,7 @@
             "label": "**** Run ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=debug --config=blockie --compiler=dmd --arch=x86_64",
+                "command": "dub run --build=debug --config=blockie --compiler=dmd --arch=x86_64 --parallel",
             },
             "group": "build",
             "presentation": {
@@ -32,7 +32,7 @@
             "label": "**** Generate ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=generate --compiler=ldc2 --arch=x86_64",
+                "command": "dub run --build=release --config=generate --compiler=ldc2 --arch=x86_64 --parallel",
             },
             "group": "build",
             "presentation": {
@@ -46,7 +46,7 @@
             "label": "**** Generate DEBUG ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=debug --config=generate --compiler=dmd --arch=x86_64",
+                "command": "dub run --build=debug --config=generate --compiler=dmd --arch=x86_64 --parallel",
             },
             "group": "build",
             "presentation": {
