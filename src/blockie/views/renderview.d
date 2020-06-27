@@ -11,20 +11,21 @@ enum RenderOption {
 
 final class RenderView : IView {
 private:
-    OpenGL gl;
     World world;
     bool needToInitWorld;
+    StopWatch renderWatch;
+    StopWatch updateWatch;
+    int4 renderRect;
+    Timing fpsTiming, frameTiming, updateTiming;
+    bool[RenderOption] renderOptions;
+
+    OpenGL gl;
     GLComputeRenderer glComputeSceneRenderer;
     SkyBox skybox;
     Console console;
     TopBar topBar;
     BottomBar bottomBar;
     MiniMap minimap;
-    StopWatch renderWatch;
-    StopWatch updateWatch;
-    int4 renderRect;
-    Timing fpsTiming, frameTiming, updateTiming;
-    bool[RenderOption] renderOptions;
 public:
     this(OpenGL gl) {
         this.gl = gl;

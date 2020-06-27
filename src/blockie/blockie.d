@@ -17,6 +17,10 @@ public:
 
         initEvents(1*MB);
 
+        version(VULKAN) {
+            log("Using Vulkan");
+        }
+
         this.gl = new OpenGL(this, (h) {
             h.width        = 1200;
             h.height       = 800;
