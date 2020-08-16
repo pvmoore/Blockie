@@ -23,6 +23,8 @@ final class Generator {
     void run() {
         initEvents(1*MB);
 
+        setEagerFlushing(true);
+
         const auto num = "8";
 
         SceneGenerator scene;
@@ -76,6 +78,11 @@ final class Generator {
                 remove(name);
             }
             generateModel5(scene, world);
+        } else version(MODEL6) {
+            foreach(string name; dirEntries(dirName, "M6*", SpanMode.shallow)) {
+                remove(name);
+            }
+            generateModel6(scene, world);
         } else assert(false);
 
         writefln("\nFinished OK");
@@ -167,5 +174,31 @@ final class Generator {
         // editor.setVoxel(worldcoords(0,0,0), 1);
         // editor.setVoxel(worldcoords(7,7,7), 1);
         // editor.commitTransaction();
+    }
+    void generateModel6(SceneGenerator sceneGenerator, World world) {
+        writefln("\n=========================================");
+        writefln("Generating Model6 %s", world);
+        writefln("=========================================\n");
+
+        auto editor = new M6WorldEditor(world, new Model6);
+        scope(exit) editor.destroy();
+
+        // editor.startTransaction();
+        // editor.setVoxel(worldcoords(0,0,0), 1);
+        // editor.setVoxel(worldcoords(31,0,0), 1);
+        // editor.setVoxel(worldcoords(32,0,0), 1);
+
+
+        //editor.setVoxel(worldcoords(0,1,0), 1);
+
+
+        //editor.setVoxel(worldcoords(0,0,1), 1);
+
+
+        //editor.setVoxel(worldcoords(31,31,31), 1);
+
+        //editor.commitTransaction();
+
+        sceneGenerator.build(editor);
     }
 }

@@ -4,7 +4,7 @@ import blockie.all;
 
 final class Blockie : ApplicationListenerAdapter {
 private:
-    const string title = "Blockie " ~ version_;
+    string title = "Blockie " ~ version_;
     OpenGL gl;
     World world;
     IView view;
@@ -46,6 +46,12 @@ public:
         getComputeMonitor().initialise(gl);
 
         renderView = new RenderView(gl);
+
+        import std : fromStringz;
+        import core.cpuid: processor;
+        string deviceName = cast(string)fromStringz(glGetString(GL_RENDERER));
+        title ~= " :: %s, %s".format(processor(), deviceName);
+        gl.setWindowTitle(title);
 
         //auto t = task(&initWorld);
         //t.executeInNewThread();
@@ -103,6 +109,19 @@ public:
             // 7:  |  525 (32 MB)  |  665 (30 MB)  |  745 (31 MB)   |  672 (243 MB) |
             // 8:  |  852 (1 MB)   | 1010 (1 MB)   | 1080 (1 MB)    | 1077 (1 MB)   |
 
+            // Laptop i7-1065G7 Iris Plus
+            //
+            // 1:  |  151 (2 MB)   |                | 191 (?)      |
+            // 2:  |  247 (5 MB)   |                | 287 (?)      |
+            // 3:  |  85 (8 MB)    |                | 142 (?)      |
+            // 4:  |  76 (242 MB)  |                | 97 (?)       |
+            // 4b: |  74 (54 MB)   |                | 98 (?)       |
+            // 4c: |  69 (79 MB)   |                | 93 (?)       |
+            // 5:  |  205 (2 MB)   |                | 245 (?)      |
+            // 6:  |  139 (53 MB)  |                | 176 (?)      |
+            // 7:  |  80 (32 MB)   |                | 109 (?)      |                                                                                                  | 5
+            // 8:  |  121 (1 MB)   |                | 158 (1 MB)   |
+
             // Notes:
             //    Model 3 has superior speed compared to Model 2 with only
             //    a small cost in extra memory usage so should be preferred.
@@ -128,6 +147,7 @@ public:
             version(MODEL3) pragma(msg, "MODEL3");
             version(MODEL4) pragma(msg, "MODEL4");
             version(MODEL5) pragma(msg, "MODEL5");
+            version(MODEL6) pragma(msg, "MODEL6");
 
 
             world.camera.resize(gl.windowSize);

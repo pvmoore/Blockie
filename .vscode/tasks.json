@@ -40,8 +40,7 @@
                 "panel": "shared"
             },
             "problemMatcher": []
-        }
-        ,
+        },
         {
             "label": "**** Generate DEBUG ****",
             "type": "shell",

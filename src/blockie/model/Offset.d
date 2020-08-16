@@ -7,6 +7,10 @@ align(1):
 struct Offset3 { static assert(Offset3.sizeof==3); align(1):
     ubyte[3] v;
 
+    this(uint o) {
+        set(o);
+    }
+
     uint get() const {
         return (v[2]<<16) | (v[1]<<8) | v[0];
     }

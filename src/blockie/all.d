@@ -41,6 +41,7 @@ import blockie.model2;
 import blockie.model3;
 import blockie.model4;
 import blockie.model5;
+import blockie.model.model6;
 import blockie.model.model1a;
 
 import blockie.generate.diamondsquare;
@@ -69,15 +70,16 @@ import derelict.glfw3;
 
 import fonts.sdf;
 import resources : PNG, HGT;
-import logging : flushLog, log, FileLogger;
+import logging : flushLog, log, setEagerFlushing, FileLogger;
 import resusage.memory : ProcessMemInfo, processMemInfo;
 import maths.noise;
 import maths.camera;
 import maths;
 import events : initEvents, getEvents, EventMsg;
 import common :
-    Allocator, Allocator_t, Archive, Array, Async, BitWriter, BufferBitWriter,
+    Allocator, Allocator_t, Archive, Array, Async,
+    BitWriter, ArrayBitWriter, ArrayByteWriter,
     Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
-    as, dbg, expect, flushConsole, isZeroMem, onlyContains,
-    makeSPSCQueue, nextHighestPowerOf2, repeat, toInt, todo;
+    as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
+    makeSPSCQueue, nextHighestPowerOf2, repeat, todo;

@@ -268,6 +268,8 @@ public:
         string[] defines = [
             "#define CHUNK_SIZE %s".format(CHUNK_SIZE),
             "#define CHUNK_SIZE_SHR %s".format(CHUNK_SIZE_SHR),
+
+            // These are MODEL1 only
             "#define OctreeTwigSize %s".format(OctreeTwig.sizeof),
             "#define OctreeLeafSize %s".format(OctreeLeaf.sizeof),
             "#define DFIELD_OFFSET %s".format(OptimisedRoot.dfields.offsetof)
@@ -344,6 +346,19 @@ public:
         } else version(MODEL5) {
             marchProgram.loadCompute(
                 "pass1_marchM5.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+            shadeProgram.loadCompute(
+                "pass3_shadeM2.comp",
+                ["shaders/",
+                "C:/pvmoore/_assets/shaders/"],
+                defines
+            );
+        } else version(MODEL6) {
+            marchProgram.loadCompute(
+                "pass1_marchM6.comp",
                 ["shaders/",
                 "C:/pvmoore/_assets/shaders/"],
                 defines

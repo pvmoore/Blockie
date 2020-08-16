@@ -1,12 +1,16 @@
 module blockie.version_;
 
-const string version_ = "0.0.24";
+const string version_ = "0.0.25";
 
 /**===============================================================
     History
 
 Upcoming ...
-    - Add voxel de-optimiser code
+       - Add voxel de-optimiser code
+
+
+0.0.25 - Add CPU and GPU name to title bar.
+       -
 
 0.0.24 - Tidy up Model3 march shader.
 

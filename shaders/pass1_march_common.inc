@@ -7,6 +7,10 @@ uint getImpliedIndex_16bit(const uint bits, const uint oct) {
     const uint and = 0x7fff >> (15-oct);
     return bitCount(bits & and);
 }
+uint getImpliedIndex_32bit(const uint bits, const uint oct) {
+    const uint and = 0x7fffffff >> (31-oct);
+    return bitCount(bits & and);
+}
 /**
  *  Assumes numBits is between 1 and 32.
  */
@@ -172,6 +176,13 @@ float getMinDistToEdgeUniDirectional(
 //     //updatePosition(pos, dir*f);
 // }
 
+/// (0-32767)
+uint getOctet_1111100000(uvec3 upos) {
+    // 11_1110_0000 -> 0zzz_zzyy_yyyx_xxxx
+    uvec3 a = bitfieldExtract(upos, 5, 5);
+    uvec3 c = a << uvec3(0,5,10);
+    return c.x + c.y + c.z;
+}
 /// (0-4095)
 uint getOctet_1111000000(const uvec3 inXYZ) {
     // 11_1100_0000 -> zzzz_yyyyxxxx

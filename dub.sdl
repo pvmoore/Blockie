@@ -19,18 +19,18 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "GC_STATS" "MODEL1" "RELEASE_ASSERT" "VULKAN"
+versions "GC_STATS" "MODEL6" "RELEASE_ASSERT" "VULKAN"
+
+targetType "executable"
 
 configuration "blockie" {
 	#mainSourceFile "src/main.d"
 	excludedSourceFiles "src/gen.d"
-	targetType "executable"
 	targetName "blockie"
 }
 configuration "generate" {
 	#mainSourceFile "src/gen.d"
 	excludedSourceFiles "src/main.d"
-	targetType "executable"
 	targetName "generate"
 }
 

@@ -20,6 +20,27 @@ uint bitsRequiredToEncode2(ulong value) {
     return value<3 ? 1 : bsr(value-1)+1;
 }
 
+uint getImpliedIndex_32bit(uint bits, uint index) {
+    assert(index < 32);
+    uint and = 0x7fffffff >> (31-index);
+    return popcnt(bits & and);
+}
+uint getImpliedIndex_64bit(ulong bits, uint index) {
+    assert(index < 64);
+    ulong and = 0x7fffffff_ffffffff >> (63-index);
+    return popcnt(bits & and);
+}
+
+string toHexString(T)(T[] array) if(isInteger!T) {
+    enum size = T.sizeof * 2;
+    auto buf = appender!(string);
+    foreach(i; 0..array.length) {
+        if(i>0) buf ~= ", ";
+        buf ~= mixin("\"%0" ~ size.to!string ~ "x\".format(array[i])");
+    }
+    return buf.data;
+}
+
 pragma(inline, true) void ASSERT(bool b, string file=__FILE__, int line=__LINE__) {
     // If we are in debug
     assert(b, "Woops %s:%s".format(file, line));

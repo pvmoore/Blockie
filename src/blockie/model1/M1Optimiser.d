@@ -135,7 +135,7 @@ private:
 
         foreach(i,ref v; sorted) {
             foreach(from; v.indexes[]) {
-                oldIndexToNew[from] = i.toInt;
+                oldIndexToNew[from] = i.as!int;
             }
         }
         return tuple(uniqueLeaves,oldIndexToNew);

@@ -87,12 +87,15 @@ private:
 
         if(p.anyLT(chunkMin) || p.anyGT(chunkMax)) return fakeView;
 
+
         Chunk c = storage.blockingGet(p);
         auto view = model.makeEditView();
-        view.beginTransaction(c);
-        addedViews ~= view;
 
+        view.beginTransaction(c);
+
+        addedViews ~= view;
         map[p] = view;
+
         return view;
     }
     bool isAir(int3 pos) {
@@ -104,7 +107,7 @@ private:
         auto maxDistance = DFieldsBi();
         int numAirChunks;
 
-        DFieldsBi process(int3 chunkPos, int index, DFieldBi xstart) {
+        DFieldsBi _process(int3 chunkPos, int index, DFieldBi xstart) {
             DFieldsBi f;
             /// x
             for(int i=xstart.up; i<=MAX; i++) {
@@ -150,6 +153,7 @@ private:
         int index = 0;
 
         for(auto z=chunkMin.z; z<=chunkMax.z; z++) {
+
             for(auto y=chunkMin.y; y<=chunkMax.y; y++) {
 
                 DFieldsBi dist;
@@ -161,7 +165,10 @@ private:
                     if(view.isAir) {
                         numAirChunks++;
 
-                        dist = process(pos, index, xstart);
+                        //StopWatch w; w.start();
+                        dist = _process(pos, index, xstart);
+                        //w.stop();
+                        //dbg("_process: %.2f ms (%s)", w.peek().total!"nsecs"*1e-06, map.length);
 
                         xstart = DFieldBi(max(1, dist.x.up-1), max(1, dist.x.down));
                     } else {

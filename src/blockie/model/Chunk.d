@@ -32,6 +32,7 @@ public:
 
         if(version_ == ver) {
             this.version_ = version_+1;
+            
             /// If voxels are null then this is just a bump to version 1 and this chunk is AIR
             if(voxels.length>0) {
                 this.voxels = voxels.dup;

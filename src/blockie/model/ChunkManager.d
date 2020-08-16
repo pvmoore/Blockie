@@ -82,6 +82,8 @@ public:
             this.storage  = new ChunkStorage(world, new Model5);
         } else version(MODEL1A) {
             this.storage  = new ChunkStorage(world, new Model1a);
+        } else version(MODEL6) {
+            this.storage  = new ChunkStorage(world, new Model6);
         } else assert(false);
 
         getEvents().subscribe("ChunkManager", EventID.CHUNK_LOADED | EventID.CHUNK_EDITED, messages);
@@ -151,6 +153,7 @@ private:
         for(auto z=0; z<VIEW_WINDOW.z; z++)
         for(auto y=0; y<VIEW_WINDOW.y; y++)
         for(auto x=0; x<VIEW_WINDOW.x; x++) {
+            
             auto p  = base + ivec3(x,y,z);
             auto ci = activateChunk(p);
 

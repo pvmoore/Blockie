@@ -6,6 +6,8 @@
 
     CHUNK_SIZE
     CHUNK_SIZE_SHR
+
+    // MODEL1 only:
     OctreeRootSize
     OctreeBranchSize
     OctreeTwigSize
