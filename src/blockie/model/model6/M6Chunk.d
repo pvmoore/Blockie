@@ -154,9 +154,9 @@ struct M6MixedCell { align(1):
         assert(index<M6_VOXELS_PER_CELL);
         if(!value) { unset(index); return; }
 
-        const x   = index >>> 10;
+        const x   = index & 31;
         const y   = (index >>> 5) & 31;
-        const z   = index & 31;
+        const z   = index >>> 10;
 
         const bit = 0 != (xyBits[y] & (1<<x));
 

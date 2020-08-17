@@ -1,8 +1,8 @@
-module blockie.ui.monitors;
-/**
- *
- */
+module blockie.render.gl.monitors;
+
 import blockie.all;
+
+version(OPENGL):
 
 private {
     __gshared CPUMonitor cpuMonitor;

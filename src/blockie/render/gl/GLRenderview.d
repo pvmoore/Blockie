@@ -1,4 +1,4 @@
-module blockie.views.renderview;
+module blockie.render.gl.GLRenderview;
 
 import blockie.all;
 
@@ -9,7 +9,7 @@ enum RenderOption {
     ACCURATE_VOXEL_BOXES
 }
 
-final class RenderView : IView {
+final class GLRenderView : IView {
 private:
     World world;
     bool needToInitWorld;

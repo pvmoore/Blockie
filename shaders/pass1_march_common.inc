@@ -40,6 +40,11 @@ bool updatePosition(inout Position pos, vec3 add) {
     pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
     return pos.chunk != prevChunk;
 }
+// Update position - assumes the chunks does not change
+void updatePositionWithinCell(inout Position pos, vec3 add) {
+    pos.fpos += add;
+    pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
+}
 
 ///
 /// Skip dist a little bit depending on how near to the camera
@@ -183,6 +188,14 @@ uint getOctet_1111100000(uvec3 upos) {
     uvec3 c = a << uvec3(0,5,10);
     return c.x + c.y + c.z;
 }
+/// (0-32767)
+uint getOctet_0000011111(uvec3 upos) {
+    // 00_0001_11111 -> 0zzz_zzyy_yyyx_xxxx
+    uvec3 a = bitfieldExtract(upos, 0, 5);
+    uvec3 c = a << uvec3(0,5,10);
+    return c.x + c.y + c.z;
+}
+
 /// (0-4095)
 uint getOctet_1111000000(const uvec3 inXYZ) {
     // 11_1100_0000 -> zzzz_yyyyxxxx
@@ -228,4 +241,16 @@ uint getOctet_0000000001(const uvec3 inXYZ) {
 	const uvec3 a = bitfieldExtract(inXYZ, 0, 1);
 	const uvec3 c = a << uvec3(0,1,2);
 	return c.x + c.y + c.z;
+}
+
+uint get3Bytes(uint voxels, uint index) {
+    uint a  = (index & 3);
+    uint i  = (index * 3) >> 2;
+    uint d1 = voxelsIn[voxels + i];
+    uint d2 = a==1 || 1==2 ? voxelsIn[voxels + i + 1] : 0;
+
+    return a == 0 ? d1 & 0xffffffu :
+           a == 1 ? (d1>>24)   | ((d2 & 0xffffu) << 8) :
+           a == 2 ? (d1 >> 16) | ((d2 & 0xffu) << 16) :
+                    d1 >> 8;
 }

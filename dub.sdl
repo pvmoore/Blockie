@@ -19,14 +19,25 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "GC_STATS" "MODEL6" "RELEASE_ASSERT" "VULKAN"
+versions "MODEL6" "GC_STATS" #"RELEASE_ASSERT"
 
 targetType "executable"
 
-configuration "blockie" {
+configuration "blockie_gl" {
 	#mainSourceFile "src/main.d"
 	excludedSourceFiles "src/gen.d"
 	targetName "blockie"
+    versions "OPENGL"
+
+    dependency "opengl3" version="~master"
+}
+configuration "blockie_vk" {
+	#mainSourceFile "src/main.d"
+	excludedSourceFiles "src/gen.d"
+	targetName "blockie"
+    versions "VULKAN"
+
+    dependency "vulkan" version="~master"
 }
 configuration "generate" {
 	#mainSourceFile "src/gen.d"
@@ -38,7 +49,6 @@ configuration "generate" {
 dependency "logging" version="~master"
 dependency "common" version="~master"
 dependency "maths" version="~master"
-dependency "opengl3" version="~master"
 dependency "fonts" version="~master"
 dependency "events" version="~master"
 dependency "resources" version="~master"

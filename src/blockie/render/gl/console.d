@@ -1,6 +1,8 @@
-module blockie.ui.console;
+module blockie.render.gl.console;
 
 import blockie.all;
+
+version(OPENGL):
 
 final class Console {
 private:

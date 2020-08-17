@@ -10,7 +10,9 @@ Upcoming ...
 
 
 0.0.25 - Add CPU and GPU name to title bar.
-       -
+       - Add MODEL6 (partial)
+       - Refactor some directores
+       - Start to isolate OpenGL (Adding a Vulkan implementation in the future)
 
 0.0.24 - Tidy up Model3 march shader.
 

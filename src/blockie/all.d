@@ -47,26 +47,12 @@ import blockie.model.model1a;
 import blockie.generate.diamondsquare;
 import blockie.generate.landscapeworld;
 
-import blockie.render.box_renderer;
 import blockie.render.irenderer;
-import blockie.render.gl_compute_renderer;
-
-import blockie.ui.console;
-import blockie.ui.topbar;
-import blockie.ui.bottombar;
-import blockie.ui.minimap;
-import blockie.ui.monitors;
+import blockie.render.iview;
 
 import blockie.util.async;
 import blockie.util.util;
 
-import blockie.views.iview;
-
-import gl;
-import gl.geom : BitmapSprite;
-
-import derelict.opengl;
-import derelict.glfw3;
 
 import fonts.sdf;
 import resources : PNG, HGT;
@@ -83,3 +69,30 @@ import common :
     IQueue, Implements, PDH, Set, Stack, Timing,
     as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, todo;
+
+version(VULKAN) {
+    pragma(msg, "VULKAN");
+
+    import vulkan;
+
+    import blockie.render.vk.VKComputeRenderer;
+
+}
+version(OPENGL) {
+    pragma(msg, "OPENGL");
+
+    import gl;
+    import gl.geom : BitmapSprite;
+
+    import derelict.opengl;
+    import derelict.glfw3;
+
+    import blockie.render.gl.bottombar;
+    import blockie.render.gl.box_renderer;
+    import blockie.render.gl.console;
+    import blockie.render.gl.GLComputeRenderer;
+    import blockie.render.gl.minimap;
+    import blockie.render.gl.monitors;
+    import blockie.render.gl.GLRenderview;
+    import blockie.render.gl.topbar;
+}

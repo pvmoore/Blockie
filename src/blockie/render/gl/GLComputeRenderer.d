@@ -1,13 +1,15 @@
-module blockie.render.gl_compute_renderer;
+module blockie.render.gl.GLComputeRenderer;
 
 import blockie.all;
+
+version(OPENGL):
 
 final class GLComputeRenderer : IRenderer, ChunkManager.SceneChangeListener {
 private:
     const bool DEBUG               = false;
     const uint DEBUG_BUFFER_LENGTH = 100;
 
-    RenderView renderView;
+    GLRenderView renderView;
     OpenGL gl;
     World world;
     uint renderTextureID;
@@ -35,7 +37,7 @@ private:
         static assert(ChunkData_GL.sizeof==4);
     }
 public:
-    this(OpenGL gl, RenderView renderView, int4 renderRect) {
+    this(OpenGL gl, GLRenderView renderView, int4 renderRect) {
         this.gl           = gl;
         this.renderRect   = renderRect;
         this.renderView   = renderView;

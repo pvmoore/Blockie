@@ -1,10 +1,8 @@
-module blockie.views.iview;
+module blockie.render.iview;
 
 import blockie.all;
 
 public:
-
-import blockie.views.renderview;
 
 interface IView {
     void enteringView();

@@ -1,16 +1,18 @@
-module blockie.ui.bottombar;
+module blockie.render.gl.bottombar;
 
 import blockie.all;
+
+version(OPENGL):
 
 final class BottomBar {
 private:
     const float FONT_SIZE = 15;
-    RenderView renderView;
+    GLRenderView renderView;
     Camera2D camera;
     SDFFontRenderer textRenderer;
     FilledRectangleRenderer rectRenderer;
 public:
-    this(OpenGL gl, RenderView renderView) {
+    this(OpenGL gl, GLRenderView renderView) {
         this.renderView   = renderView;
         auto font         = gl.getFont("dejavusans-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);

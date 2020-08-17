@@ -1,0 +1,7 @@
+description = 
+camera_position = 1630,1634.98,4509.35
+camera_focal_point = 1630.03,1634.58,4508.43
+camera_fov = 60
+camera_near = 10
+camera_far = 100000
+sun_position = 1024,3072,1024

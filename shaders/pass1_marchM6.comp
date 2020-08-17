@@ -60,6 +60,13 @@ struct Flags {
 #define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
 #define CHUNK_DISTANCE_Z(f) (f.b >> 16)
 
+#define CELL_DISTANCES      (chunkVoxels + 1026)
+#define CELL_OFFSETS        (chunkVoxels + 1026)
+
+uint getNumUniqXYBits(uint chunkVoxels) { return voxelsIn[chunkVoxels + 2+1024+24576]; }
+uint getNumUniqZBits(uint chunkVoxels)  { return voxelsIn[chunkVoxels + 2+1024+24576+1]; }
+uint getNumUniqCounts(uint chunkVoxels) { return voxelsIn[chunkVoxels + 2+1024+24576+2]; }
+
 #include "useful_functions.comp"
 #include "pass1_march_common.inc"
 #include "marchM6.inc"
@@ -83,30 +90,19 @@ bool isAirCell(uint voxels, uint cell) {
     uint r = cell & 31u;
     return 0 == (voxelsIn[CELL_FLAGS + i] & (1u<<r));
 }
-uvec3 getCellDistanceField(uint voxels, uint cell) {
+uvec3 getCellDistanceField(uint chunkVoxels, uint cell) {
     // 8+4096 (1026):
     //Distance3[] cellDistances;
-    const uint CELL_DISTANCES = voxels + 1026;
 
-    uint a = (cell & 3);
-    uint i = (cell * 3) >> 2;
-    uint d1 = voxelsIn[CELL_DISTANCES + i];
-    uint d2 = a==1 || 1==2 ? voxelsIn[CELL_DISTANCES + i + 1] : 0;
-
-    // uvec3(up and down x, up and down y, up and down z)
-    uvec3 d = a == 0 ? uvec3(d1,     d1>>8,  d1>>16) :
-              a == 1 ? uvec3(d1>>24, d2,     d2>>8) :
-              a == 2 ? uvec3(d1>>16, d1>>24, d2) :
-                       uvec3(d1>>8,  d1>>16, d1>>24);
-
-    return d & 0xffu;
+    uint b = get3Bytes(CELL_DISTANCES, cell);
+    return uvec3(b & 0xffu, (b>>8) & 0xffu, (b>>16) & 0xffu);
 }
 
 Voxel march(Ray ray, inout Position pos) {
-    Voxel voxel    = Voxel(0,0,0,0);
-    float distance = 0;
-    uint voxels    = chunkDataIn[pos.chunk] / 4;
-    Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+    Voxel voxel      = Voxel(0,0,0,0);
+    float distance   = 0;
+    uint chunkVoxels = chunkDataIn[pos.chunk] / 4;
+    Flags flags      = Flags(voxelsIn[chunkVoxels], voxelsIn[chunkVoxels+1]);
 
     // Assume:
     //      1) pos.chunk will always start with a valid chunk
@@ -120,16 +116,18 @@ Voxel march(Ray ray, inout Position pos) {
 
             // Are we inside an air cell?
             uint cell = getOctet_1111100000(pos.upos);
-            if(isAirCell(voxels, cell)) {
+            if(isAirCell(chunkVoxels, cell)) {
                 // We are inside an air cell. Use the cell distance
-                uvec3 cellDistances = getCellDistanceField(voxels, cell);
+                uvec3 cellDistances = getCellDistanceField(chunkVoxels, cell);
                 dist = getMinDistToEdge4BitsBiDirectional(ray, pos, cellDistances, CELL_SIZE);
             } else {
 
-                // todo - march within cell
+                if(marchCell(ray, pos, voxel, chunkVoxels, cell)) {
+                    // We have hit something
+                    break;
+                }
 
                 voxel.value = 1;
-                voxel.distance = distance;
                 break;
             }
 
@@ -168,8 +166,8 @@ Voxel march(Ray ray, inout Position pos) {
                 voxel.value = 0;
                 break;
             }
-            voxels = chunkDataIn[pos.chunk] / 4;
-            flags  = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+            chunkVoxels = chunkDataIn[pos.chunk] / 4;
+            flags       = Flags(voxelsIn[chunkVoxels], voxelsIn[chunkVoxels+1]);
         }
 	}
 

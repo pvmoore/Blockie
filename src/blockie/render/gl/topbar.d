@@ -1,17 +1,19 @@
-module blockie.ui.topbar;
+module blockie.render.gl.topbar;
 
 import blockie.all;
+
+version(OPENGL):
 
 final class TopBar {
 private:
     const int FONT_SIZE = 15;
-    RenderView renderView;
+    GLRenderView renderView;
     World world;
     Font font;
     SDFFontRenderer textRenderer;
     FilledRectangleRenderer rectRenderer;
 public:
-    this(OpenGL gl, RenderView renderView, uint height) {
+    this(OpenGL gl, GLRenderView renderView, uint height) {
         this.renderView = renderView;
         this.font = gl.getFont("dejavusans-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);

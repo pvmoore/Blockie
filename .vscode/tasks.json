@@ -9,17 +9,30 @@
             "compiler": "dmd",
             "archType": "x86_64",
             "buildType": "debug",
-            "configuration": "blockie",
+            "configuration": "blockie_gl",
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
         },
         {
-            "label": "**** Run ****",
+            "label": "**** Run OpenGL ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=debug --config=blockie --compiler=dmd --arch=x86_64 --parallel",
+                "command": "dub run --build=debug --config=blockie_gl --compiler=dmd --arch=x86_64 --parallel",
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "**** Run Vulkan ****",
+            "type": "shell",
+            "windows": {
+                "command": "dub run --build=debug --config=blockie_vk --compiler=dmd --arch=x86_64 --parallel",
             },
             "group": "build",
             "presentation": {

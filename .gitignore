@@ -14,4 +14,4 @@ bin/
 *.xml
 
 
-data/
+data/**/*.zip

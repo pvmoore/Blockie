@@ -1,6 +1,8 @@
-module blockie.ui.minimap;
+module blockie.render.gl.minimap;
 
 import blockie.all;
+
+version(OPENGL):
 
 final class MiniMap {
 private:
