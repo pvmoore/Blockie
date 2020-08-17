@@ -1,6 +1,6 @@
 module blockie.model.world;
 
-import blockie.all;
+import blockie.model;
 import std.file  : mkdir, rmdirRecurse, write;
 import std.stdio : File;
 

@@ -1,6 +1,6 @@
 module blockie.model.DistanceFieldsBiDirCell;
 
-import blockie.all;
+import blockie.model;
 /**
  *  xyz bi-directional distance fields.
  */

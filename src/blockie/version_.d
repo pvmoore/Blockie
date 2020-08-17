@@ -1,6 +1,6 @@
 module blockie.version_;
 
-const string version_ = "0.0.25";
+const string version_ = "0.0.26";
 
 /**===============================================================
     History
@@ -8,6 +8,7 @@ const string version_ = "0.0.25";
 Upcoming ...
        - Add voxel de-optimiser code
 
+0.0.26 - Lots of package tidying and moving modules around. Separate render from generate.
 
 0.0.25 - Add CPU and GPU name to title bar.
        - Add MODEL6 (partial)

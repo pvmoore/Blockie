@@ -2,7 +2,7 @@ module main;
 
 version(Win64) {} else { static assert(false); }
 
-import blockie.all;
+import blockie.render.all;
 import core.sys.windows.windows;
 import core.runtime : Runtime;
 

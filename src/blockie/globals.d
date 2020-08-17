@@ -1,8 +1,60 @@
 module blockie.globals;
 
-import maths : int3;
-
 public:
+
+version(LDC) {
+    import ldc.attributes : fastmath;
+}
+
+import core.time                : dur;
+import core.memory	            : GC;
+import core.atomic		        : atomicStore, atomicLoad;
+import core.thread              : Thread;
+import core.sync.mutex          : Mutex;
+import core.sync.semaphore      : Semaphore;
+import core.stdc.string         : memcpy;
+import core.bitop               : popcnt;
+
+import std.stdio                : writef, writefln, File;
+import std.file                 : exists;
+import std.math                 : fabs;
+import std.datetime.stopwatch   : StopWatch;
+import std.string               : toStringz, strip, indexOf;
+import std.random	            : uniform, Mt19937;
+import std.array                : array, Appender, appender, join, replace, split, uninitializedArray;
+import std.conv                 : to;
+import std.format               : format;
+import std.range                : chain, iota;
+import std.parallelism          : task;
+import std.typecons             : Tuple, tuple;
+import std.algorithm.iteration	: each, filter, map, sum, uniq;
+import std.algorithm.searching	: any, all, count;
+import std.algorithm.sorting    : sort;
+
+import maths.noise;
+import maths.camera;
+import maths;
+import fonts.sdf;
+import resources : PNG, HGT;
+import logging : flushLog, log, setEagerFlushing, FileLogger;
+import resusage.memory : ProcessMemInfo, processMemInfo;
+import events : initEvents, getEvents, EventMsg;
+import common :
+    Allocator, Allocator_t, Archive, Array, Async,
+    BitWriter, ArrayBitWriter, ArrayByteWriter,
+    Comment, From,
+    IQueue, Implements, PDH, Set, Stack, Timing,
+    as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
+    makeSPSCQueue, nextHighestPowerOf2, repeat, todo;
+
+
+import blockie.version_;
+
+import blockie.model;
+
+import blockie.util.async;
+import blockie.util.util;
+
 
 /**
  * size 16   (4)  =         4,096 voxels
@@ -13,12 +65,12 @@ public:
  * size 512  (9)  =   134,217,728 voxels (128MB)
  * size 1024 (10) = 1,073,741,824 voxels (1GB)
  */
-const CHUNK_SIZE_SHR     = 10;   // 6 to 10
-const CHUNK_SIZE         = 2^^CHUNK_SIZE_SHR;
-const CHUNK_SIZE_SQUARED = CHUNK_SIZE*CHUNK_SIZE;
+enum CHUNK_SIZE_SHR     = 10;   // 6 to 10
+enum CHUNK_SIZE         = 2^^CHUNK_SIZE_SHR;
+enum CHUNK_SIZE_SQUARED = CHUNK_SIZE*CHUNK_SIZE;
 
-const KB = 1024;
-const MB = 1024*1024;
+enum KB = 1024;
+enum MB = 1024*1024;
 
 alias worldcoords = int3;
 alias chunkcoords = int3;

@@ -1,7 +1,6 @@
 module blockie.model.model1a.M1aOptimiser;
 
 import blockie.model;
-import blockie.model.model1a;
 
 final class M1aOptimiser : Optimiser {
 private:

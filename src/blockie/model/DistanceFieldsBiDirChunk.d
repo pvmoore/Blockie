@@ -1,6 +1,6 @@
 module blockie.model.DistanceFieldsBiDirChunk;
 
-import blockie.all;
+import blockie.model;
 import std.algorithm.searching : minElement, maxElement;
 import std.algorithm.iteration : fold;
 

@@ -1,6 +1,6 @@
 module blockie.model.DistanceFieldsUniDirCell;
 
-import blockie.all;
+import blockie.model;
 
 final class DistanceFieldsUniDirCell {
 private:

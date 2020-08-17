@@ -1,6 +1,5 @@
 module blockie.generate.landscapeworld;
 
-import blockie.all;
 import blockie.generate.all;
 /**
  * Creates a random flat landscape with smooth hills.

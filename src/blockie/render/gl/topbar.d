@@ -1,6 +1,6 @@
 module blockie.render.gl.topbar;
 
-import blockie.all;
+import blockie.render.all;
 
 version(OPENGL):
 

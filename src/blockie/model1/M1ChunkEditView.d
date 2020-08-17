@@ -1,6 +1,6 @@
 module blockie.model1.M1ChunkEditView;
 
-import blockie.all;
+import blockie.model;
 
 /**
  * CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:

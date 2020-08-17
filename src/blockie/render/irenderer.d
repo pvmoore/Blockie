@@ -1,6 +1,6 @@
 module blockie.render.irenderer;
 
-import blockie.all;
+import blockie.render.all;
 
 interface IRenderer {
     void render();

@@ -1,6 +1,5 @@
 module blockie.generate.testscene7_hgt;
 
-import blockie.all;
 import blockie.generate.all;
 /**
  *

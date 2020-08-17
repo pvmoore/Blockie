@@ -1,6 +1,6 @@
-module blockie.blockie;
+module blockie.render.blockie;
 
-import blockie.all;
+import blockie.render.all;
 
 interface Blockie {
     void initialise();

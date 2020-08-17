@@ -1,6 +1,6 @@
 module blockie.model.ChunkSerialiser;
 
-import blockie.all;
+import blockie.model;
 
 abstract class ChunkSerialiser {
 protected:

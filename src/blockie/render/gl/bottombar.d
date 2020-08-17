@@ -1,6 +1,6 @@
 module blockie.render.gl.bottombar;
 
-import blockie.all;
+import blockie.render.all;
 
 version(OPENGL):
 

@@ -1,6 +1,6 @@
 module blockie.render.iview;
 
-import blockie.all;
+import blockie.render.all;
 
 public:
 

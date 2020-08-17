@@ -25,24 +25,26 @@ targetType "executable"
 
 configuration "blockie_gl" {
 	#mainSourceFile "src/main.d"
-	excludedSourceFiles "src/gen.d"
+	excludedSourceFiles "src/gen.d" "src/blockie/generate/*"
 	targetName "blockie"
-    versions "OPENGL"
+    versions "OPENGL" "RENDER"
 
     dependency "opengl3" version="~master"
 }
 configuration "blockie_vk" {
 	#mainSourceFile "src/main.d"
-	excludedSourceFiles "src/gen.d"
+	excludedSourceFiles "src/gen.d" "src/blockie/generate/*"
 	targetName "blockie"
-    versions "VULKAN"
+    versions "VULKAN" "RENDER"
 
     dependency "vulkan" version="~master"
 }
 configuration "generate" {
 	#mainSourceFile "src/gen.d"
-	excludedSourceFiles "src/main.d"
+	excludedSourceFiles "src/main.d" "src/blockie/render/*"
+    exclude
 	targetName "generate"
+    versions "GENERATE"
 }
 
 # local

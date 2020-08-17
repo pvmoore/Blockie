@@ -1,3 +1,3 @@
 module blockie.util.async;
 
-import blockie.all;
+import blockie.globals;

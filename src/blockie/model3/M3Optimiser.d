@@ -3,7 +3,7 @@ module blockie.model3.M3Optimiser;
 /**
  *  Convert edit-optimised voxels into render-optimised voxels.
  */
-import blockie.all;
+import blockie.model;
 
 final class M3Optimiser : Optimiser {
 private:

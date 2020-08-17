@@ -2,7 +2,7 @@ module blockie.model2;
 
 public:
 
-import blockie.all;
+import blockie.model;
 
 import blockie.model2.M2Chunk;
 import blockie.model2.M2ChunkEditView;
@@ -12,7 +12,7 @@ import blockie.model2.M2Optimiser;
 import blockie.model2.M2WorldEditor;
 
 /**
- * 
+ *
  *
  *
  */

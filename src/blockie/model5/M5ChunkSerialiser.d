@@ -1,6 +1,6 @@
 module blockie.model5.M5ChunkSerialiser;
 
-import blockie.all;
+import blockie.model;
 
 final class M5ChunkSerialiser : ChunkSerialiser {
 protected:
@@ -17,7 +17,7 @@ protected:
         );
     }
 public:
-    this(World w, Model model) { 
+    this(World w, Model model) {
         super(w, model);
     }
 }

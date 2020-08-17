@@ -1,6 +1,6 @@
 module blockie.model.model6.M6WorldEditor;
 
-import blockie.all;
+import blockie.model;
 
 final class M6WorldEditor : WorldEditor {
 protected:

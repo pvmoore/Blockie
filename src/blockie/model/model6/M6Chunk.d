@@ -1,6 +1,6 @@
 module blockie.model.model6.M6Chunk;
 
-import blockie.all;
+import blockie.model;
 
 final class M6Chunk : Chunk {
 public:

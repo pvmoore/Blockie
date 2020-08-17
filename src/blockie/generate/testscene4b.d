@@ -1,6 +1,5 @@
 module blockie.generate.testscene4b;
 
-import blockie.all;
 import blockie.generate.all;
 /**
  *  Resolution: 1920x1080 (-26*2y)

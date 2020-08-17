@@ -1,6 +1,6 @@
 module src.blockie.render.vk.VKComputeRenderer;
 
-import blockie.all;
+import blockie.render.all;
 
 version(VULKAN):
 

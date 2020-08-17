@@ -1,6 +1,6 @@
 module blockie.render.gl.monitors;
 
-import blockie.all;
+import blockie.render.all;
 
 version(OPENGL):
 

@@ -1,6 +1,6 @@
 module blockie.model5.M5Chunk;
 
-import blockie.all;
+import blockie.model;
 
 /**
  *  De-optimised M5 voxel layout.
@@ -191,7 +191,7 @@ struct M5SubCell2 { static assert(M5SubCell2.sizeof==12); align(1):
         for(auto i=0; i<NUMBITS; i++) {
             if(isBranch(i)) {
                 if(!getCell(ptr, i).equals(ptr, other.getCell(ptr,i))) return false;
-            } 
+            }
         }
         return true;
     }

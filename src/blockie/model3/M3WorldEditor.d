@@ -1,6 +1,6 @@
 module blockie.model3.M3WorldEditor;
 
-import blockie.all;
+import blockie.model;
 
 final class M3WorldEditor : WorldEditor {
 protected:

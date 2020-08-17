@@ -1,6 +1,6 @@
 module blockie.model4.M4Optimiser;
 
-import blockie.all;
+import blockie.model;
 
 final class M4Optimiser : Optimiser {
 private:

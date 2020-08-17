@@ -1,6 +1,5 @@
 module blockie.generate.testscene6_bunny;
 
-import blockie.all;
 import blockie.generate.all;
 /**
  *

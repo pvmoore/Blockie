@@ -1,6 +1,6 @@
 module blockie.model3.M3Chunk;
 
-import blockie.all;
+import blockie.model;
 
 ///
 /// Assumes CHUNK_SIZE       == 1024

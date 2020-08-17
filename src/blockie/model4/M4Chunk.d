@@ -1,6 +1,6 @@
 module blockie.model4.M4Chunk;
 
-import blockie.all;
+import blockie.model;
 
 ///
 /// voxels:

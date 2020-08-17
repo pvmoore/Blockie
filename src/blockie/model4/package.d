@@ -2,7 +2,7 @@ module blockie.model4;
 
 public:
 
-import blockie.all;
+import blockie.model;
 
 import blockie.model4.M4Chunk;
 import blockie.model4.M4ChunkEditView;

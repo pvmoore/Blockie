@@ -1,6 +1,6 @@
 module blockie.model1.M1ChunkOptView;
 
-import blockie.all;
+import blockie.model;
 
 align(1):
 

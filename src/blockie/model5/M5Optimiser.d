@@ -1,6 +1,6 @@
 module blockie.model5.M5Optimiser;
 
-import blockie.all;
+import blockie.model;
 
 final class M5Optimiser : Optimiser {
 private:
@@ -91,7 +91,7 @@ private:
                 } else {
                     // Point to the original
                     cell.offset.set(*p);
-                }  
+                }
             }
         }
         void _recurseSubCell1(M5SubCell1* cell) {
@@ -130,7 +130,7 @@ private:
             } else if(oldCell.isAir) {
                 newCell.offset.set(0);
             } else {
-                
+
                 uint oldOffset = oldCell.offset.get();
                 auto p = oldOffset in oldToNewOffset;
                 if(p) {

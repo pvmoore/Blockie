@@ -1,6 +1,5 @@
 module blockie.generate.diamondsquare;
 
-import blockie.all;
 import blockie.generate.all;
 import core.bitop : popcnt;
 

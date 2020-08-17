@@ -1,7 +1,6 @@
 module blockie.model1.M1Chunk;
 
-import blockie.all;
-import blockie.model.Chunk;
+import blockie.model;
 /**
  *  y    z
  *  |   /----------

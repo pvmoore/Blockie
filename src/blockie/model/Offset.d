@@ -1,6 +1,6 @@
 module blockie.model.Offset;
 
-import blockie.all;
+import blockie.model;
 
 align(1):
 

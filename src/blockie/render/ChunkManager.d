@@ -1,6 +1,6 @@
-module blockie.model.ChunkManager;
+module blockie.render.ChunkManager;
 
-import blockie.all;
+import blockie.render.all;
 ///
 /// Manage chunks in a scene and data transfer to GPU.
 ///
@@ -53,11 +53,20 @@ private:
     ChunkInfo[VIEW_WINDOW_HMUL] currentGrid;
     ChunkInfo[VIEW_WINDOW_HMUL] tempGrid;
 
+    // FIXME: isolate these somehow
     VBOMemoryManager voxelsMM;
     VBOMemoryManager chunksMM;
+    GPUMemoryManager voxelsMM2;
+    GPUMemoryManager chunksMM2;
 public:
     interface SceneChangeListener {
         void boundsChanged(uint3 chunksDim, worldcoords min, worldcoords max);
+    }
+    interface GPUMemoryManager {
+        uint getNumBytesUsed();
+        void bind();
+        uint write(ubyte[] data);
+        void free(uint offset, uint size);
     }
 
     this(SceneChangeListener listener,
@@ -70,6 +79,7 @@ public:
         this.world    = world;
         this.voxelsMM = voxelsVboMM;
         this.chunksMM = chunksVboMM;
+
         version(MODEL1) {
             this.storage  = new ChunkStorage(world, new Model1);
         } else version(MODEL2) {
@@ -128,7 +138,7 @@ public:
             numOnGPU,
             numActive,
             numFlyweight
-        );
+       );
     }
 private:
     void initialise() {
@@ -153,7 +163,7 @@ private:
         for(auto z=0; z<VIEW_WINDOW.z; z++)
         for(auto y=0; y<VIEW_WINDOW.y; y++)
         for(auto x=0; x<VIEW_WINDOW.x; x++) {
-            
+
             auto p  = base + ivec3(x,y,z);
             auto ci = activateChunk(p);
 

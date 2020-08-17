@@ -1,6 +1,6 @@
 module blockie.model3.M3ChunkEditView;
 
-import blockie.all;
+import blockie.model;
 ///
 /// Level   | Bits         |                 | Count         | Volume                 |
 /// --------+--------------+-----------------+---------------+------------------------|

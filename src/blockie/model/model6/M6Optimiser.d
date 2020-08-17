@@ -1,6 +1,6 @@
 module blockie.model.model6.M6Optimiser;
 
-import blockie.all;
+import blockie.model;
 
 /*
     in:

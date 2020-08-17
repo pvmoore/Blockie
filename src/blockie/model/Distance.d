@@ -1,6 +1,6 @@
 module blockie.model.Distance;
 
-import blockie.all;
+import blockie.model;
 
 align(1):
 

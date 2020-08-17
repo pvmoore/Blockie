@@ -1,6 +1,5 @@
 module blockie.generate.testscene4;
 
-import blockie.all;
 import blockie.generate.all;
 
 final class TestScene4 : SceneGenerator {

@@ -1,6 +1,6 @@
 module blockie.util.util;
 
-import blockie.all;
+import blockie.globals;
 import core.bitop : bsr;
 
 //Pixel toPixel(vec3 v) pure nothrow @nogc{

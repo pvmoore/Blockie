@@ -2,7 +2,7 @@ module blockie.model.ChunkStorage;
 ///
 /// Cache chunks and handle loading and saving.
 ///
-import blockie.all;
+import blockie.model;
 
 final class ChunkStorage {
 private:
@@ -57,7 +57,7 @@ public:
         chunks[coords] = c;
         ulong bytes = serialiser.load(c);
         bytesRead += bytes;
-        getDiskMonitor().setValue(0, bytesRead/MB);
+        //getDiskMonitor().setValue(0, bytesRead/MB);
         getEvents().fire(EventMsg(EventID.CHUNK_LOADED, c));
         return c;
     }
@@ -108,7 +108,7 @@ private:
             ulong bytes = serialiser.load(c);
             logger.log("bytes = %s", bytes);
             bytesRead += bytes;
-            getDiskMonitor().setValue(0, bytesRead/MB);
+            //getDiskMonitor().setValue(0, bytesRead/MB);
             getEvents().fire(EventMsg(EventID.CHUNK_LOADED, c));
             logger.log("done");
         }
@@ -116,7 +116,7 @@ private:
             logger.log("ChunkStorage: Save chunk %s", c);
             ulong bytes = serialiser.save(c);
             bytesWritten += bytes;
-            getDiskMonitor().setValue(1, bytesWritten/MB);
+            //getDiskMonitor().setValue(1, bytesWritten/MB);
         }
         void handleMessage(EventMsg msg) {
             logger.log("ChunkStorage: Processing event %s chunk:%s", msg.id, msg.get!Chunk);

@@ -1,6 +1,6 @@
 module blockie.model.ChunkEditView;
 
-import blockie.all;
+import blockie.model;
 
 interface ChunkEditView {
     void beginTransaction(Chunk chunk);

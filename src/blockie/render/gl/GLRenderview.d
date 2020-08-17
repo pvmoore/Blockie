@@ -1,6 +1,6 @@
 module blockie.render.gl.GLRenderview;
 
-import blockie.all;
+import blockie.render.all;
 
 public:
 

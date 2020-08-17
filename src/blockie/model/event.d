@@ -1,6 +1,6 @@
 module blockie.model.event;
 
-import blockie.all;
+import blockie.model;
 
 enum EventID : ulong {
     CHUNK_ACTIVATED   = 1<<0,

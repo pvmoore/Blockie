@@ -1,6 +1,6 @@
 module blockie.model.voxel;
 
-import blockie.all;
+import blockie.model;
 
 final enum : ubyte {
 // volumetric. size (1..CHUNK_SIZE) voxels

@@ -1,6 +1,6 @@
 module blockie.model1.M1Optimiser;
 
-import blockie.all;
+import blockie.model;
 /**
  * Optimised read-only voxels layout (assumes 10-bit chunk 4-bit root):
  *

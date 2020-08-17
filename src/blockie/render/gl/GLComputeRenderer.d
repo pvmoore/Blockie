@@ -1,6 +1,6 @@
 module blockie.render.gl.GLComputeRenderer;
 
-import blockie.all;
+import blockie.render.all;
 
 version(OPENGL):
 

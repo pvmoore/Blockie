@@ -1,8 +1,6 @@
 module blockie.model.model1a.M1aChunk;
 
-import blockie.all;
 import blockie.model;
-import blockie.model.model1a;
 
 final class M1aChunk : Chunk {
 public:

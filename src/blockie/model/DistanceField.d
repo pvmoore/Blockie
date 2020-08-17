@@ -1,6 +1,6 @@
 module blockie.model.DistanceField;
 
-import blockie.all;
+import blockie.model;
 
 struct DFieldBi {
     int up, down;

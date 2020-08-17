@@ -1,6 +1,6 @@
 module blockie.model4.M4ChunkSerialiser;
 
-import blockie.all;
+import blockie.model;
 
 final class M4ChunkSerialiser : ChunkSerialiser {
 protected:

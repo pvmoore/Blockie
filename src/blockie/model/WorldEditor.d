@@ -1,6 +1,6 @@
 module blockie.model.WorldEditor;
 
-import blockie.all;
+import blockie.model;
 
 abstract class WorldEditor {
 protected:

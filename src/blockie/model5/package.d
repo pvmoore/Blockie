@@ -2,7 +2,7 @@ module blockie.model5;
 
 public:
 
-import blockie.all;
+import blockie.model;
 import blockie.model5.M5Chunk;
 import blockie.model5.M5ChunkEditView;
 import blockie.model5.M5ChunkSerialiser;

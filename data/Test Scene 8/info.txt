@@ -1,6 +1,6 @@
 description = 
 camera_position = 1200,1100,1000
-camera_focal_point = 5.3201e-05,9.62153e-05,2.53551e-05
+camera_focal_point = 0,0,-6.10352e-05
 camera_fov = 60
 camera_near = 10
 camera_far = 100000
