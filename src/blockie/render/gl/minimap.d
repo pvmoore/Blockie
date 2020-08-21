@@ -2,8 +2,6 @@ module blockie.render.gl.minimap;
 
 import blockie.render.all;
 
-version(OPENGL):
-
 final class MiniMap {
 private:
     OpenGL gl;

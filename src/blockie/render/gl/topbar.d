@@ -2,8 +2,6 @@ module blockie.render.gl.topbar;
 
 import blockie.render.all;
 
-version(OPENGL):
-
 final class TopBar {
 private:
     const int FONT_SIZE = 15;

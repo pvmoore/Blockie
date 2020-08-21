@@ -45,7 +45,7 @@ import common :
     Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
     as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
-    makeSPSCQueue, nextHighestPowerOf2, repeat, todo;
+    makeSPSCQueue, nextHighestPowerOf2, repeat, todo, toString;
 
 
 import blockie.version_;

@@ -96,7 +96,12 @@ public:
             this.storage  = new ChunkStorage(world, new Model6);
         } else assert(false);
 
-        getEvents().subscribe("ChunkManager", EventID.CHUNK_LOADED | EventID.CHUNK_EDITED, messages);
+        // Listen to events
+        getEvents().subscribe(
+            "ChunkManager",
+            EventID.CHUNK_LOADED | EventID.CHUNK_EDITED,
+            messages);
+
         initialise();
     }
     void destroy() {
@@ -125,20 +130,25 @@ public:
             writeChunkData();
         }
 
-        getGPUIOMonitor().setValues(
-            totalGPUWrites/MB,
-            voxelsMM.numBytesUsed/MB,
-            chunksMM.numBytesUsed/KB,
-            (totalCameraMoveUpdateTime/cast(double)numCameraMoves)/1000000.0,
-            (totalChunkUpdateTime/cast(double)numChunkUpdateBatches)/1000000.0
-        );
+        getEvents().fire(EventID.GPU_WRITES, totalGPUWrites.as!double/MB);
+        getEvents().fire(EventID.GPU_VOXELS_USAGE, voxelsMM.numBytesUsed.as!double/MB);
+        getEvents().fire(EventID.GPU_CHUNKS_USAGE, chunksMM.numBytesUsed.as!double/KB);
+        getEvents().fire(EventID.CM_CAMERA_MOVE_UPDATE_TIME,
+            (totalCameraMoveUpdateTime/cast(double)numCameraMoves)/1000000.0);
+        getEvents().fire(EventID.CM_CHUNK_UPDATE_TIME,
+            (totalChunkUpdateTime/cast(double)numChunkUpdateBatches)/1000000.0);
 
-        getChunksMonitor().setValues(
-            chunks.length,
-            numOnGPU,
-            numActive,
-            numFlyweight
-       );
+        getEvents().fire(EventID.CHUNKS_TOTAL, chunks.length.as!double);
+        getEvents().fire(EventID.CHUNKS_ON_GPU, numOnGPU.as!double);
+        getEvents().fire(EventID.CHUNKS_READY, numActive.as!double);
+        getEvents().fire(EventID.CHUNKS_FLYWEIGHT, numFlyweight.as!double);
+
+    //     getChunksMonitor().setValues(
+    //         chunks.length,
+    //         numOnGPU,
+    //         numActive,
+    //         numFlyweight
+    //    );
     }
 private:
     void initialise() {

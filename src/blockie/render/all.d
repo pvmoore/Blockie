@@ -7,6 +7,7 @@ import blockie.globals;
 import blockie.render.blockie;
 import blockie.render.iview;
 import blockie.render.irenderer;
+import blockie.render.StatsMonitor;
 
 version(VULKAN) {
     pragma(msg, "VULKAN");

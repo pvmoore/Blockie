@@ -64,16 +64,6 @@ public:
 
         log("screen = %s", gl.windowSize.to!int);
 
-        getCPUMonitor().initialise(gl);
-        getMEMMonitor().initialise(gl);
-        getDiskMonitor().initialise(gl);
-        getGPUIOMonitor().initialise(gl);
-        getChunksMonitor().initialise(gl);
-        getFPSMonitor().initialise(gl);
-        getUpdateTimeMonitor().initialise(gl);
-        getFrameTimeMonitor().initialise(gl);
-        getComputeMonitor().initialise(gl);
-
         renderView = new GLRenderView(gl);
 
         import std : fromStringz;
@@ -89,9 +79,14 @@ public:
         gl.showWindow(true);
     }
     void destroy() {
-        writefln("");
+        log("==================");
+        log("Events statistics:");
+        foreach(stat; getEvents().getSubscriberStats()) {
+            log("  %s: 0x%x time: %s count: %s", stat[0], stat[1], stat[2]/1000000.0, stat[3]);
+        }
+        log("==================");
+
         if(renderView) renderView.destroy();
-        destroyMonitors();
         if(gl) gl.destroy();
         gl = null;
     }

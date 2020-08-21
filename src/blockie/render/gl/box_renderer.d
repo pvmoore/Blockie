@@ -2,8 +2,6 @@ module blockie.render.gl.box_renderer;
 
 import blockie.render.all;
 
-version(OPENGL):
-
 /**
  *  Render a rectangle border around the world.
  */

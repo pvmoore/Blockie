@@ -2,8 +2,6 @@ module blockie.render.gl.bottombar;
 
 import blockie.render.all;
 
-version(OPENGL):
-
 final class BottomBar {
 private:
     const float FONT_SIZE = 15;

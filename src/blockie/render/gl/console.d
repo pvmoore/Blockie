@@ -2,8 +2,6 @@ module blockie.render.gl.console;
 
 import blockie.render.all;
 
-version(OPENGL):
-
 final class Console {
 private:
     const float FONT_SIZE = 16;

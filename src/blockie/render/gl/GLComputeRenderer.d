@@ -2,8 +2,6 @@ module blockie.render.gl.GLComputeRenderer;
 
 import blockie.render.all;
 
-version(OPENGL):
-
 final class GLComputeRenderer : IRenderer, ChunkManager.SceneChangeListener {
 private:
     const bool DEBUG               = false;
@@ -144,12 +142,8 @@ public:
 
         renderTiming.endFrame();
 
-        getComputeMonitor().setValues(
-            renderTiming.average(2),
-            computeTiming.average(2)
-        );
-        //log("render end");
-        //flushLog();
+        getEvents().fire(EventID.COMPUTE_RENDER_TIME, renderTiming.average(2));
+        getEvents().fire(EventID.COMPUTE_TIME, computeTiming.average(2));
     }
     @Implements("SceneChangeListener")
     void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {

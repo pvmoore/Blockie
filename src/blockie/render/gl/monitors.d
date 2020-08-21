@@ -2,84 +2,6 @@ module blockie.render.gl.monitors;
 
 import blockie.render.all;
 
-version(OPENGL):
-
-private {
-    __gshared CPUMonitor cpuMonitor;
-    __gshared MEMMonitor memMonitor;
-    __gshared MultiValueMonitor!double diskMonitor;
-    __gshared MultiValueMonitor!double gpuioMonitor;
-    __gshared MultiValueMonitor!ulong chunksMonitor;
-    __gshared MultiValueMonitor!double fpsMonitor;
-    __gshared MultiValueMonitor!double updateTimeMonitor;
-    __gshared MultiValueMonitor!double frameTimeMonitor;
-    __gshared MultiValueMonitor!double computeMonitor;
-}
-shared static this() {
-    cpuMonitor  = new CPUMonitor;
-    memMonitor  = new MEMMonitor;
-    diskMonitor = new MultiValueMonitor!double(2, "Disk (MB) ")
-        .colour(WHITE*0.92)
-        .formatting("3.1f")
-        .setValue(0,0,"Read ... ")
-        .setValue(1,0,"Write .. ");
-    gpuioMonitor = new MultiValueMonitor!double(5, "GPU (MB)")
-        .colour(WHITE*0.92)
-        .formatting("4.2f")
-        .setValue(0, 0, "Writes ..... ")
-        .setValue(1, 0, "Used (vx) .. ")
-        .setValue(2, 0, "Used (ch) .. ", "K")
-        .setValue(3, 0, "Cam updt ... ","ms")
-        .setValue(4, 0, "Chk updt ... ","ms");
-    chunksMonitor = new MultiValueMonitor!ulong(4, "Chunks")
-        .colour(WHITE*0.92)
-        .formatting("u")
-        .setValue(0, 0, "Total ...... ")
-        .setValue(1, 0, "On GPU ..... ")
-        .setValue(2, 0, "Ready ...... ")
-        .setValue(3, 0, "Flyweight .. ");
-    fpsMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*1.1)
-        .formatting("4.2f")
-        .setValue(0, 0, "FPS ....... ");
-    updateTimeMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*0.92)
-        .formatting("4.2f")
-        .setValue(0, 0, "Update .... ", "ms");
-    frameTimeMonitor = new MultiValueMonitor!double(1, null)
-        .colour(WHITE*0.92)
-        .formatting("4.2f")
-        .setValue(0,0, "Frame ..... ", "ms");
-    computeMonitor = new MultiValueMonitor!double(2, "Compute")
-        .colour(WHITE*0.92)
-        .formatting("5.2f")
-        .setValue(0,0, "Render ....", "ms")
-        .setValue(1,0, "Compute ...", "ms");
-}
-
-void destroyMonitors() {
-    cpuMonitor.destroy();
-    memMonitor.destroy();
-    diskMonitor.destroy();
-    gpuioMonitor.destroy();
-    chunksMonitor.destroy();
-    fpsMonitor.destroy();
-    updateTimeMonitor.destroy();
-    frameTimeMonitor.destroy();
-    computeMonitor.destroy();
-}
-
-auto getCPUMonitor()        { return cpuMonitor; }
-auto getMEMMonitor()        { return memMonitor; }
-auto getDiskMonitor()       { return diskMonitor; }
-auto getGPUIOMonitor()      { return gpuioMonitor; }
-auto getChunksMonitor()     { return chunksMonitor; }
-auto getFPSMonitor()        { return fpsMonitor; }
-auto getUpdateTimeMonitor() { return updateTimeMonitor; }
-auto getFrameTimeMonitor()  { return frameTimeMonitor; }
-auto getComputeMonitor()    { return computeMonitor; }
-
-//=======================================================
 final class CPUMonitor {
 private:
     const float FONT_SIZE = 14;
@@ -203,29 +125,13 @@ public:
     }
 }
 //========================================================
-final class MultiValueMonitor(T) {
+
+final class GLMonitor : StatsMonitor {
 private:
-    const float FONT_SIZE = 14;
     OpenGL gl;
-    Camera2D camera;
     SDFFontRenderer textRenderer;
-    ivec2 pos;
-    RGBA col = WHITE;
-    string label;
-    string fmt = "5.2f";
-    string[] prefixes;
-    string[] suffixes;
-    T[] values;
-public:
-    this(int numValues, string label) {
-        this.label  = label;
-        this.values.length = numValues;
-        this.prefixes.length = numValues;
-        this.suffixes.length = numValues;
-        values[] = 0;
-    }
-    auto initialise(OpenGL gl) {
-        this.gl   = gl;
+protected:
+    override void doInitialise() {
         auto font = gl.getFont("dejavusansmono-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, true);
         this.camera = new Camera2D(gl.windowSize());
@@ -239,51 +145,32 @@ public:
                 .appendText(label);
         }
 
-        foreach(v; values) {
+        foreach(i; 0..values.length) {
             textRenderer
                 .setColour(col)
                 .appendText("");
         }
+    }
+public:
+    this(OpenGL gl, string name, string label) {
+        super(name, label);
+        this.gl = gl;
+    }
+    override void destroy() {
+        super.destroy();
+        if(textRenderer) textRenderer.destroy();
+    }
+    override GLMonitor move(int2 pos) {
+        super.move(pos);
 
-        return this;
-    }
-    void destroy() {
-        textRenderer.destroy();
-    }
-    auto formatting(string fmt) {
-        this.fmt = fmt;
-        return this;
-    }
-    auto colour(RGBA c) {
-        col = c;
-        return this;
-    }
-    auto move(ivec2 pos) {
-        this.pos = pos;
         if(label) {
             textRenderer.replaceText(0, label, pos.x, pos.y);
         }
         return this;
     }
-    auto setValues(T[] v...) {
-        values[] = v[];
-        return this;
-    }
-    auto setValue(int index, T v) {
-        values[index] = v;
-        return this;
-    }
-    auto setValue(int index,
-                  T v,
-                  string prefix,
-                  string suffix="")
-    {
-        values[index] = v;
-        prefixes[index] = prefix;
-        suffixes[index] = suffix;
-        return this;
-    }
-    void render() {
+    override void render() {
+        super.render();
+
         uint n = 0;
         int y = pos.y;
 

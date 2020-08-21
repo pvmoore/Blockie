@@ -26,6 +26,16 @@ private:
     TopBar topBar;
     BottomBar bottomBar;
     MiniMap minimap;
+
+    CPUMonitor cpuMonitor;
+    MEMMonitor memMonitor;
+    StatsMonitor fpsMonitor;
+    StatsMonitor frametimeMonitor;
+    StatsMonitor updateTimeMonitor;
+    StatsMonitor computeTimeMonitor;
+    StatsMonitor diskMonitor;
+    StatsMonitor gpuIoMonitor;
+    StatsMonitor chunksMonitor;
 public:
     this(OpenGL gl) {
         this.gl = gl;
@@ -49,36 +59,82 @@ public:
 
         const Y = 22;
 
-        getFPSMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y)
-        );
-        getFrameTimeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*1)
-        );
-        getUpdateTimeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*2)
-        );
-        getComputeMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*3)
-        );
-        getMEMMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*6)
-        );
-        getDiskMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*9)
-        );
-        getGPUIOMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*12)
-        );
-        getChunksMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*18)
-        );
-        getCPUMonitor().move(
-            ivec2(cast(int)gl.windowSize.width-180, Y+16*23)
-        );
+        this.memMonitor  = new MEMMonitor()
+            .initialise(gl)
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*6));
 
+        this.cpuMonitor = new CPUMonitor()
+            .initialise(gl)
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*23));
+
+        this.fpsMonitor = new GLMonitor(gl, "FPS", null)
+            .colour(WHITE*1.1)
+            .formatting("4.2f")
+            .addValue(EventID.NONE, "FPS ....... ")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y));
+
+        this.frametimeMonitor = new GLMonitor(gl, "FrameTime", null)
+            .colour(WHITE*0.92)
+            .formatting("4.2f")
+            .addValue(EventID.NONE, "Frame ..... ", "ms")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*1));
+
+        this.updateTimeMonitor = new GLMonitor(gl, "UpdateTime", null)
+            .colour(WHITE*0.92)
+            .formatting("4.2f")
+            .addValue(EventID.NONE, "Update .... ", "ms")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*2));
+
+        this.computeTimeMonitor = new GLMonitor(gl, "ComputeTime", "Compute")
+            .colour(WHITE*0.92)
+            .formatting("5.2f")
+            .addValue(EventID.COMPUTE_RENDER_TIME, "Render ....", "ms")
+            .addValue(EventID.COMPUTE_TIME, "Compute ...", "ms")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*3));
+
+        this.diskMonitor = new GLMonitor(gl, "DiskUsage", "Disk (MB) ")
+            .colour(WHITE*0.92)
+            .formatting("3.1f")
+            .addValue(EventID.STORAGE_READ,  "Read ... ", "")
+            .addValue(EventID.STORAGE_WRITE, "Write .. ", "")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*9));
+
+        this.gpuIoMonitor = new GLMonitor(gl, "GPUUsage", "GPU (MB)")
+            .colour(WHITE*0.92)
+            .formatting("4.2f")
+            .addValue(EventID.GPU_WRITES, "Writes ..... ")
+            .addValue(EventID.GPU_VOXELS_USAGE, "Used (vx) .. ")
+            .addValue(EventID.GPU_CHUNKS_USAGE, "Used (ch) .. ", "K")
+            .addValue(EventID.CM_CAMERA_MOVE_UPDATE_TIME, "Cam updt ... ","ms")
+            .addValue(EventID.CM_CHUNK_UPDATE_TIME, "Chk updt ... ","ms")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*12));
+
+        this.chunksMonitor = new GLMonitor(gl, "ChunksUsage", "Chunks")
+            .colour(WHITE*0.92)
+            .formatting("6.0f")
+            .addValue(EventID.CHUNKS_TOTAL, "Total ...... ")
+            .addValue(EventID.CHUNKS_ON_GPU, "On GPU ..... ")
+            .addValue(EventID.CHUNKS_READY, "Ready ...... ")
+            .addValue(EventID.CHUNKS_FLYWEIGHT, "Flyweight .. ")
+            .initialise()
+            .move(int2(cast(int)gl.windowSize.width-180, Y+16*18));
     }
     void destroy() {
+        if(memMonitor) memMonitor.destroy();
+        if(cpuMonitor) cpuMonitor.destroy();
+        if(fpsMonitor) fpsMonitor.destroy();
+        if(frametimeMonitor) frametimeMonitor.destroy();
+        if(updateTimeMonitor) updateTimeMonitor.destroy();
+        if(computeTimeMonitor) computeTimeMonitor.destroy();
+        if(diskMonitor) diskMonitor.destroy();
+        if(gpuIoMonitor) gpuIoMonitor.destroy();
+        if(chunksMonitor) chunksMonitor.destroy();
         console.destroy();
         topBar.destroy();
         bottomBar.destroy();
@@ -216,21 +272,22 @@ public:
         updateTiming.endFrame(updateWatch.peek().total!"nsecs");
         fpsTiming.endFrame(cast(ulong)(1000000*60.0/timeDelta));
 
+        fpsMonitor.update(0, fpsTiming.average(2));
+        frametimeMonitor.update(0, frameTiming.average(2));
+        updateTimeMonitor.update(0, updateTiming.average(0));
+
+        fpsMonitor.render();
+        frametimeMonitor.render();
+        updateTimeMonitor.render();
+        computeTimeMonitor.render();
+
+        cpuMonitor.render();
+        memMonitor.render();
+
+        diskMonitor.render();
+        gpuIoMonitor.render();
+        chunksMonitor.render();
         console.render();
-
-        getFPSMonitor().setValues(fpsTiming.average(2));
-        getUpdateTimeMonitor().setValues(updateTiming.average(0));
-        getFrameTimeMonitor().setValues(frameTiming.average(2));
-
-        getFPSMonitor().render();
-        getUpdateTimeMonitor().render();
-        getFrameTimeMonitor().render();
-        getComputeMonitor().render();
-        getCPUMonitor().render();
-        getMEMMonitor().render();
-        getDiskMonitor().render();
-        getGPUIOMonitor().render();
-        getChunksMonitor().render();
     }
 private:
     void calculateRenderRect() {
