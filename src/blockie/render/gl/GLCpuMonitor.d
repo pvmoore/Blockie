@@ -42,11 +42,11 @@ public:
             return "O".repeat(a) ~ ".".repeat(10-a);
         }
 
-        textRenderer.replaceText(1, "Average  |%s|".format(_fmt(total)), pos.x, pos.y+16);
+        textRenderer.replaceText(1, "Average   |%s|".format(_fmt(total)), pos.x, pos.y+16);
 
         int y = pos.y+16+16;
         foreach(i, d; cores) {
-            textRenderer.replaceText(cast(int)i+2, "Thread %s |%s|".format(i, _fmt(d)), pos.x, y);
+            textRenderer.replaceText(cast(int)i+2, "Thread %02s |%s|".format(i, _fmt(d)), pos.x, y);
             y += 16;
         }
         textRenderer.render();

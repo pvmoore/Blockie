@@ -1,11 +1,11 @@
-module blockie.render.gl.box_renderer;
+module blockie.render.gl.GLBoxRenderer;
 
 import blockie.render.all;
 
 /**
  *  Render a rectangle border around the world.
  */
-final class BoxRenderer {
+final class GLBoxRenderer {
     LineRenderer3D lineRenderer;
     vec3 min;
     vec3 max;

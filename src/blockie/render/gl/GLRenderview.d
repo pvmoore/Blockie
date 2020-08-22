@@ -2,23 +2,8 @@ module blockie.render.gl.GLRenderview;
 
 import blockie.render.all;
 
-public:
-
-enum RenderOption {
-    DISPLAY_VOXEL_SIZES,
-    ACCURATE_VOXEL_BOXES
-}
-
-final class GLRenderView : IView {
-private:
-    World world;
-    bool needToInitWorld;
-    StopWatch renderWatch;
-    StopWatch updateWatch;
-    int4 renderRect;
-    Timing fpsTiming, frameTiming, updateTiming;
-    bool[RenderOption] renderOptions;
-
+final class GLRenderView : RenderView {
+protected:
     OpenGL gl;
     GLComputeRenderer glComputeSceneRenderer;
     SkyBox skybox;
@@ -26,30 +11,17 @@ private:
     GLTopBar topBar;
     GLBottomBar bottomBar;
     GLMinimap minimap;
-
-    IMonitor cpuMonitor;
-    IMonitor memMonitor;
-    IMonitor fpsMonitor;
-    IMonitor frametimeMonitor;
-    IMonitor updateTimeMonitor;
-    IMonitor computeTimeMonitor;
-    IMonitor diskMonitor;
-    IMonitor gpuIoMonitor;
-    IMonitor chunksMonitor;
 public:
     this(OpenGL gl) {
+        super();
+
+        calculateRenderRect(gl.windowSize);
+
         this.gl = gl;
-
-        calculateRenderRect();
-
-        setRenderOption(RenderOption.DISPLAY_VOXEL_SIZES, false);
-        setRenderOption(RenderOption.ACCURATE_VOXEL_BOXES, false);
-
         this.console      = new GLConsole(gl, renderRect.y);
         this.topBar       = new GLTopBar(gl, this, renderRect.y+1);
         this.bottomBar    = new GLBottomBar(gl, this, );
         this.minimap      = new GLMinimap(gl);
-        this.fpsTiming    = new Timing(10,3);
         this.frameTiming  = new Timing(10,3);
         this.updateTiming = new Timing(10,1);
 
@@ -125,16 +97,18 @@ public:
             .initialise()
             .move(int2(cast(int)gl.windowSize.width-180, Y+16*18));
     }
-    void destroy() {
-        if(memMonitor) memMonitor.destroy();
-        if(cpuMonitor) cpuMonitor.destroy();
-        if(fpsMonitor) fpsMonitor.destroy();
-        if(frametimeMonitor) frametimeMonitor.destroy();
-        if(updateTimeMonitor) updateTimeMonitor.destroy();
-        if(computeTimeMonitor) computeTimeMonitor.destroy();
-        if(diskMonitor) diskMonitor.destroy();
-        if(gpuIoMonitor) gpuIoMonitor.destroy();
-        if(chunksMonitor) chunksMonitor.destroy();
+    override void setWorld(World world) {
+        super.setWorld(world);
+
+        topBar.setWorld(world);
+        minimap.setWorld(world);
+        glComputeSceneRenderer.setWorld(world);
+        skybox.setVP(world.camera);
+    }
+    @Implements("RenderView")
+    override void destroy() {
+        super.destroy();
+
         console.destroy();
         topBar.destroy();
         bottomBar.destroy();
@@ -142,13 +116,10 @@ public:
         skybox.destroy();
         glComputeSceneRenderer.destroy();
     }
-    bool getRenderOption(RenderOption opt) {
-        return renderOptions[opt];
-    }
-    void setRenderOption(RenderOption opt, bool value) {
-        renderOptions[opt] = value;
-    }
-    void enteringView() {
+    @Implements("RenderView")
+    override void enteringView() {
+        super.enteringView();
+
         glClearColor(0.1, 0, 0, 0);
 
         glEnable(GL_BLEND);
@@ -162,97 +133,9 @@ public:
 
         CheckGLErrors();
     }
-    void exitingView() {
-
-    }
-    void setWorld(World world) {
-        this.world           = world;
-        this.needToInitWorld = true;
-
-        world.camera.resize(renderRect.dimension);
-    }
-    void keyPress(uint keyCode, bool down, uint mods) {
-        if(!down) return;
-
-        switch(keyCode) {
-            case GLFW_KEY_1:
-                setRenderOption(RenderOption.DISPLAY_VOXEL_SIZES,
-                    !getRenderOption(RenderOption.DISPLAY_VOXEL_SIZES));
-                topBar.renderOptionsChanged();
-                glComputeSceneRenderer.renderOptionsChanged();
-                break;
-            case GLFW_KEY_2:
-                setRenderOption(RenderOption.ACCURATE_VOXEL_BOXES,
-                    !getRenderOption(RenderOption.ACCURATE_VOXEL_BOXES));
-                topBar.renderOptionsChanged();
-                glComputeSceneRenderer.renderOptionsChanged();
-                break;
-            default:
-                break;
-        }
-    }
-    void update(float timeDelta) {
-        updateWatch.reset();
-        updateWatch.start();
-        scope(exit) updateWatch.stop();
-
-        if(!world) return;
-
-        if(needToInitWorld) {
-            topBar.setWorld(world);
-            minimap.setWorld(world);
-            glComputeSceneRenderer.setWorld(world);
-            skybox.setVP(world.camera);
-            needToInitWorld = false;
-        }
-
-        bool moved;
-        float rotateRatio  = 0.02 * timeDelta;
-        float fwdBackRatio = 0.4*20 * timeDelta;
-
-        if(gl.isMouseButtonPressed(0)) {
-            auto pos = gl.mousePos;
-            //writefln("[%s,%s] %s", pos[0], pos[1], world.camera);
-        }
-
-        if(gl.isKeyPressed(GLFW_KEY_UP)) {
-            world.camera.pitch(rotateRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_DOWN)) {
-            world.camera.pitch(-rotateRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_LEFT)) {
-            world.camera.yaw(-rotateRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_RIGHT)) {
-            world.camera.yaw(rotateRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_Q)) {
-            world.camera.roll(-rotateRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_W)) {
-            world.camera.roll(rotateRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_A)) {
-            world.camera.moveForward(fwdBackRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_Z)) {
-            world.camera.moveForward(-fwdBackRatio);
-            moved = true;
-        } else if(gl.isKeyPressed(GLFW_KEY_F12)) {
-            GC.collect();
-            GC.minimize();
-            writefln("Collecting garbage");
-        }
-
-        if(moved) {
-            log("camera = %s", world.camera);
-            skybox.setVP(world.camera);
-        }
-        glComputeSceneRenderer.afterUpdate(moved);
-    }
-    void render(long frameNumber, long normalisedFrameNumber, float timeDelta) {
-        if(!world || needToInitWorld) return;
+    @Implements("RenderView")
+    override void render(ulong frameNumber, float seconds, float perSecond) {
+        if(!isReady()) return;
 
         renderWatch.reset();
         renderWatch.start();
@@ -268,11 +151,11 @@ public:
         minimap.render();
 
         renderWatch.stop();
+
         frameTiming.endFrame(renderWatch.peek().total!"nsecs");
         updateTiming.endFrame(updateWatch.peek().total!"nsecs");
-        fpsTiming.endFrame(cast(ulong)(1000000*60.0/timeDelta));
 
-        fpsMonitor.update(0, fpsTiming.average(2));
+        fpsMonitor.update(0, gl.FPS());
         frametimeMonitor.update(0, frameTiming.average(2));
         updateTimeMonitor.update(0, updateTiming.average(0));
 
@@ -289,16 +172,21 @@ public:
         chunksMonitor.render();
         console.render();
     }
-private:
-    void calculateRenderRect() {
-        auto dim = gl.windowSize;
-        renderRect = IntRect(0, 20, cast(int)dim.width, (cast(int)dim.height-20)-20);
-        uint rem = renderRect.height&7;
-        if(rem!=0) {
-            /// ensure height is a multiple of 8
-            renderRect.y      += rem;
-            renderRect.height -= rem;
-        }
+protected:
+    override bool isKeyPressed(uint key) {
+        return gl.isKeyPressed(key);
     }
+    override bool isMouseButtonPressed(uint button) {
+        return gl.isMouseButtonPressed(0);
+    }
+    override void afterUpdate(bool cameraMoved, float perSecond) {
+        skybox.setVP(world.camera);
+        glComputeSceneRenderer.afterUpdate(cameraMoved);
+    }
+    override void renderOptionsChanged() {
+        topBar.renderOptionsChanged();
+        glComputeSceneRenderer.renderOptionsChanged();
+    }
+private:
 }
 

@@ -9,6 +9,7 @@ import blockie.render.iview;
 import blockie.render.irenderer;
 
 import blockie.render.EventStatsMonitor;
+import blockie.render.RenderView;
 
 version(VULKAN) {
     pragma(msg, "VULKAN");
@@ -29,7 +30,7 @@ version(OPENGL) {
     import blockie.render.ChunkManager;
 
     import blockie.render.gl.GLBottomBar;
-    import blockie.render.gl.box_renderer;
+    import blockie.render.gl.GLBoxRenderer;
     import blockie.render.gl.GLConsole;
     import blockie.render.gl.GLCPUMonitor;
     import blockie.render.gl.GLComputeRenderer;

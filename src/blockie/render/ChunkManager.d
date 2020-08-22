@@ -1,14 +1,15 @@
 module blockie.render.ChunkManager;
 
 import blockie.render.all;
-///
-/// Manage chunks in a scene and data transfer to GPU.
-///
+/**
+ *
+ * Manage chunks in a scene and data transfer to GPU.
+ */
 final class ChunkManager {
 private:
-    const uint VIEW_WINDOW_X    = 25;
-    const uint VIEW_WINDOW_Y    = 8;
-    const uint VIEW_WINDOW_Z    = 25;
+    enum VIEW_WINDOW_X    = 25;
+    enum VIEW_WINDOW_Y    = 8;
+    enum VIEW_WINDOW_Z    = 25;
 
     const uint3 VIEW_WINDOW     = uint3(VIEW_WINDOW_X,VIEW_WINDOW_Y,VIEW_WINDOW_Z);
     const int3 HALF_VIEW_WINDOW = int3(VIEW_WINDOW_X/2,VIEW_WINDOW_Y/2,VIEW_WINDOW_Z/2);

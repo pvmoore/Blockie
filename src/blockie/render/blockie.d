@@ -146,10 +146,7 @@ public:
     }
     /// always called on the main thread
     @Implements("ApplicationListener")
-    override void render(long frameNumber,
-                         long normalisedFrameNumber,
-                         float timeDelta)
-    {
+    override void render(ulong frameNumber, float seconds, float perSecond) {
         if(!gl) return;
         if(nextView) {
             if(view) view.exitingView();
@@ -158,8 +155,8 @@ public:
             nextView = null;
         }
         if(!view) return;
-        view.render(frameNumber, normalisedFrameNumber, timeDelta);
-        view.update(timeDelta);
+        view.render(frameNumber, seconds, perSecond);
+        view.update(perSecond);
 
 //        if((frameNumber&255)==0) {
 //            writefln("Event subscribers {");
