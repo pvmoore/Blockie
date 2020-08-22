@@ -26,23 +26,10 @@ protected:
     IMonitor chunksMonitor;
     bool[RenderOption] renderOptions;
 
-    abstract bool isKeyPressed(uint key);
-    abstract bool isMouseButtonPressed(uint key);
-    abstract void afterUpdate(bool cameraMoved, float perSecond);
-    abstract void renderOptionsChanged();
-
-    bool isReady() {
-        return world !is null;
-    }
-    void calculateRenderRect(float2 windowSize) {
-        renderRect = IntRect(0, 20, cast(int)windowSize.width, (cast(int)windowSize.height-20)-20);
-        uint rem = renderRect.height&7;
-        if(rem!=0) {
-            /// ensure height is a multiple of 8
-            renderRect.y      += rem;
-            renderRect.height -= rem;
-        }
-    }
+    Console console;
+    TopBar topBar;
+    BottomBar bottomBar;
+    MiniMap minimap;
 public:
     this() {
         renderOptions[RenderOption.DISPLAY_VOXEL_SIZES] = false;
@@ -58,6 +45,10 @@ public:
         if(diskMonitor) diskMonitor.destroy();
         if(gpuIoMonitor) gpuIoMonitor.destroy();
         if(chunksMonitor) chunksMonitor.destroy();
+        if(console) console.destroy();
+        if(topBar) topBar.destroy();
+        if(bottomBar) bottomBar.destroy();
+        if(minimap) minimap.destroy();
     }
     void enteringView() {
 
@@ -133,11 +124,48 @@ public:
         }
         afterUpdate(moved, perSecond);
     }
-    abstract void render(ulong frameNumber, float seconds, float perSecond);
+    final void render(ulong frameNumber, float seconds, float perSecond) {
+        if(!isReady()) return;
 
+        renderWatch.reset();
+        renderWatch.start();
+
+        doRender(frameNumber, seconds, perSecond);
+
+        // render UI elements
+        console.clear();
+        topBar.render();
+        bottomBar.render();
+        minimap.render();
+
+        renderWatch.stop();
+
+        frameTiming.endFrame(renderWatch.peek().total!"nsecs");
+        updateTiming.endFrame(updateWatch.peek().total!"nsecs");
+
+        fpsMonitor.update(0, getFps());
+        frametimeMonitor.update(0, frameTiming.average(2));
+        updateTimeMonitor.update(0, updateTiming.average(0));
+
+        fpsMonitor.render();
+        frametimeMonitor.render();
+        updateTimeMonitor.render();
+        computeTimeMonitor.render();
+
+        cpuMonitor.render();
+        memMonitor.render();
+
+        diskMonitor.render();
+        gpuIoMonitor.render();
+        chunksMonitor.render();
+        console.render();
+    }
     void setWorld(World world) {
         this.world = world;
         world.camera.resize(renderRect.dimension);
+
+        topBar.setWorld(world);
+        minimap.setWorld(world);
     }
     bool getRenderOption(RenderOption opt) {
         return renderOptions[opt];
@@ -145,5 +173,103 @@ public:
     void setRenderOption(RenderOption opt, bool value) {
         renderOptions[opt] = value;
     }
-private:
+protected:
+    abstract bool isKeyPressed(uint key);
+    abstract bool isMouseButtonPressed(uint key);
+    abstract void afterUpdate(bool cameraMoved, float perSecond);
+    abstract void renderOptionsChanged();
+    abstract float2 getWindowSize();
+    abstract void doRender(ulong frameNumber, float seconds, float perSecond);
+    abstract float getFps();
+
+    bool isReady() {
+        return world !is null;
+    }
+    void calculateRenderRect(float2 windowSize) {
+        this.renderRect = IntRect(0, 20, cast(int)windowSize.width, (cast(int)windowSize.height-20)-20);
+
+        uint rem = renderRect.height&7;
+        if(rem!=0) {
+            /// ensure height is a multiple of 8
+            renderRect.y      += rem;
+            renderRect.height -= rem;
+        }
+    }
+    void initialiseMonitors() {
+        int width = getWindowSize().x.as!int;
+        enum Y = 22;
+
+        memMonitor
+            .initialise()
+            .move(int2(width-180, Y+16*6));
+
+        cpuMonitor
+            .initialise()
+            .move(int2(width-180, Y+16*23));
+
+        fpsMonitor
+            .colour(WHITE*1.1)
+            .formatting("4.2f")
+            .as!EventStatsMonitor
+            .addValue(EventID.NONE, "FPS ....... ")
+            .initialise()
+            .move(int2(width-180, Y));
+
+        frametimeMonitor
+            .colour(WHITE*0.92)
+            .formatting("4.2f")
+            .as!EventStatsMonitor
+            .addValue(EventID.NONE, "Frame ..... ", "ms")
+            .initialise()
+            .move(int2(width-180, Y+16*1));
+
+        updateTimeMonitor
+            .colour(WHITE*0.92)
+            .formatting("4.2f")
+            .as!EventStatsMonitor
+            .addValue(EventID.NONE, "Update .... ", "ms")
+            .initialise()
+            .move(int2(width-180, Y+16*2));
+
+        computeTimeMonitor
+            .colour(WHITE*0.92)
+            .formatting("5.2f")
+            .as!EventStatsMonitor
+            .addValue(EventID.COMPUTE_RENDER_TIME, "Render ....", "ms")
+            .addValue(EventID.COMPUTE_TIME, "Compute ...", "ms")
+            .initialise()
+            .move(int2(width-180, Y+16*3));
+
+        diskMonitor
+            .colour(WHITE*0.92)
+            .formatting("3.1f")
+            .as!EventStatsMonitor
+            .addValue(EventID.STORAGE_READ,  "Read ... ", "")
+            .addValue(EventID.STORAGE_WRITE, "Write .. ", "")
+            .initialise()
+            .move(int2(width-180, Y+16*9));
+
+        gpuIoMonitor
+            .colour(WHITE*0.92)
+            .formatting("4.2f")
+            .as!EventStatsMonitor
+            .addValue(EventID.GPU_WRITES, "Writes ..... ")
+            .addValue(EventID.GPU_VOXELS_USAGE, "Used (vx) .. ")
+            .addValue(EventID.GPU_CHUNKS_USAGE, "Used (ch) .. ", "K")
+            .addValue(EventID.CM_CAMERA_MOVE_UPDATE_TIME, "Cam updt ... ","ms")
+            .addValue(EventID.CM_CHUNK_UPDATE_TIME, "Chk updt ... ","ms")
+            .initialise()
+            .move(int2(width-180, Y+16*12));
+
+        chunksMonitor
+            .colour(WHITE*0.92)
+            .formatting("6.0f")
+            .as!EventStatsMonitor
+            .addValue(EventID.CHUNKS_TOTAL, "Total ...... ")
+            .addValue(EventID.CHUNKS_ON_GPU, "On GPU ..... ")
+            .addValue(EventID.CHUNKS_READY, "Ready ...... ")
+            .addValue(EventID.CHUNKS_FLYWEIGHT, "Flyweight .. ")
+            .initialise()
+            .move(int2(width-180, Y+16*18));
+    }
 }

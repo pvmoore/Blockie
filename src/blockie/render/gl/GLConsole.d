@@ -2,16 +2,13 @@ module blockie.render.gl.GLConsole;
 
 import blockie.render.all;
 
-final class GLConsole {
+final class GLConsole : Console {
 private:
-    const float FONT_SIZE = 16;
-    Camera2D camera;
     SDFFontRenderer textRenderer;
-    string[] buffer;
-    int ypos;
 public:
     this(OpenGL gl, uint y) {
-        this.ypos = y;
+        super(y);
+
         auto font = gl.getFont("roboto-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);
         this.camera = new Camera2D(gl.windowSize());
@@ -19,18 +16,11 @@ public:
         textRenderer.setVP(camera.VP);
         textRenderer.setColour(WHITE*0.9);
     }
-    void destroy() {
+    override void destroy() {
+        super.destroy();
         textRenderer.destroy();
     }
-    auto log(string s) {
-        buffer ~= s;
-        return this;
-    }
-    auto clear() {
-        buffer.length = 0;
-        return this;
-    }
-    void render() {
+    override void render() {
         textRenderer.clearText();
 
         long start = buffer.length-30;

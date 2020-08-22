@@ -19,7 +19,7 @@ import std.stdio                : writef, writefln, File;
 import std.file                 : exists;
 import std.math                 : fabs;
 import std.datetime.stopwatch   : StopWatch;
-import std.string               : toStringz, strip, indexOf;
+import std.string               : toStringz, fromStringz, strip, indexOf;
 import std.random	            : uniform, Mt19937;
 import std.array                : array, Appender, appender, join, replace, split, uninitializedArray;
 import std.conv                 : to;
@@ -34,11 +34,17 @@ import std.algorithm.sorting    : sort;
 import maths.noise;
 import maths.camera;
 import maths;
+
 import fonts.sdf;
-import resources : PNG, HGT;
+
+import resources : DDS, PNG, HGT;
+
 import logging : flushLog, log, setEagerFlushing, FileLogger;
+
 import resusage.memory : ProcessMemInfo, processMemInfo;
+
 import events : initEvents, getEvents, EventMsg;
+
 import common :
     Allocator, Allocator_t, Archive, Array, Async,
     BitWriter, ArrayBitWriter, ArrayByteWriter,
@@ -47,10 +53,8 @@ import common :
     as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, todo, toString;
 
-
-import blockie.version_;
-
 import blockie.model;
+import blockie.version_;
 
 import blockie.util.async;
 import blockie.util.util;

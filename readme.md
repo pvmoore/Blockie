@@ -24,6 +24,7 @@ Voxel renderer using Opengl3 compute shaders
 
 ##### 0.0.27
 - Refactor stats monitors to isolate opengl specific code.
+- Create base RenderView class
 
 ##### 0.0.26
 - Lots of package tidying and moving modules around. Separate render from generate.

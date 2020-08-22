@@ -2,16 +2,6 @@ module blockie.render.EventStatsMonitor;
 
 import blockie.render.all;
 
-interface IMonitor {
-    IMonitor initialise();
-    void destroy();
-    IMonitor move(int2 pos);
-    void update(uint index, double value);
-    void render();
-}
-
-//##################################################################################################
-
 abstract class EventStatsMonitor : IMonitor {
 private:
     IQueue!EventMsg messages;
@@ -39,15 +29,15 @@ public:
     void destroy() {
 
     }
-    auto formatting(string fmt) {
+    EventStatsMonitor formatting(string fmt) {
         this.fmt = fmt;
         return this;
     }
-    auto colour(RGBA c) {
+    EventStatsMonitor colour(RGBA c) {
         col = c;
         return this;
     }
-    auto addValue(EventID eventId, string prefix, string suffix = "") {
+    EventStatsMonitor addValue(EventID eventId, string prefix, string suffix = "") {
         if(eventId != 0) {
             eventIds[eventId.as!ulong] = eventIds.length.as!uint;
         }

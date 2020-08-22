@@ -2,20 +2,19 @@ module blockie.render.gl.GLBottomBar;
 
 import blockie.render.all;
 
-final class GLBottomBar {
+final class GLBottomBar : BottomBar {
 private:
-    const float FONT_SIZE = 15;
-    GLRenderView renderView;
-    Camera2D camera;
     SDFFontRenderer textRenderer;
     FilledRectangleRenderer rectRenderer;
 public:
     this(OpenGL gl, GLRenderView renderView) {
-        this.renderView   = renderView;
+        super(renderView);
+
         auto font         = gl.getFont("dejavusans-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);
         this.rectRenderer = new FilledRectangleRenderer(gl);
         this.camera = new Camera2D(gl.windowSize);
+
         auto dim = gl.windowSize();
         textRenderer.setSize(FONT_SIZE);
         textRenderer.setVP(camera.VP);
@@ -29,11 +28,12 @@ public:
             RGBA(0.1, 0.1, 0.3, 1)
         );
     }
-    void destroy() {
+    override void destroy() {
+        super.destroy();
         textRenderer.destroy();
         rectRenderer.destroy();
     }
-    void render() {
+    override void render() {
         rectRenderer.render();
         textRenderer.render();
     }

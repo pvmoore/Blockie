@@ -66,7 +66,6 @@ public:
 
         renderView = new GLRenderView(gl);
 
-        import std : fromStringz;
         import core.cpuid: processor;
         string deviceName = cast(string)fromStringz(glGetString(GL_RENDERER));
         title ~= " :: %s, %s".format(processor(), deviceName);

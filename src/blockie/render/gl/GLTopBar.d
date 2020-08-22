@@ -2,21 +2,21 @@ module blockie.render.gl.GLTopBar;
 
 import blockie.render.all;
 
-final class GLTopBar {
+final class GLTopBar : TopBar {
 private:
-    const int FONT_SIZE = 15;
-    GLRenderView renderView;
-    World world;
-    Font font;
     SDFFontRenderer textRenderer;
     FilledRectangleRenderer rectRenderer;
+    Font font;
 public:
     this(OpenGL gl, GLRenderView renderView, uint height) {
-        this.renderView = renderView;
+        super(renderView, height);
+
+        auto camera2d = new Camera2D(gl.windowSize);
+
         this.font = gl.getFont("dejavusans-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);
         this.rectRenderer = new FilledRectangleRenderer(gl);
-        auto camera2d = new Camera2D(gl.windowSize);
+
         textRenderer.setSize(FONT_SIZE);
         textRenderer.setVP(camera2d.VP);
         textRenderer.setColour(WHITE*1.0);
@@ -33,28 +33,19 @@ public:
         );
         renderOptionsChanged();
     }
-    void destroy() {
+    override void destroy() {
+        super.destroy();
         textRenderer.destroy();
         rectRenderer.destroy();
     }
-    void setWorld(World world) {
-        this.world = world;
+    override void setWorld(World world) {
+        super.setWorld(world);
 
-        /// Display world name
-        version(MODEL1) {
-            const model = 1;
-        } else version(MODEL2) {
-            const model = 2;
-        } else version(MODEL3) {
-            const model = 3;
-        } else {
-            const model = 4;
-        }
-        auto text = "%s (MODEL %s)".format(world.name, model);
-        float x = world.camera.windowSize().width/2 - font.sdf.getDimension(text,FONT_SIZE).width/2;
+        auto text = "%s (MODEL %s)".format(world.name, getModelName());
+        float x = world.camera.windowSize().width/2 - font.sdf.getDimension(text, FONT_SIZE).width/2;
         textRenderer.replaceText(1, text, cast(int)x);
     }
-    void renderOptionsChanged() {
+    override void renderOptionsChanged() {
         /// Display RenderOptions
         bool opt1 = renderView.getRenderOption(RenderOption.DISPLAY_VOXEL_SIZES);
         bool opt2 = renderView.getRenderOption(RenderOption.ACCURATE_VOXEL_BOXES);
@@ -63,7 +54,7 @@ public:
             (opt2 ? "2" : "-")
         );
     }
-    void render() {
+    override void render() {
         rectRenderer.render();
 
         if(world) {
