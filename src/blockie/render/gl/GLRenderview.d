@@ -22,20 +22,20 @@ private:
     OpenGL gl;
     GLComputeRenderer glComputeSceneRenderer;
     SkyBox skybox;
-    Console console;
-    TopBar topBar;
-    BottomBar bottomBar;
-    MiniMap minimap;
+    GLConsole console;
+    GLTopBar topBar;
+    GLBottomBar bottomBar;
+    GLMinimap minimap;
 
-    CPUMonitor cpuMonitor;
-    MEMMonitor memMonitor;
-    StatsMonitor fpsMonitor;
-    StatsMonitor frametimeMonitor;
-    StatsMonitor updateTimeMonitor;
-    StatsMonitor computeTimeMonitor;
-    StatsMonitor diskMonitor;
-    StatsMonitor gpuIoMonitor;
-    StatsMonitor chunksMonitor;
+    IMonitor cpuMonitor;
+    IMonitor memMonitor;
+    IMonitor fpsMonitor;
+    IMonitor frametimeMonitor;
+    IMonitor updateTimeMonitor;
+    IMonitor computeTimeMonitor;
+    IMonitor diskMonitor;
+    IMonitor gpuIoMonitor;
+    IMonitor chunksMonitor;
 public:
     this(OpenGL gl) {
         this.gl = gl;
@@ -45,10 +45,10 @@ public:
         setRenderOption(RenderOption.DISPLAY_VOXEL_SIZES, false);
         setRenderOption(RenderOption.ACCURATE_VOXEL_BOXES, false);
 
-        this.console      = new Console(gl, renderRect.y);
-        this.topBar       = new TopBar(gl, this, renderRect.y+1);
-        this.bottomBar    = new BottomBar(gl, this, );
-        this.minimap      = new MiniMap(gl);
+        this.console      = new GLConsole(gl, renderRect.y);
+        this.topBar       = new GLTopBar(gl, this, renderRect.y+1);
+        this.bottomBar    = new GLBottomBar(gl, this, );
+        this.minimap      = new GLMinimap(gl);
         this.fpsTiming    = new Timing(10,3);
         this.frameTiming  = new Timing(10,3);
         this.updateTiming = new Timing(10,1);
@@ -59,13 +59,13 @@ public:
 
         const Y = 22;
 
-        this.memMonitor  = new MEMMonitor()
-            .initialise(gl)
-            .move(int2(cast(int)gl.windowSize.width-180, Y+16*6));
+        this.memMonitor  = new GLMemMonitor(gl)
+            .initialise()
+            .move(int2(gl.windowSize.width.as!int-180, Y+16*6));
 
-        this.cpuMonitor = new CPUMonitor()
-            .initialise(gl)
-            .move(int2(cast(int)gl.windowSize.width-180, Y+16*23));
+        this.cpuMonitor = new GLCpuMonitor(gl)
+            .initialise()
+            .move(int2(gl.windowSize.width.as!int-180, Y+16*23));
 
         this.fpsMonitor = new GLMonitor(gl, "FPS", null)
             .colour(WHITE*1.1)

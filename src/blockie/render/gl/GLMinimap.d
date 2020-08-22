@@ -1,8 +1,8 @@
-module blockie.render.gl.minimap;
+module blockie.render.gl.GLMinimap;
 
 import blockie.render.all;
 
-final class MiniMap {
+final class GLMinimap {
 private:
     OpenGL gl;
     Camera2D camera;

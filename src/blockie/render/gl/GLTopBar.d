@@ -1,8 +1,8 @@
-module blockie.render.gl.topbar;
+module blockie.render.gl.GLTopBar;
 
 import blockie.render.all;
 
-final class TopBar {
+final class GLTopBar {
 private:
     const int FONT_SIZE = 15;
     GLRenderView renderView;

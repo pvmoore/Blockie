@@ -1,8 +1,18 @@
-module blockie.render.StatsMonitor;
+module blockie.render.EventStatsMonitor;
 
 import blockie.render.all;
 
-abstract class StatsMonitor {
+interface IMonitor {
+    IMonitor initialise();
+    void destroy();
+    IMonitor move(int2 pos);
+    void update(uint index, double value);
+    void render();
+}
+
+//##################################################################################################
+
+abstract class EventStatsMonitor : IMonitor {
 private:
     IQueue!EventMsg messages;
     EventMsg[100] tempMessages;
@@ -46,7 +56,7 @@ public:
         values   ~= 0;
         return this;
     }
-    auto initialise() {
+    EventStatsMonitor initialise() {
         if(eventIds.length > 0) {
             // Subscribe to events
             ulong e = 0;
@@ -58,7 +68,7 @@ public:
         doInitialise();
         return this;
     }
-    StatsMonitor move(int2 pos) {
+    EventStatsMonitor move(int2 pos) {
         this.pos = pos;
         return this;
     }

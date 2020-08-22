@@ -1,8 +1,8 @@
-module blockie.render.gl.console;
+module blockie.render.gl.GLConsole;
 
 import blockie.render.all;
 
-final class Console {
+final class GLConsole {
 private:
     const float FONT_SIZE = 16;
     Camera2D camera;

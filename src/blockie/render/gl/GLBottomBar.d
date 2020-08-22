@@ -1,8 +1,8 @@
-module blockie.render.gl.bottombar;
+module blockie.render.gl.GLBottomBar;
 
 import blockie.render.all;
 
-final class BottomBar {
+final class GLBottomBar {
 private:
     const float FONT_SIZE = 15;
     GLRenderView renderView;
