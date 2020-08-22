@@ -25,6 +25,13 @@ interface IMonitor {
     void update(uint index, double value);
     void render();
 }
+interface IGPUMemoryManager {
+    ulong getNumBytesUsed();
+    void bind();
+    long write(ubyte[] data);
+    long write(uint[] data);
+    void free(ulong offset, ulong size);
+}
 
 import blockie.globals;
 
@@ -59,6 +66,7 @@ version(OPENGL) {
     import blockie.render.gl.GLConsole;
     import blockie.render.gl.GLCPUMonitor;
     import blockie.render.gl.GLComputeRenderer;
+    import blockie.render.gl.GLGPUMemoryManager;
     import blockie.render.gl.GLMinimap;
     import blockie.render.gl.GLMemMonitor;
     import blockie.render.gl.GLMonitor;

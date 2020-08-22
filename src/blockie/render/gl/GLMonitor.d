@@ -6,8 +6,18 @@ class GLMonitor : EventStatsMonitor {
 protected:
     OpenGL gl;
     SDFFontRenderer textRenderer;
+public:
+    this(OpenGL gl, string name, string label) {
+        super(name, label);
+        this.gl = gl;
+    }
+    override void destroy() {
+        super.destroy();
+        if(textRenderer) textRenderer.destroy();
+    }
+    override GLMonitor initialise() {
+        super.initialise();
 
-    override void doInitialise() {
         auto font = gl.getFont("dejavusansmono-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, true);
         this.camera = new Camera2D(gl.windowSize());
@@ -26,15 +36,7 @@ protected:
                 .setColour(col)
                 .appendText("");
         }
-    }
-public:
-    this(OpenGL gl, string name, string label) {
-        super(name, label);
-        this.gl = gl;
-    }
-    override void destroy() {
-        super.destroy();
-        if(textRenderer) textRenderer.destroy();
+        return this;
     }
     override GLMonitor move(int2 pos) {
         super.move(pos);

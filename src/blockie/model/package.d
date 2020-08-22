@@ -40,3 +40,13 @@ interface Model {
     int             numRootBits();
 }
 
+Model createModel() {
+    version(MODEL1) return new Model1;
+    else version(MODEL1a) return new Model1a;
+    else version(MODEL2) return new Model2;
+    else version(MODEL3) return new Model3;
+    else version(MODEL4) return new Model4;
+    else version(MODEL5) return new Model5;
+    else version(MODEL6) return new Model6;
+    else static assert(false);
+}

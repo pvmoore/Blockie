@@ -2,10 +2,7 @@ module blockie.render.EventStatsMonitor;
 
 import blockie.render.all;
 
-abstract class EventStatsMonitor : IMonitor {
-private:
-    IQueue!EventMsg messages;
-    EventMsg[100] tempMessages;
+abstract class StatsMonitor : IMonitor {
 protected:
     enum FONT_SIZE = 14;
     string name;
@@ -18,24 +15,52 @@ protected:
     string[] prefixes;
     string[] suffixes;
     double[] values;
-
-    abstract void doInitialise();
 public:
     this(string name, string label) {
         this.name = name;
         this.label = label;
-        this.messages = makeSPSCQueue!EventMsg(1024*8);
     }
     void destroy() {
 
     }
-    EventStatsMonitor formatting(string fmt) {
+    StatsMonitor addValue(string prefix, string suffix = "") {
+        prefixes ~= prefix;
+        suffixes ~= suffix;
+        values   ~= 0;
+        return this;
+    }
+    StatsMonitor formatting(string fmt) {
         this.fmt = fmt;
         return this;
     }
-    EventStatsMonitor colour(RGBA c) {
+    StatsMonitor colour(RGBA c) {
         col = c;
         return this;
+    }
+    StatsMonitor initialise() {
+        return this;
+    }
+    StatsMonitor move(int2 pos) {
+        this.pos = pos;
+        return this;
+    }
+    void update(uint index, double value) {
+        values[index] = value;
+    }
+    void render() {
+
+    }
+}
+
+abstract class EventStatsMonitor : StatsMonitor {
+private:
+    IQueue!EventMsg messages;
+    EventMsg[100] tempMessages;
+protected:
+public:
+    this(string name, string label) {
+        super(name, label);
+        this.messages = makeSPSCQueue!EventMsg(1024*8);
     }
     EventStatsMonitor addValue(EventID eventId, string prefix, string suffix = "") {
         if(eventId != 0) {
@@ -46,7 +71,7 @@ public:
         values   ~= 0;
         return this;
     }
-    EventStatsMonitor initialise() {
+    override EventStatsMonitor initialise() {
         if(eventIds.length > 0) {
             // Subscribe to events
             ulong e = 0;
@@ -55,17 +80,12 @@ public:
             getEvents().subscribe("StatsMonitor::" ~ name, e, messages);
         }
 
-        doInitialise();
+        super.initialise();
         return this;
     }
-    EventStatsMonitor move(int2 pos) {
-        this.pos = pos;
-        return this;
-    }
-    void update(uint index, double value) {
-        values[index] = value;
-    }
-    void render() {
+    override void render() {
+        super.render();
+
         auto numMsgs = messages.drain(tempMessages);
         if(numMsgs>0) {
             foreach(i; 0..numMsgs) {

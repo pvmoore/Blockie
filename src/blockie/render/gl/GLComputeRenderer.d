@@ -4,35 +4,36 @@ import blockie.render.all;
 
 final class GLComputeRenderer : IRenderer, ChunkManager.SceneChangeListener {
 private:
-    const bool DEBUG               = false;
-    const uint DEBUG_BUFFER_LENGTH = 100;
+    enum DEBUG               = false;
+    enum DEBUG_BUFFER_LENGTH = 100;
 
-    GLRenderView renderView;
-    OpenGL gl;
     World world;
     uint renderTextureID;
     uint marchOutTextureID;
     int width, height;
     int4 renderRect;
     ChunkManager chunkManager;
-    SpriteRenderer quadRenderer;
-    SphereRenderer3D sphereRenderer;
     Timing renderTiming;
     Timing computeTiming;
+
+    uint[2] timerQueries;
+    uint flipFlop;
+
+    // GL specific
+    GLRenderView renderView;
+    OpenGL gl;
+
+    uint[] materialTextures;
+    SpriteRenderer quadRenderer;
+    SphereRenderer3D sphereRenderer;
 
     Program marchProgram, shadeProgram, dummyProgram;
 
     VBO marchVoxelsInVBO, marchChunksInVBO;
     VBO marchOutVBO, marchDebugOutVBO;
 
-    uint[2] timerQueries;
-    uint flipFlop;
-
-    uint[] materialTextures;
-
-    final static struct ChunkData_GL {
+    struct ChunkData_GL { static assert(ChunkData_GL.sizeof==4);
         uint voxelsOffset;
-        static assert(ChunkData_GL.sizeof==4);
     }
 public:
     this(OpenGL gl, GLRenderView renderView, int4 renderRect) {
@@ -85,8 +86,8 @@ public:
         chunkManager = new ChunkManager(
             this,
             world,
-            marchVoxelsInVBO.getMemoryManager(),
-            marchChunksInVBO.getMemoryManager()
+            new GLGPUMemoryManager(marchVoxelsInVBO.getMemoryManager()),
+            new GLGPUMemoryManager(marchChunksInVBO.getMemoryManager())
         );
         sphereRenderer.addSphere(world.sunPos, 100, YELLOW);
         cameraMoved();

@@ -7,9 +7,9 @@ import blockie.render.all;
  */
 final class ChunkManager {
 private:
-    enum VIEW_WINDOW_X    = 25;
-    enum VIEW_WINDOW_Y    = 8;
-    enum VIEW_WINDOW_Z    = 25;
+    enum VIEW_WINDOW_X = 25;
+    enum VIEW_WINDOW_Y = 8;
+    enum VIEW_WINDOW_Z = 25;
 
     const uint3 VIEW_WINDOW     = uint3(VIEW_WINDOW_X,VIEW_WINDOW_Y,VIEW_WINDOW_Z);
     const int3 HALF_VIEW_WINDOW = int3(VIEW_WINDOW_X/2,VIEW_WINDOW_Y/2,VIEW_WINDOW_Z/2);
@@ -54,26 +54,17 @@ private:
     ChunkInfo[VIEW_WINDOW_HMUL] currentGrid;
     ChunkInfo[VIEW_WINDOW_HMUL] tempGrid;
 
-    // FIXME: isolate these somehow
-    VBOMemoryManager voxelsMM;
-    VBOMemoryManager chunksMM;
-    GPUMemoryManager voxelsMM2;
-    GPUMemoryManager chunksMM2;
+    IGPUMemoryManager voxelsMM;
+    IGPUMemoryManager chunksMM;
 public:
     interface SceneChangeListener {
         void boundsChanged(uint3 chunksDim, worldcoords min, worldcoords max);
     }
-    interface GPUMemoryManager {
-        uint getNumBytesUsed();
-        void bind();
-        uint write(ubyte[] data);
-        void free(uint offset, uint size);
-    }
 
     this(SceneChangeListener listener,
          World world,
-         VBOMemoryManager voxelsVboMM,
-         VBOMemoryManager chunksVboMM)
+         IGPUMemoryManager voxelsVboMM,
+         IGPUMemoryManager chunksVboMM)
     {
         this.messages = makeSPSCQueue!EventMsg(1024*1024);
         this.listener = listener;
@@ -81,21 +72,7 @@ public:
         this.voxelsMM = voxelsVboMM;
         this.chunksMM = chunksVboMM;
 
-        version(MODEL1) {
-            this.storage  = new ChunkStorage(world, new Model1);
-        } else version(MODEL2) {
-            this.storage  = new ChunkStorage(world, new Model2);
-        } else version(MODEL3) {
-            this.storage  = new ChunkStorage(world, new Model3);
-        } else version(MODEL4) {
-            this.storage  = new ChunkStorage(world, new Model4);
-        } else version(MODEL5) {
-            this.storage  = new ChunkStorage(world, new Model5);
-        } else version(MODEL1A) {
-            this.storage  = new ChunkStorage(world, new Model1a);
-        } else version(MODEL6) {
-            this.storage  = new ChunkStorage(world, new Model6);
-        } else assert(false);
+        this.storage = new ChunkStorage(world, createModel());
 
         // Listen to events
         getEvents().subscribe(
@@ -132,8 +109,8 @@ public:
         }
 
         getEvents().fire(EventID.GPU_WRITES, totalGPUWrites.as!double/MB);
-        getEvents().fire(EventID.GPU_VOXELS_USAGE, voxelsMM.numBytesUsed.as!double/MB);
-        getEvents().fire(EventID.GPU_CHUNKS_USAGE, chunksMM.numBytesUsed.as!double/KB);
+        getEvents().fire(EventID.GPU_VOXELS_USAGE, voxelsMM.getNumBytesUsed().as!double/MB);
+        getEvents().fire(EventID.GPU_CHUNKS_USAGE, chunksMM.getNumBytesUsed().as!double/KB);
         getEvents().fire(EventID.CM_CAMERA_MOVE_UPDATE_TIME,
             (totalCameraMoveUpdateTime/cast(double)numCameraMoves)/1000000.0);
         getEvents().fire(EventID.CM_CHUNK_UPDATE_TIME,
@@ -181,7 +158,7 @@ private:
             ci.onGPU = true;
             numOnGPU++;
 
-            ci.offset = cast(uint)voxelsMM.write(ci.chunk.getVoxels(), 4);
+            ci.offset = cast(uint)voxelsMM.write(ci.chunk.getVoxels());
             ci.size   = cast(uint)ci.chunk.getVoxelsLength();
 
             totalGPUWrites    += ci.size;
@@ -257,7 +234,7 @@ private:
                 ci.onGPU = true;
                 numOnGPU++;
 
-                ci.offset = cast(uint)voxelsMM.write(ci.chunk.getVoxels(), 4);
+                ci.offset = cast(uint)voxelsMM.write(ci.chunk.getVoxels());
                 auto length = cast(uint)ci.chunk.getVoxelsLength();
                 totalGPUWrites += length;
                 ci.size = length;
@@ -293,7 +270,7 @@ private:
 
                 voxelsMM.free(ci.offset, ci.size);
 
-                ci.offset = cast(uint)voxelsMM.write(c.voxels, 4);
+                ci.offset = cast(uint)voxelsMM.write(c.voxels);
                 ci.size   = cast(uint)c.voxels.length;
                 totalGPUWrites += ci.size;
 
@@ -317,7 +294,7 @@ private:
         chunksMM.bind();
         ulong numBytes = chunkData.length*uint.sizeof;
         /// free the existing region if it exists
-        if(chunksMM.numBytesUsed>0) {
+        if(chunksMM.getNumBytesUsed() > 0) {
             chunksMM.free(0, numBytes);
         }
         /// update chunkData
@@ -328,7 +305,7 @@ private:
         }
         /// write chunkData to VBO
         totalGPUWrites += numBytes;
-        expect(0==chunksMM.write(chunkData, 4));
+        expect(0==chunksMM.write(chunkData));
     }
 //    uint getGridIndex(Chunk c) {
 //        ivec3 p = c.pos-base;
