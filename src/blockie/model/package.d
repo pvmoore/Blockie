@@ -50,3 +50,15 @@ Model createModel() {
     else version(MODEL6) return new Model6;
     else static assert(false);
 }
+
+string getModelName() {
+    /// Display world name
+    version(MODEL1) return "1";
+    else version(MODEL1a) return "1a";
+    else version(MODEL2) return "2";
+    else version(MODEL3) return "3";
+    else version(MODEL4) return "4";
+    else version(MODEL5) return "5";
+    else version(MODEL6) return "6";
+    else return "Unknown Model";
+}

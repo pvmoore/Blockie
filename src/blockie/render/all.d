@@ -15,6 +15,7 @@ interface IRenderer {
     void render();
     void afterUpdate(bool cameraMoved);
     void setWorld(World w);
+    void renderOptionsChanged();
 }
 interface IMonitor {
     IMonitor initialise();
@@ -35,7 +36,7 @@ interface IGPUMemoryManager {
 
 import blockie.globals;
 
-import blockie.render.blockie;
+import blockie.render.Blockie;
 import blockie.render.BottomBar;
 import blockie.render.Console;
 import blockie.render.EventStatsMonitor;
@@ -48,8 +49,10 @@ version(VULKAN) {
 
     import vulkan;
 
+    import blockie.render.vk.VKBlockie;
     import blockie.render.vk.VKComputeRenderer;
-
+    import blockie.render.vk.VKGPUMemoryManager;
+    import blockie.render.vk.VKRenderView;
 }
 version(OPENGL) {
     pragma(msg, "OPENGL");
@@ -61,6 +64,7 @@ version(OPENGL) {
 
     import blockie.render.ChunkManager;
 
+    import blockie.render.gl.GLBlockie;
     import blockie.render.gl.GLBottomBar;
     import blockie.render.gl.GLBoxRenderer;
     import blockie.render.gl.GLConsole;

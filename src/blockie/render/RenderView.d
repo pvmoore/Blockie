@@ -12,6 +12,7 @@ protected:
     World world;
     StopWatch renderWatch;
     StopWatch updateWatch;
+    float2 windowSize;
     int4 renderRect;
     Timing frameTiming, updateTiming;
 
@@ -30,10 +31,17 @@ protected:
     TopBar topBar;
     BottomBar bottomBar;
     MiniMap minimap;
+    IRenderer computeRenderer;
 public:
-    this() {
+    this(float2 windowSize) {
+        this.windowSize   = windowSize;
+        this.frameTiming  = new Timing(10,3);
+        this.updateTiming = new Timing(10,1);
+
         renderOptions[RenderOption.DISPLAY_VOXEL_SIZES] = false;
         renderOptions[RenderOption.ACCURATE_VOXEL_BOXES] = false;
+
+        calculateRenderRect(windowSize);
     }
     void destroy() {
         if(memMonitor) memMonitor.destroy();
@@ -177,26 +185,14 @@ protected:
     abstract bool isKeyPressed(uint key);
     abstract bool isMouseButtonPressed(uint key);
     abstract void afterUpdate(bool cameraMoved, float perSecond);
-    abstract void renderOptionsChanged();
-    abstract float2 getWindowSize();
     abstract void doRender(ulong frameNumber, float seconds, float perSecond);
     abstract float getFps();
 
     bool isReady() {
         return world !is null;
     }
-    void calculateRenderRect(float2 windowSize) {
-        this.renderRect = IntRect(0, 20, cast(int)windowSize.width, (cast(int)windowSize.height-20)-20);
-
-        uint rem = renderRect.height&7;
-        if(rem!=0) {
-            /// ensure height is a multiple of 8
-            renderRect.y      += rem;
-            renderRect.height -= rem;
-        }
-    }
     void initialiseMonitors() {
-        int width = getWindowSize().x.as!int;
+        int width = windowSize.x.as!int;
         enum Y = 22;
 
         memMonitor
@@ -271,5 +267,20 @@ protected:
             .addValue(EventID.CHUNKS_FLYWEIGHT, "Flyweight .. ")
             .initialise()
             .move(int2(width-180, Y+16*18));
+    }
+private:
+    void renderOptionsChanged() {
+        topBar.renderOptionsChanged();
+        computeRenderer.renderOptionsChanged();
+    }
+    void calculateRenderRect(float2 windowSize) {
+        this.renderRect = IntRect(0, 20, cast(int)windowSize.width, (cast(int)windowSize.height-20)-20);
+
+        uint rem = renderRect.height&7;
+        if(rem!=0) {
+            /// ensure height is a multiple of 8
+            renderRect.y      += rem;
+            renderRect.height -= rem;
+        }
     }
 }

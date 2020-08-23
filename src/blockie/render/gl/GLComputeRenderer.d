@@ -146,18 +146,7 @@ public:
         getEvents().fire(EventID.COMPUTE_RENDER_TIME, renderTiming.average(2));
         getEvents().fire(EventID.COMPUTE_TIME, computeTiming.average(2));
     }
-    @Implements("SceneChangeListener")
-    void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {
-        marchProgram
-            .use()
-            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
-            .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
-
-        shadeProgram
-            .use()
-            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
-            .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
-    }
+    @Implements("IRenderer")
     void renderOptionsChanged() {
         assert(marchProgram);
         assert(shadeProgram);
@@ -169,6 +158,18 @@ public:
 
         marchProgram.use().setUniform("RENDER_OPTS", opts);
         shadeProgram.use().setUniform("RENDER_OPTS", opts);
+    }
+    @Implements("SceneChangeListener")
+    void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {
+        marchProgram
+            .use()
+            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
+            .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
+
+        shadeProgram
+            .use()
+            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
+            .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
     }
  private:
     ulong getElapsedTime(uint query) {

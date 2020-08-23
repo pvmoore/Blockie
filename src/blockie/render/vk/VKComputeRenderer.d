@@ -2,17 +2,18 @@ module src.blockie.render.vk.VKComputeRenderer;
 
 import blockie.render.all;
 
-version(VULKAN):
-
 final class VKComputeRenderer : IRenderer, ChunkManager.SceneChangeListener {
 private:
+    VulkanContext context;
+    RenderView renderView;
+    int4 renderRect;
     World world;
-    ChunkManager chunkManager;  // gl specific
-    //RenderView renderView;      // gl specific
-
+    ChunkManager chunkManager;
 public:
-    this() {
-
+    this(VulkanContext context, RenderView renderView, int4 renderRect) {
+        this.context    = context;
+        this.renderView = renderView;
+        this.renderRect = renderRect;
     }
     @Implements("IRenderer")
     void destroy() {
