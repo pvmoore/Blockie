@@ -3,10 +3,7 @@ module blockie.render.MiniMap;
 import blockie.render.all;
 
 abstract class MiniMap {
-private:
-
 protected:
-    Camera2D camera;
     World world;
 public:
     this() {
@@ -18,5 +15,6 @@ public:
     void setWorld(World world) {
         this.world = world;
     }
-    abstract void render();
+    abstract void update(AbsRenderData renderData);
+    abstract void render(AbsRenderData renderData);
 }

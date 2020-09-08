@@ -2,18 +2,21 @@ module blockie.render.all;
 
 public:
 
+abstract class AbsRenderData {
+    double perSecond;
+}
 interface IView {
     void destroy();
     void enteringView();
     void exitingView();
     bool isReady();
-    void update(float timeDelta);
-    void render(ulong frameNumber, float seconds, float perSecond);
+    void update(AbsRenderData renderData);
+    void render(AbsRenderData renderData);
 }
 interface IRenderer {
     void destroy();
-    void render();
-    void afterUpdate(bool cameraMoved);
+    void update(AbsRenderData renderData, bool cameraMoved);
+    void render(AbsRenderData renderData);
     void setWorld(World w);
     void renderOptionsChanged();
 }
@@ -23,14 +26,14 @@ interface IMonitor {
     IMonitor colour(RGBA c);
     IMonitor formatting(string fmt);
     IMonitor move(int2 pos);
-    void update(uint index, double value);
-    void render();
+    void updateValue(uint index, double value);
+    void update(AbsRenderData renderData);
+    void render(AbsRenderData renderData);
 }
-interface IGPUMemoryManager {
+interface IGPUMemoryManager(T) {
     ulong getNumBytesUsed();
     void bind();
-    long write(ubyte[] data);
-    long write(uint[] data);
+    long write(T[] data);
     void free(ulong offset, ulong size);
 }
 
@@ -38,6 +41,8 @@ import blockie.globals;
 
 import blockie.render.Blockie;
 import blockie.render.BottomBar;
+import blockie.render.ChunkManager;
+import blockie.render.ComputeRenderer;
 import blockie.render.Console;
 import blockie.render.EventStatsMonitor;
 import blockie.render.MiniMap;
@@ -49,20 +54,39 @@ version(VULKAN) {
 
     import vulkan;
 
+    final class VKRenderData : AbsRenderData {
+        FrameInfo frame;
+        PerFrameResource res;
+
+        VkCommandBuffer[] commandBuffers;
+        VkSemaphore[] waitSemaphores;
+        VPipelineStage[] waitStages;
+    }
+
     import blockie.render.vk.VKBlockie;
+    import blockie.render.vk.VKBottomBar;
     import blockie.render.vk.VKComputeRenderer;
+    import blockie.render.vk.VKConsole;
+    import blockie.render.vk.VKCpuMonitor;
     import blockie.render.vk.VKGPUMemoryManager;
+    import blockie.render.vk.VKMemMonitor;
+    import blockie.render.vk.VKMonitor;
+    import blockie.render.vk.VKMiniMap;
     import blockie.render.vk.VKRenderView;
+    import blockie.render.vk.VKTopBar;
 }
 version(OPENGL) {
     pragma(msg, "OPENGL");
+
+    final class GLRenderData : AbsRenderData {
+        ulong frameNumber;
+        float seconds;
+    }
 
     import gl;
     import gl.geom : BitmapSprite;
     import derelict.opengl;
     import derelict.glfw3;
-
-    import blockie.render.ChunkManager;
 
     import blockie.render.gl.GLBlockie;
     import blockie.render.gl.GLBottomBar;

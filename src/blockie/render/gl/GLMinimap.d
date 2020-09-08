@@ -10,12 +10,15 @@ public:
         super();
 
         this.gl = gl;
-        this.camera = new Camera2D(gl.windowSize());
+        auto camera = new Camera2D(gl.windowSize());
     }
     override void destroy() {
         super.destroy();
     }
-    override void render() {
+    override void update(AbsRenderData renderData) {
+
+    }
+    override void render(AbsRenderData renderData) {
 
     }
 }

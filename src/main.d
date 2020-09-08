@@ -6,6 +6,8 @@ import blockie.render.all;
 import core.sys.windows.windows;
 import core.runtime : Runtime;
 
+pragma(lib, "user32.lib");
+
 extern(Windows)
 int WinMain(HINSTANCE theHInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	int result = 0;
@@ -19,6 +21,8 @@ int WinMain(HINSTANCE theHInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
 			app = new GLBlockie();
 		} else version(VULKAN) {
 			app = new VKBlockie();
+		} else {
+			static assert(false);
 		}
 
 		app.initialise();

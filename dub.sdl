@@ -19,7 +19,7 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "MODEL6" "GC_STATS" #"RELEASE_ASSERT"
+versions "MODEL1" "GC_STATS" #"RELEASE_ASSERT"
 
 targetType "executable"
 

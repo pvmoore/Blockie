@@ -13,7 +13,7 @@ public:
         this.gl              = gl;
         this.console         = new GLConsole(gl, renderRect.y);
         this.topBar          = new GLTopBar(gl, this, renderRect.y+1);
-        this.bottomBar       = new GLBottomBar(gl, this, );
+        this.bottomBar       = new GLBottomBar(gl, this);
         this.minimap         = new GLMinimap(gl);
         this.computeRenderer = new GLComputeRenderer(gl, this, renderRect);
         this.skybox          = new SkyBox(gl, "/pvmoore/_assets/images/skyboxes/skybox1");
@@ -62,17 +62,17 @@ public:
         skybox.setVP(world.camera);
     }
 protected:
-    override void afterUpdate(bool cameraMoved, float perSecond) {
+    override void updateScene(AbsRenderData renderData, bool cameraMoved) {
         if(cameraMoved) {
             skybox.setVP(world.camera);
         }
-        computeRenderer.afterUpdate(cameraMoved);
+        computeRenderer.update(renderData, cameraMoved);
     }
-    override void doRender(ulong frameNumber, float seconds, float perSecond) {
+    override void renderScene(AbsRenderData renderData) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         skybox.render();
-        computeRenderer.render();
+        computeRenderer.render(renderData);
     }
     override bool isKeyPressed(uint key) {
         return gl.isKeyPressed(key);

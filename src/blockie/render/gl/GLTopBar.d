@@ -20,6 +20,7 @@ public:
         textRenderer.setSize(FONT_SIZE);
         textRenderer.setVP(camera2d.VP);
         textRenderer.setColour(WHITE*1.0);
+
         textRenderer.appendText("[]", 2, 1);        /// 0
         textRenderer.appendText("World", 300, 1);   /// 1
         textRenderer.setColour(RGBA(1,0.8,0.2,1));
@@ -54,7 +55,10 @@ public:
             (opt2 ? "2" : "-")
         );
     }
-    override void render() {
+    override void update(AbsRenderData renderData) {
+        // Nothing to do
+    }
+    override void render(AbsRenderData renderData) {
         rectRenderer.render();
 
         if(world) {

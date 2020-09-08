@@ -24,7 +24,11 @@ Voxel renderer using Opengl3 compute shaders
 
 ##### 0.0.27
 - Refactor stats monitors to isolate opengl specific code.
-- Create base RenderView class
+- More refactoring to isolate OpenGL functionality
+- Move statistics to stats.md
+- Move shader source files into sub folders march/ or shade/
+- Initial Vulkan version is working. There is still a glitch when the chunk boundary changes which
+  needs to be optimised
 
 ##### 0.0.26
 - Lots of package tidying and moving modules around. Separate render from generate.

@@ -11,7 +11,7 @@ public:
 
         auto font = gl.getFont("roboto-bold");
         this.textRenderer = new SDFFontRenderer(gl, font, false);
-        this.camera = new Camera2D(gl.windowSize());
+        auto camera = new Camera2D(gl.windowSize());
         textRenderer.setSize(FONT_SIZE);
         textRenderer.setVP(camera.VP);
         textRenderer.setColour(WHITE*0.9);
@@ -20,7 +20,10 @@ public:
         super.destroy();
         textRenderer.destroy();
     }
-    override void render() {
+    override void update(AbsRenderData renderData) {
+
+    }
+    override void render(AbsRenderData renderData) {
         textRenderer.clearText();
 
         long start = buffer.length-30;

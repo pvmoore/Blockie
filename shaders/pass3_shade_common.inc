@@ -1,10 +1,10 @@
 
 /// Calculate the hit pos given a screen pixel
 vec3 getHitPos(ivec2 pos) {
-    uint i     = pos.x + (pos.y*SIZE.x);
+    uint i     = pos.x + (pos.y*ubo_SIZE.x);
     vec3 dir   = getRayDirForPixel(pos);
     float dist = dataIn[i].distance;
-    return CAMERA_POS + (dir*dist);
+    return ubo_CAMERA_POS + (dir*dist);
 }
 
 vec3 calculateNormal(vec3 currentPos) {
@@ -26,7 +26,7 @@ vec3 calculateNormal(vec3 currentPos) {
 }
 
 float getBrightness(const vec3 hitPos, const vec3 normal) {
-    const vec3 lightPos = SUN_POS;
+    const vec3 lightPos = ubo_SUN_POS;
     const vec3 toLight  = normalize(lightPos-hitPos);
     const float NdotL   = dot(normal, toLight);
     return max(NdotL, 0);

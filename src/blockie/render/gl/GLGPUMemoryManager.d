@@ -2,7 +2,7 @@ module blockie.render.gl.GLGPUMemoryManager;
 
 import blockie.render.all;
 
-final class GLGPUMemoryManager : IGPUMemoryManager {
+final class GLGPUMemoryManager(T) : IGPUMemoryManager!T {
 private:
     VBOMemoryManager decorated;
 public:
@@ -18,11 +18,7 @@ public:
         decorated.bind();
     }
     @Implements("IGPUMemoryManager")
-    long write(ubyte[] data) {
-        return decorated.write(data, 4);
-    }
-    @Implements("IGPUMemoryManager")
-    long write(uint[] data) {
+    long write(T[] data) {
         return decorated.write(data, 4);
     }
     @Implements("IGPUMemoryManager")

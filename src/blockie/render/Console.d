@@ -3,11 +3,8 @@ module blockie.render.Console;
 import blockie.render.all;
 
 abstract class Console {
-private:
-
 protected:
     enum FONT_SIZE = 16;
-    Camera2D camera;
     int ypos;
     string[] buffer;
 public:
@@ -25,5 +22,6 @@ public:
         buffer.length = 0;
         return this;
     }
-    abstract void render();
+    abstract void update(AbsRenderData renderData);
+    abstract void render(AbsRenderData renderData);
 }

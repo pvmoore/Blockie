@@ -3,8 +3,6 @@ module blockie.render.TopBar;
 import blockie.render.all;
 
 abstract class TopBar {
-private:
-
 protected:
     enum FONT_SIZE = 15;
     RenderView renderView;
@@ -21,8 +19,7 @@ public:
     void setWorld(World world) {
         this.world = world;
     }
-    void renderOptionsChanged() {
-
-    }
-    abstract void render();
+    abstract void renderOptionsChanged();
+    abstract void update(AbsRenderData renderData);
+    abstract void render(AbsRenderData renderData);
 }

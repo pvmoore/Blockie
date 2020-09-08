@@ -82,16 +82,15 @@ public:
                 break;
         }
     }
-    void update(float perSecond) {
+    void update(AbsRenderData renderData) {
         if(!isReady()) return;
 
         updateWatch.reset();
         updateWatch.start();
-        scope(exit) updateWatch.stop();
 
         bool moved;
-        float rotateRatio  = 2 * perSecond;
-        float fwdBackRatio = 400 * perSecond;
+        float rotateRatio  = 2 * renderData.perSecond;
+        float fwdBackRatio = 400 * renderData.perSecond;
 
         if(isMouseButtonPressed(0)) {
             //auto pos = gl.mousePos;
@@ -127,46 +126,61 @@ public:
             GC.minimize();
             writefln("Collecting garbage");
         }
+
+        fpsMonitor.updateValue(0, getFps());
+        frametimeMonitor.updateValue(0, frameTiming.average(2));
+        updateTimeMonitor.updateValue(0, updateTiming.average(0));
+
+        topBar.update(renderData);
+        bottomBar.update(renderData);
+        minimap.update(renderData);
+        console.update(renderData);
+        console.clear();
+
+        fpsMonitor.update(renderData);
+        frametimeMonitor.update(renderData);
+        updateTimeMonitor.update(renderData);
+        computeTimeMonitor.update(renderData);
+        cpuMonitor.update(renderData);
+        memMonitor.update(renderData);
+        diskMonitor.update(renderData);
+        gpuIoMonitor.update(renderData);
+        chunksMonitor.update(renderData);
+
         if(moved) {
-            log("camera = %s", world.camera);
+            this.log("camera = %s", world.camera);
         }
-        afterUpdate(moved, perSecond);
+        updateScene(renderData, moved);
+
+        updateWatch.stop();
+        updateTiming.endFrame(updateWatch.peek().total!"nsecs");
     }
-    final void render(ulong frameNumber, float seconds, float perSecond) {
+    final void render(AbsRenderData renderData) {
         if(!isReady()) return;
 
         renderWatch.reset();
         renderWatch.start();
 
-        doRender(frameNumber, seconds, perSecond);
+        renderScene(renderData);
 
         // render UI elements
-        console.clear();
-        topBar.render();
-        bottomBar.render();
-        minimap.render();
+        topBar.render(renderData);
+        bottomBar.render(renderData);
+        minimap.render(renderData);
+        console.render(renderData);
+
+        fpsMonitor.render(renderData);
+        frametimeMonitor.render(renderData);
+        updateTimeMonitor.render(renderData);
+        computeTimeMonitor.render(renderData);
+        cpuMonitor.render(renderData);
+        memMonitor.render(renderData);
+        diskMonitor.render(renderData);
+        gpuIoMonitor.render(renderData);
+        chunksMonitor.render(renderData);
 
         renderWatch.stop();
-
         frameTiming.endFrame(renderWatch.peek().total!"nsecs");
-        updateTiming.endFrame(updateWatch.peek().total!"nsecs");
-
-        fpsMonitor.update(0, getFps());
-        frametimeMonitor.update(0, frameTiming.average(2));
-        updateTimeMonitor.update(0, updateTiming.average(0));
-
-        fpsMonitor.render();
-        frametimeMonitor.render();
-        updateTimeMonitor.render();
-        computeTimeMonitor.render();
-
-        cpuMonitor.render();
-        memMonitor.render();
-
-        diskMonitor.render();
-        gpuIoMonitor.render();
-        chunksMonitor.render();
-        console.render();
     }
     void setWorld(World world) {
         this.world = world;
@@ -184,14 +198,15 @@ public:
 protected:
     abstract bool isKeyPressed(uint key);
     abstract bool isMouseButtonPressed(uint key);
-    abstract void afterUpdate(bool cameraMoved, float perSecond);
-    abstract void doRender(ulong frameNumber, float seconds, float perSecond);
+    abstract void updateScene(AbsRenderData renderData, bool cameraMoved);
+    abstract void renderScene(AbsRenderData renderData);
     abstract float getFps();
 
     bool isReady() {
         return world !is null;
     }
     void initialiseMonitors() {
+        this.log("Initialising monitors");
         int width = windowSize.x.as!int;
         enum Y = 22;
 
@@ -267,6 +282,8 @@ protected:
             .addValue(EventID.CHUNKS_FLYWEIGHT, "Flyweight .. ")
             .initialise()
             .move(int2(width-180, Y+16*18));
+
+        this.log("Monitors initialised");
     }
 private:
     void renderOptionsChanged() {

@@ -8,7 +8,7 @@
 #define GROUP_SIZE_Y 8
 layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
 
-#include "header.inc"
+#include "_header.inc"
 
 #define CELL_SIZE (CHUNK_SIZE>>4)  // 64
 
@@ -51,7 +51,7 @@ uniform bool RENDER_OPTS[2];
 
 ivec2 pixel     = ivec2(gl_GlobalInvocationID.xy);
 uint g_index    = gl_GlobalInvocationID.x +
-                  gl_GlobalInvocationID.y*SIZE.x;
+                  gl_GlobalInvocationID.y * ubo_SIZE.x;
 vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
 
 struct Flags {
@@ -65,7 +65,7 @@ struct Flags {
 
 #include "useful_functions.comp"
 #include "marchM2.inc"
-#include "camera.inc"
+#include "_camera.inc"
 
 #line 1
 

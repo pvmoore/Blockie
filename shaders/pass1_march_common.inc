@@ -30,11 +30,11 @@ uint getBits_voxelsIn(uint byteIndex, uint bitOffset, int numBits) {
 /// Return true if chunk changes
 bool updatePosition(inout Position pos, vec3 add) {
     pos.fpos += add;
-    pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
+    pos.upos  = ivec3(floor(pos.fpos-ubo_WORLD_BB_MIN));
 
     uvec3 xyz = pos.upos >> CHUNK_SIZE_SHR;
 
-	bool outOfBounds = any(greaterThanEqual(xyz, WORLD_CHUNKS_XYZ));
+	bool outOfBounds = any(greaterThanEqual(xyz, ubo_WORLD_CHUNKS_XYZ));
 
     int prevChunk = pos.chunk;
     pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
@@ -43,7 +43,7 @@ bool updatePosition(inout Position pos, vec3 add) {
 // Update position - assumes the chunks does not change
 void updatePositionWithinCell(inout Position pos, vec3 add) {
     pos.fpos += add;
-    pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
+    pos.upos  = ivec3(floor(pos.fpos-ubo_WORLD_BB_MIN));
 }
 
 ///
@@ -74,7 +74,7 @@ void skipLOD(float distance, inout float dist) {
 // Calculate the minimum distance to the edge of the current voxel of size _voxelSize_.
 //
 float getMinDistToEdge(Ray ray, Position pos, uint voxelSize) {
-    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
     vec3 rem  = mod(p, voxelSize);
     vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * voxelSize;
     vec3 dist = size-rem;
@@ -93,7 +93,7 @@ float getMinDistToEdge8BitsBiDirectional(Ray ray, Position pos, uvec3 radius, ui
     uvec3 upradius   = radius >> 8u;        // high 8 bits = up distance
     uvec3 downradius = radius & 0xffu;      // low  8 bits = down distance
 
-    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
     vec3 rem  = mod(p, voxelSize) + downradius*voxelSize;
     vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*voxelSize);
     vec3 dist = size-rem;
@@ -112,7 +112,7 @@ float getMinDistToEdge5BitsBiDirectional(Ray ray, Position pos, uvec3 radius, ui
     vec3 up   = radius >> 5;   // high 5 bits = up distance
     vec3 down = radius & 31;   // low  5 bits = down distance
 
-    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
     vec3 rem  = mod(p, voxelSize) + down*voxelSize;
     vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*voxelSize);
     vec3 dist = size-rem;
@@ -131,7 +131,7 @@ float getMinDistToEdge4BitsBiDirectional(Ray ray, Position pos, uvec3 radius, ui
     vec3 up   = radius >> 4;   // high 45 bits = up distance
     vec3 down = radius & 15;   // low  45 bits = down distance
 
-    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
     vec3 rem  = mod(p, voxelSize) + down*voxelSize;
     vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*voxelSize);
     vec3 dist = size-rem;
@@ -153,7 +153,7 @@ float getMinDistToEdgeUniDirectional(
     //          etc...
     const vec3 r    = radius*sideSize;
     const vec3 r2   = r*2;
-    const vec3 p    = pos.fpos-WORLD_BB[0];
+    const vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
     const vec3 rem  = mod(p, sideSize) + r;
     const vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * (sideSize+r2);
     const vec3 dist = size-rem;
@@ -167,7 +167,7 @@ float getMinDistToEdgeUniDirectional(
 //     vec3 dir    = -ray.direction;
 //     vec3 invDir = -ray.invDirection;
 
-//     vec3 p    = pos.fpos-WORLD_BB[0];
+//     vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
 //     vec3 rem  = mod(p, voxelSize);
 //     vec3 size = vec3(greaterThanEqual(dir, vec3(0))) * voxelSize;
 //     vec3 dist = size-rem;

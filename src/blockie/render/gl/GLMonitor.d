@@ -46,9 +46,9 @@ public:
         }
         return this;
     }
-    override void render() {
-        super.render();
-
+    override void update(AbsRenderData renderData) {
+        super.update(renderData);
+        
         uint n = 0;
         int y = pos.y;
 
@@ -66,7 +66,8 @@ public:
             );
             y += 16;
         }
-
+    }
+    override void render(AbsRenderData renderData) {
         textRenderer.render();
     }
 }

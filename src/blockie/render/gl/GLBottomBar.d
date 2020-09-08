@@ -29,11 +29,13 @@ public:
         );
     }
     override void destroy() {
-        super.destroy();
         textRenderer.destroy();
         rectRenderer.destroy();
     }
-    override void render() {
+    override void update(AbsRenderData renderData) {
+
+    }
+    override void render(AbsRenderData renderData) {
         rectRenderer.render();
         textRenderer.render();
     }

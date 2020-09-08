@@ -2,12 +2,12 @@
 #line 1000
 
 vec3 getRayDirForPixel(ivec2 p) {
-    vec2 mid = vec2(p) - vec2(SIZE)/2.0f;
-    return normalize((SCREEN_MIDDLE + mid.x*SCREEN_XDELTA) + mid.y*SCREEN_YDELTA);
+    vec2 mid = vec2(p) - vec2(ubo_SIZE)/2.0f;
+    return normalize((ubo_SCREEN_MIDDLE + mid.x*ubo_SCREEN_XDELTA) + mid.y*ubo_SCREEN_YDELTA);
 }
 Ray generateRay() {
     Ray ray;
-    ray.start        = CAMERA_POS;
+    ray.start        = ubo_CAMERA_POS;
     ray.direction    = getRayDirForPixel(pixel);
     ray.invDirection = 1.0f/ray.direction;
     return ray;
@@ -34,11 +34,11 @@ Ray getRay(vec2 pixel) {
 
 vec4 screenToClipSpace(vec2 screenPos) {
     const float z = 0.5;
-    return vec4((screenPos/SIZE)*2-1, z, 1);
+    return vec4((screenPos/ubo_SIZE)*2-1, z, 1);
 }
 vec3 screenToWorld(vec2 p) {
     // Convert p to camera space
-    vec2 pos = 2*((p+0.5)/SIZE);
+    vec2 pos = 2*((p+0.5)/ubo_SIZE);
     pos.x -= 1;
     pos.y  = 1-pos.y;
     pos *= ASPECT_RATIO * TANFOV2;
@@ -51,6 +51,6 @@ vec2 worldToScreen(vec3 w) {
     vec3 cam = (VIEW * vec4(w, 1)).xyz;
     vec2 a   = cam.xy / (-cam.z * ASPECT_RATIO * TANFOV2);
 
-    return vec2(a.x+1, 1-a.y) / 2 * SIZE - 0.5;
+    return vec2(a.x+1, 1-a.y) / 2 * ubo_SIZE - 0.5;
 }
 */

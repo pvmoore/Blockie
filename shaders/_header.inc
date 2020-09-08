@@ -4,16 +4,25 @@
 /*
     Set by program:
 
-    CHUNK_SIZE
-    CHUNK_SIZE_SHR
+    CHUNK_SIZE      = 1024
+    CHUNK_SIZE_SHR  = 10
 
     // MODEL1 only:
-    OctreeRootSize
-    OctreeBranchSize
-    OctreeTwigSize
-    OctreeLeafSize
-    DFIELD_OFFSET
+    OctreeTwigSize  = 12
+    OctreeLeafSize  = 8
+    DFIELD_OFFSET   = 5152
 */
+
+#ifdef VULKAN
+    // All models
+    #define CHUNK_SIZE      (1024)
+    #define CHUNK_SIZE_SHR  (10)
+
+    // MODEL1 only:
+    #define OctreeTwigSize  (12)
+    #define OctreeLeafSize  (8)
+    #define DFIELD_OFFSET   (5152)
+#endif
 
 #define MAX_DISTANCE (15000)
 

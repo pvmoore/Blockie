@@ -44,12 +44,11 @@ public:
         this.pos = pos;
         return this;
     }
-    void update(uint index, double value) {
+    void updateValue(uint index, double value) {
         values[index] = value;
     }
-    void render() {
-
-    }
+    abstract void update(AbsRenderData renderData);
+    abstract void render(AbsRenderData renderData);
 }
 
 abstract class EventStatsMonitor : StatsMonitor {
@@ -83,9 +82,7 @@ public:
         super.initialise();
         return this;
     }
-    override void render() {
-        super.render();
-
+    override void update(AbsRenderData renderData) {
         auto numMsgs = messages.drain(tempMessages);
         if(numMsgs>0) {
             foreach(i; 0..numMsgs) {

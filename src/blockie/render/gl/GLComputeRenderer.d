@@ -2,25 +2,18 @@ module blockie.render.gl.GLComputeRenderer;
 
 import blockie.render.all;
 
-final class GLComputeRenderer : IRenderer, ChunkManager.SceneChangeListener {
+final class GLComputeRenderer : ComputeRenderer {
 private:
     enum DEBUG               = false;
     enum DEBUG_BUFFER_LENGTH = 100;
 
-    World world;
     uint renderTextureID;
     uint marchOutTextureID;
-    int width, height;
-    int4 renderRect;
-    ChunkManager chunkManager;
-    Timing renderTiming;
-    Timing computeTiming;
 
     uint[2] timerQueries;
     uint flipFlop;
 
     // GL specific
-    GLRenderView renderView;
     OpenGL gl;
 
     uint[] materialTextures;
@@ -37,17 +30,9 @@ private:
     }
 public:
     this(OpenGL gl, GLRenderView renderView, int4 renderRect) {
-        this.gl           = gl;
-        this.renderRect   = renderRect;
-        this.renderView   = renderView;
-        this.width        = renderRect.width;
-        this.height       = renderRect.height;
+        super(renderView, renderRect);
 
-        expect((width&7)==0, "Width must be multiple of 8. It is %s".format(width));
-        expect((height&7)==0, "Height must be multiple of 8. It is %s".format(height));
-
-        this.renderTiming   = new Timing(10,3);
-        this.computeTiming  = new Timing(10,3);
+        this.gl             = gl;
         this.sphereRenderer = new SphereRenderer3D(gl);
         this.marchProgram   = new Program;
         this.shadeProgram   = new Program;
@@ -61,7 +46,9 @@ public:
         renderOptionsChanged();
     }
     @Implements("IRenderer")
-    void destroy() {
+    override void destroy() {
+        super.destroy();
+
         if(timerQueries[0]) glDeleteQueries(timerQueries.length, timerQueries.ptr);
         if(quadRenderer) quadRenderer.destroy();
         if(sphereRenderer) sphereRenderer.destroy();
@@ -74,32 +61,41 @@ public:
         if(marchChunksInVBO) marchChunksInVBO.destroy();
         if(marchOutVBO) marchOutVBO.destroy();
         if(marchDebugOutVBO) marchDebugOutVBO.destroy();
-        if(chunkManager) chunkManager.destroy();
 
         if(marchProgram) marchProgram.destroy();
         if(shadeProgram) shadeProgram.destroy();
         if(dummyProgram) dummyProgram.destroy();
     }
     @Implements("IRenderer")
-    void setWorld(World world) {
-        this.world = world;
+    override void setWorld(World world) {
+        super.setWorld(world);
+
         chunkManager = new ChunkManager(
             this,
             world,
-            new GLGPUMemoryManager(marchVoxelsInVBO.getMemoryManager()),
-            new GLGPUMemoryManager(marchChunksInVBO.getMemoryManager())
+            new GLGPUMemoryManager!ubyte(marchVoxelsInVBO.getMemoryManager()),
+            new GLGPUMemoryManager!uint(marchChunksInVBO.getMemoryManager())
         );
+
+        // View window never changes
+        marchProgram
+            .use()
+            .setUniform("WORLD_CHUNKS_XYZ", chunkManager.getViewWindow());
+        shadeProgram
+            .use()
+            .setUniform("WORLD_CHUNKS_XYZ", chunkManager.getViewWindow());
+
         sphereRenderer.addSphere(world.sunPos, 100, YELLOW);
         cameraMoved();
     }
     @Implements("IRenderer")
-    void afterUpdate(bool camMoved) {
+    void update(AbsRenderData renderData, bool camMoved) {
         if(camMoved) cameraMoved();
         chunkManager.afterUpdate();
     }
     @Implements("IRenderer")
-    void render() {
-        //log("render");
+    void render(AbsRenderData renderData) {
+        //this.log("render");
         renderTiming.startFrame();
 
         glBeginQuery(GL_TIME_ELAPSED, timerQueries[flipFlop]);
@@ -109,9 +105,9 @@ public:
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);// | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        executeDummyShader();
+        //executeDummyShader();
 
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);// | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);// | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         executeShadeShader();
 
@@ -132,7 +128,7 @@ public:
         glEndQuery(GL_TIME_ELAPSED);
 
         quadRenderer.render();
-        sphereRenderer.render();
+        //sphereRenderer.render();
 
         //glMemoryBarrier(GL_ALL_BARRIER_BITS);
         ulong queryTime = getElapsedTime(timerQueries[flipFlop]);
@@ -160,15 +156,13 @@ public:
         shadeProgram.use().setUniform("RENDER_OPTS", opts);
     }
     @Implements("SceneChangeListener")
-    void boundsChanged(uvec3 chunksDim, worldcoords minBB, worldcoords maxBB) {
+    void boundsChanged( worldcoords minBB, worldcoords maxBB) {
         marchProgram
             .use()
-            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
             .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
 
         shadeProgram
             .use()
-            .setUniform("WORLD_CHUNKS_XYZ", chunksDim)
             .setUniform("WORLD_BB", [minBB.to!float, maxBB.to!float]);
     }
  private:
@@ -201,15 +195,13 @@ public:
         //    GL_WRITE_ONLY,
         //    GL_RGBA32F);
 
-        glDispatchCompute(
-            width/8,
-            height/8,
-            1);
+        glDispatchCompute(renderRect.width/8, renderRect.height/8, 1);
     }
     void executeShadeShader() {
         shadeProgram.use();
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, marchOutVBO.id);
+        // binding 0 - March out buffer
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, marchOutVBO.id);
 
         if(DEBUG) {
             //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, marchDebugOutVBO.id);
@@ -224,8 +216,9 @@ public:
         //    GL_READ_ONLY,
         //    GL_RGBA32F);
 
+        // Image out texture
         glBindImageTexture(
-            1,              // binding
+            4,              // binding
             renderTextureID,
             0,              // level
             GL_FALSE,       // layered
@@ -245,21 +238,14 @@ public:
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D, materialTextures[0]);
 
-        glDispatchCompute(
-            width/8,
-            height/8,
-            1);
+        glDispatchCompute(renderRect.width/8, renderRect.height/8, 1);
     }
     void executeDummyShader() {
         dummyProgram.use();
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, marchOutVBO.id);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, marchOutVBO.id);
 
-        glDispatchCompute(
-            width/8,
-            height/8,
-            1
-        );
+        glDispatchCompute(renderRect.width/8, renderRect.height/8, 1);
     }
     void setupCompute() {
 
@@ -277,13 +263,13 @@ public:
             marchProgram.loadCompute(
                 "pass1_marchM1.comp",
                 ["shaders/",
-                "C:/pvmoore/_assets/shaders/"],
+                "C:/pvmoore/_assets/shaders/", "."],
                 defines
             );
             shadeProgram.loadCompute(
                 "pass3_shade.comp",
                 ["shaders/",
-                "C:/pvmoore/_assets/shaders/"],
+                "C:/pvmoore/_assets/shaders/", "."],
                 defines
             );
         } else version(MODEL1A) {
@@ -376,19 +362,16 @@ public:
         );
 
         marchProgram.use()
-                    .setUniform("SIZE", int2(width,height));
+                    .setUniform("SIZE", int2(renderRect.width, renderRect.height));
         shadeProgram.use()
-                    .setUniform("SIZE", ivec2(width,height));
+                    .setUniform("SIZE", int2(renderRect.width, renderRect.height));
         dummyProgram.use()
-                    .setUniform("SIZE", ivec2(width,height));
+                    .setUniform("SIZE", int2(renderRect.width, renderRect.height));
 
-        /// create 1300MB voxels buffer
-        marchVoxelsInVBO = VBO.shaderStorage(1024*1024*1300, GL_DYNAMIC_DRAW);
+        marchVoxelsInVBO = VBO.shaderStorage(Blockie.VOXEL_BUFFER_SIZE, GL_DYNAMIC_DRAW);
+        marchChunksInVBO = VBO.shaderStorage(Blockie.CHUNK_BUFFER_SIZE, GL_DYNAMIC_DRAW);
 
-        /// create space for 1 million offsets
-        marchChunksInVBO = VBO.shaderStorage(1024*1024*uint.sizeof, GL_DYNAMIC_DRAW);
-
-        marchOutVBO = VBO.shaderStorage(width*height*8, GL_DYNAMIC_DRAW);
+        marchOutVBO = VBO.shaderStorage(renderRect.width*renderRect.height*8, GL_DYNAMIC_DRAW);
 
         if(DEBUG) {
             marchDebugOutVBO = VBO.shaderStorage(DEBUG_BUFFER_LENGTH*uint.sizeof, GL_DYNAMIC_DRAW);
@@ -413,7 +396,7 @@ public:
 
         glTexImage2D(GL_TEXTURE_2D, 0,
                      GL_RGBA32F,
-                     width, height,
+                     renderRect.width, renderRect.height,
                      0, GL_RGBA,
                      GL_FLOAT, null);
     }
@@ -429,7 +412,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-                     width, height,
+                     renderRect.width, renderRect.height,
                      0, GL_RGBA, GL_UNSIGNED_BYTE, null);
     }
     void loadMaterialTextures() {
@@ -459,7 +442,7 @@ public:
         quadRenderer
             .setVP(new Camera2D(gl.windowSize).VP);
         quadRenderer
-            .withTexture(new Texture2D(renderTextureID, Dimension(width, height)))
+            .withTexture(new Texture2D(renderTextureID, Dimension(renderRect.width, renderRect.height)))
             .addSprites([
                 cast(BitmapSprite)new BitmapSprite()
                     .move(vec2(renderRect.x,renderRect.y))
@@ -475,27 +458,14 @@ public:
         return dest;
     }
     void cameraMoved() {
-        log("cameraMoved");
-        auto camera = world.camera;
-        const float Y  = renderRect.y;
-        const float w  = width;
-        const float h  = height;
-        const float h2 = h/2;
-        const float w2 = w/2;
-        const float z  = 0;
-
-        vec3 cameraPos = camera.position();
-
-        vec3 left   = camera.screenToWorld(0, Y+h2, z) - cameraPos;
-        vec3 right  = camera.screenToWorld(w, Y+h2, z) - cameraPos;
-        vec3 top    = camera.screenToWorld(w2, Y,   z) - cameraPos;
-        vec3 bottom = camera.screenToWorld(w2, Y+h, z) - cameraPos;
+        this.log("cameraMoved");
+        auto screen = calculateScreen();
 
         marchProgram
             .use()
-            .setUniform("SCREEN_MIDDLE", camera.screenToWorld(w2, Y+h2, z) - cameraPos)
-            .setUniform("SCREEN_XDELTA", (right-left) / w)
-            .setUniform("SCREEN_YDELTA", (bottom-top) / h)
+            .setUniform("SCREEN_MIDDLE", screen.middle)
+            .setUniform("SCREEN_XDELTA", screen.xDelta)
+            .setUniform("SCREEN_YDELTA", screen.yDelta)
             .setUniform("CAMERA_POS", world.camera.position);
 
         //import std.math : tan;
@@ -506,13 +476,13 @@ public:
         shadeProgram
             .use()
             .setUniform("SUN_POS", world.sunPos)
-            .setUniform("CAMERA_POS", cameraPos)
-            .setUniform("SCREEN_MIDDLE", camera.screenToWorld(w2, Y+h2, z) - cameraPos)
-            .setUniform("SCREEN_XDELTA", (right-left) / w)
-            .setUniform("SCREEN_YDELTA", (bottom-top) / h);
+            .setUniform("CAMERA_POS", world.camera.position)
+            .setUniform("SCREEN_MIDDLE", screen.middle)
+            .setUniform("SCREEN_XDELTA", screen.xDelta)
+            .setUniform("SCREEN_YDELTA", screen.yDelta);
 
-        sphereRenderer.cameraUpdate(camera);
-        log("cameraMoved end"); flushLog();
+        sphereRenderer.cameraUpdate(world.camera);
+        this.log("cameraMoved end");
     }
 }
 

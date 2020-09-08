@@ -1,9 +1,14 @@
 #version 450 core
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_vulkan_glsl : enable
+//#extension GL_GOOGLE_include_directive : require
+
 layout(local_size_x = 8, local_size_y = 8) in;
 
-#include "header.inc"
+#include "_header.inc"
 
-layout(binding = 0, std430) readonly buffer I0 {
+layout(set = 0, binding = 0, std430) readonly buffer I0 {
 	MarchOut dataIn[];
 };
 
@@ -11,8 +16,7 @@ layout(binding = 0, std430) readonly buffer I0 {
 //layout(binding = 0, rgba32f)
 //uniform readonly image2D imageIn;
 
-layout(binding = 1, rgba8)
-uniform writeonly image2D imageOut;
+layout(set = 0, binding = 4, rgba8) uniform writeonly image2D imageOut;
 
 //layout(binding = 2, rgba8)
 //uniform readonly image2D material0;
@@ -21,16 +25,18 @@ uniform writeonly image2D imageOut;
 //	float debugOut[];
 //};
 
-layout(binding=3)
-uniform sampler2D SAMPLER0;
+layout(set = 0, binding=5) uniform sampler2D SAMPLER0;
+
+//layout(binding = 6, rgba8) uniform readonly image2D material0;
+
 //=======================================================================================
 
 uniform ivec2 SIZE;             // Render window size
 uniform uvec3 WORLD_CHUNKS_XYZ; // (25, 8, 25)
 uniform vec3  WORLD_BB[2];      // world bounding box in worldcoords
 
-uniform vec3 SUN_POS;       // in worldcoords
-uniform vec3 CAMERA_POS;    // in worldcoords
+uniform vec3 SUN_POS;           // in worldcoords
+uniform vec3 CAMERA_POS;        // in worldcoords
 uniform vec3  SCREEN_MIDDLE;    // for calculating Ray
 uniform vec3  SCREEN_XDELTA;    // for calculating Ray
 uniform vec3  SCREEN_YDELTA;    // for calculating Ray
@@ -40,14 +46,14 @@ uniform bool RENDER_OPTS[2];
 
 ivec2 pixel  = ivec2(gl_GlobalInvocationID.xy);
 uint g_index = gl_GlobalInvocationID.x +
-               gl_GlobalInvocationID.y*SIZE.x;
+               gl_GlobalInvocationID.y * ubo_SIZE.x;
 //ivec2 l_pos  = ivec2(gl_LocalInvocationID.xy);
 //uint l_index = gl_LocalInvocationIndex;
 
 #include "useful_functions.comp"
 //#include "perlin_noise.comp"
 #include "simplex_noise_3d.comp"
-#include "camera.inc"
+#include "_camera.inc"
 
 // #define V_EARTH1 (10)
 // #define V_ROCK1 (11)

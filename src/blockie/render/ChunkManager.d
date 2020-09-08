@@ -11,6 +11,10 @@ private:
     enum VIEW_WINDOW_Y = 8;
     enum VIEW_WINDOW_Z = 25;
 
+    // TODO - use these enums
+    enum MAX_VOXELS_SIZE = 0;
+    enum MAX_CHUNKS_SIZE = 0;
+
     const uint3 VIEW_WINDOW     = uint3(VIEW_WINDOW_X,VIEW_WINDOW_Y,VIEW_WINDOW_Z);
     const int3 HALF_VIEW_WINDOW = int3(VIEW_WINDOW_X/2,VIEW_WINDOW_Y/2,VIEW_WINDOW_Z/2);
     const int3 VIEW_WINDOW_MUL  = int3(1,VIEW_WINDOW_X,VIEW_WINDOW_X*VIEW_WINDOW_Y);
@@ -54,17 +58,19 @@ private:
     ChunkInfo[VIEW_WINDOW_HMUL] currentGrid;
     ChunkInfo[VIEW_WINDOW_HMUL] tempGrid;
 
-    IGPUMemoryManager voxelsMM;
-    IGPUMemoryManager chunksMM;
+    IGPUMemoryManager!ubyte voxelsMM;
+    IGPUMemoryManager!uint chunksMM;
 public:
     interface SceneChangeListener {
-        void boundsChanged(uint3 chunksDim, worldcoords min, worldcoords max);
+        void boundsChanged(worldcoords min, worldcoords max);
     }
+
+    uint3 getViewWindow() { return VIEW_WINDOW; }
 
     this(SceneChangeListener listener,
          World world,
-         IGPUMemoryManager voxelsVboMM,
-         IGPUMemoryManager chunksVboMM)
+         IGPUMemoryManager!ubyte voxelsVboMM,
+         IGPUMemoryManager!uint chunksVboMM)
     {
         this.messages = makeSPSCQueue!EventMsg(1024*1024);
         this.listener = listener;
@@ -108,9 +114,9 @@ public:
             writeChunkData();
         }
 
-        getEvents().fire(EventID.GPU_WRITES, totalGPUWrites.as!double/MB);
-        getEvents().fire(EventID.GPU_VOXELS_USAGE, voxelsMM.getNumBytesUsed().as!double/MB);
-        getEvents().fire(EventID.GPU_CHUNKS_USAGE, chunksMM.getNumBytesUsed().as!double/KB);
+        getEvents().fire(EventID.GPU_WRITES, totalGPUWrites.as!double/(1024*1024));
+        getEvents().fire(EventID.GPU_VOXELS_USAGE, voxelsMM.getNumBytesUsed().as!double/(1024*1024));
+        getEvents().fire(EventID.GPU_CHUNKS_USAGE, chunksMM.getNumBytesUsed().as!double/1024);
         getEvents().fire(EventID.CM_CAMERA_MOVE_UPDATE_TIME,
             (totalCameraMoveUpdateTime/cast(double)numCameraMoves)/1000000.0);
         getEvents().fire(EventID.CM_CHUNK_UPDATE_TIME,
@@ -120,25 +126,17 @@ public:
         getEvents().fire(EventID.CHUNKS_ON_GPU, numOnGPU.as!double);
         getEvents().fire(EventID.CHUNKS_READY, numActive.as!double);
         getEvents().fire(EventID.CHUNKS_FLYWEIGHT, numFlyweight.as!double);
-
-    //     getChunksMonitor().setValues(
-    //         chunks.length,
-    //         numOnGPU,
-    //         numActive,
-    //         numFlyweight
-    //    );
     }
 private:
     void initialise() {
-        log("ChunkManager: Initialising {");
+        this.log("ChunkManager: Initialising {");
 
         lastccp = (world.camera.position / CHUNK_SIZE).floor().to!int;
-        log("\t\tCamera pos       = %s", world.camera.position);
-        log("\t\tCamera chunk pos = %s", lastccp);
+        this.log("\t\tCamera pos       = %s", world.camera.position);
+        this.log("\t\tCamera chunk pos = %s", lastccp);
 
         base = lastccp - HALF_VIEW_WINDOW;
-        log("\t\tBounds(chunks)   = %s %s", base, (base+(VIEW_WINDOW.to!int)));
-        flushLog();
+        this.log("\t\tBounds(chunks)   = %s %s", base, (base+(VIEW_WINDOW.to!int)));
 
         StopWatch watch; watch.start();
 
@@ -169,10 +167,9 @@ private:
         writeChunkData();
 
         watch.stop();
-        log("\tWritten %s bytes to GPU", totalGPUWrites);
-        log("\t\ttook %s millis", watch.peek().total!"nsecs"/1000000.0);
-        log("}");
-        flushLog();
+        this.log("\tWritten %s bytes to GPU", totalGPUWrites);
+        this.log("\t\ttook %s millis", watch.peek().total!"nsecs"/1000000.0);
+        this.log("}");
     }
     ///
     /// The camera has moved to a different chunk. Update
@@ -186,9 +183,9 @@ private:
     ///     reaches that position.
     ///
     void cameraMovedTo(chunkcoords ccp) {
-        log("ChunkManager: Mamera moved {");
-        log("\t\tfrom %s", lastccp);
-        log("\t\tto   %s", ccp);
+        this.log("ChunkManager: Camera moved {");
+        this.log("\t\tfrom %s", lastccp);
+        this.log("\t\tto   %s", ccp);
         StopWatch watch; watch.start();
 
         numCameraMoves++;
@@ -213,12 +210,12 @@ private:
         for(uint x=0; x<VIEW_WINDOW.x; x++) {
             uint3 from  = uint3(x,y,z) - uoffset;
             uint3 to    = uint3(x,y,z) + uoffset;
-            //log("here=%s from=%s to=%s", here, from, to); flushLog();
+            //this.log("here=%s from=%s to=%s", here, from, to); flushthis.log();
 
             if(to.anyGTE(VIEW_WINDOW)) {
                 /// This chunk is moving out of bounds
                 chunkcoords pos = oldBase+ivec3(x,y,z);
-                //log("going oob: %s %s", ivec3(x,y,z),pos);
+                //this.log("going oob: %s %s", ivec3(x,y,z),pos);
 
                 auto ci = getChunkInfo(pos);
                 ci.onGPU = false;
@@ -229,7 +226,7 @@ private:
             if(from.anyGTE(VIEW_WINDOW)) {
                 /// This offset needs a new chunk
                 chunkcoords pos = base+ivec3(x,y,z);
-                //log("coming in: %s %s", ivec3(x,y,z),pos);
+                //this.log("coming in: %s %s", ivec3(x,y,z),pos);
                 auto ci = activateChunk(pos);
                 ci.onGPU = true;
                 numOnGPU++;
@@ -249,11 +246,11 @@ private:
         watch.stop();
         totalCameraMoveUpdateTime += watch.peek().total!"nsecs";
 
-        log("\t\ttook %s millis", watch.peek().total!"nsecs"/1000000.0);
-        log("}");
+        this.log("\t\ttook %s millis", watch.peek().total!"nsecs"/1000000.0);
+        this.log("}");
     }
     bool chunksUpdated(Chunk[] chunks) {
-        log("Chunks updated");
+        this.log("Chunks updated");
         StopWatch w; w.start();
         bool chunkDataChanged = false;
 
@@ -265,7 +262,7 @@ private:
 
             if(ci.onGPU) {
 
-//                log("update offset %s size %s to %s (voxelsOffset=%s)",
+//                this.log("update offset %s size %s to %s (voxelsOffset=%s)",
 //                    ci.offset, ci.size, c.voxels.length, i);
 
                 voxelsMM.free(ci.offset, ci.size);
@@ -281,14 +278,13 @@ private:
         w.stop();
         totalChunkUpdateTime += w.peek().total!"nsecs";
         numChunkUpdateBatches++;
-        log("Total bytes written to GPU: %s", totalGPUWrites);
-        flushLog();
+        this.log("Total bytes written to GPU: %s", totalGPUWrites);
         return chunkDataChanged;
     }
     void updateWorldBB(worldcoords min, worldcoords max) {
         worldMin = min;
         worldMax = max;
-        listener.boundsChanged(VIEW_WINDOW, min, max);
+        listener.boundsChanged(min, max);
     }
     void writeChunkData() {
         chunksMM.bind();

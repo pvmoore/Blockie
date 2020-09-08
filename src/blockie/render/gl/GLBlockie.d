@@ -5,7 +5,11 @@ import blockie.render.all;
 final class GLBlockie : Blockie, ApplicationListener {
 protected:
     OpenGL gl;
+    GLRenderData renderData;
 public:
+    this() {
+        this.renderData = new GLRenderData();
+    }
     override void initialise() {
         super.initialise();
 
@@ -73,8 +77,13 @@ public:
             nextView = null;
         }
         if(!view) return;
-        view.render(frameNumber, seconds, perSecond);
-        view.update(perSecond);
+
+        renderData.frameNumber = frameNumber;
+        renderData.seconds = seconds;
+        renderData.perSecond = perSecond;
+
+        view.update(renderData);
+        view.render(renderData);
 
 //        if((frameNumber&255)==0) {
 //            writefln("Event subscribers {");

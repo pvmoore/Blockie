@@ -10,18 +10,25 @@ protected:
     IView nextView;
     RenderView renderView;
 public:
+    enum {
+        VOXEL_BUFFER_SIZE = 1300.MB,
+        CHUNK_BUFFER_SIZE = 4.MB
+    }
+
     void initialise() {
+        setEagerFlushing(true);
         log("Starting %s", title);
         writefln("\n%s", title);
 
-        initEvents(1*MB);
+        initEvents(1.MB.as!int);
     }
     void destroy() {
-        log("Events statistics:");
+        this.log("Destroy called");
+        this.log("Events statistics:");
         foreach(stat; getEvents().getSubscriberStats()) {
-            log("  %s: 0x%x time: %s count: %s", stat[0], stat[1], stat[2]/1000000.0, stat[3]);
+            this.log("  %s: 0x%x time: %s count: %s", stat[0], stat[1], stat[2]/1000000.0, stat[3]);
         }
-        log("==================");
+        this.log("==================");
 
         if(renderView) renderView.destroy();
     }

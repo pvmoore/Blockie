@@ -1,4 +1,4 @@
-module blockie.util.util;
+module blockie.util;
 
 import blockie.globals;
 import core.bitop : bsr;

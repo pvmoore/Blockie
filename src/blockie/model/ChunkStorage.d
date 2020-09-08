@@ -57,7 +57,7 @@ public:
         chunks[coords] = c;
         ulong bytes = serialiser.load(c);
         bytesRead += bytes;
-        getEvents().fire(EventMsg(EventID.STORAGE_READ, bytesRead.as!double/MB));
+        getEvents().fire(EventMsg(EventID.STORAGE_READ, bytesRead.as!double/ (1024*1024)));
         getEvents().fire(EventMsg(EventID.CHUNK_LOADED, c));
         return c;
     }
@@ -108,7 +108,7 @@ private:
             ulong bytes = serialiser.load(c);
             logger.log("bytes = %s", bytes);
             bytesRead += bytes;
-            getEvents().fire(EventMsg(EventID.STORAGE_READ, bytesRead.as!double/MB));
+            getEvents().fire(EventMsg(EventID.STORAGE_READ, bytesRead.as!double / (1024*1024)));
             getEvents().fire(EventMsg(EventID.CHUNK_LOADED, c));
             logger.log("done");
         }
@@ -116,7 +116,7 @@ private:
             logger.log("ChunkStorage: Save chunk %s", c);
             ulong bytes = serialiser.save(c);
             bytesWritten += bytes;
-            getEvents().fire(EventMsg(EventID.STORAGE_WRITE, bytesWritten.as!double/MB));
+            getEvents().fire(EventMsg(EventID.STORAGE_WRITE, bytesWritten.as!double / (1024*1024)));
         }
         void handleMessage(EventMsg msg) {
             logger.log("ChunkStorage: Processing event %s chunk:%s", msg.id, msg.get!Chunk);
