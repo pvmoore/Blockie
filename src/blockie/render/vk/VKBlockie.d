@@ -106,12 +106,6 @@ public:
     @Implements("IVulkanApplication")
     void selectQueueFamilies(QueueManager queueManager) {
         // Use the default queue families chosen by our Vulkan app
-
-        // Select a compute queue which can transfer
-        auto computeQ = queueManager.getFamily(QueueManager.COMPUTE);
-        if(!queueManager.supportsTransfer(computeQ)) {
-            throw new Error("A compute queue that supports transfer is required");
-        }
     }
     @Implements("IVulkanApplication")
     VkRenderPass getRenderPass(VkDevice device) {
@@ -119,7 +113,7 @@ public:
         return renderPass;
     }
     @Implements("IVulkanApplication")
-    void render(FrameInfo frame, PerFrameResource res) {
+    void render(Frame frame) {
         if(nextView) {
             if(view) view.exitingView();
             view = nextView;
@@ -129,11 +123,11 @@ public:
         if(!view) return;
 
         // Start issuing commands
+        auto res = frame.resource;
         auto b = res.adhocCB;
         b.beginOneTimeSubmit();
 
         renderData.frame = frame;
-        renderData.res = res;
         renderData.perSecond = frame.perSecond;
         renderData.commandBuffers.length = 1;
         renderData.waitSemaphores.length = 1;
@@ -149,8 +143,7 @@ public:
 
         view.as!VKRenderView.beforeRenderPass(renderData);
 
-        // Inside render pass
-        //  - initialLayout = VImageLayout.UNDEFINED
+        // Inside render pass: initialLayout = VImageLayout.UNDEFINED
         b.beginRenderPass(
             context.renderPass,
             res.frameBuffer,
@@ -162,8 +155,7 @@ public:
         view.render(renderData);
 
         b.endRenderPass();
-        // After render pass
-        //  - finalLayout = VImageLayout.PRESENT_SRC_KHR
+        // After render pass: finalLayout = VImageLayout.PRESENT_SRC_KHR
 
         view.as!VKRenderView.afterRenderPass(renderData);
 
@@ -186,7 +178,7 @@ private:
     void createContext() {
         auto mem = new MemoryAllocator(vk);
 
-        auto storageSize = Blockie.VOXEL_BUFFER_SIZE + Blockie.CHUNK_BUFFER_SIZE + 8*NUM_FRAME_BUFFERS.MB;
+        auto storageSize = Blockie.VOXEL_BUFFER_SIZE + Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS + 8*NUM_FRAME_BUFFERS.MB;
 
         this.context = new VulkanContext(vk)
             .withMemory(MemID.LOCAL, mem.allocStdDeviceLocal("Blockie_Local", storageSize + 256.MB))
@@ -198,7 +190,7 @@ private:
                .withBuffer(MemID.LOCAL, BufID.STORAGE, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, 8*NUM_FRAME_BUFFERS.MB)
 
                .withBuffer(MemID.LOCAL, MARCH_VOXEL_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.VOXEL_BUFFER_SIZE)
-               .withBuffer(MemID.LOCAL, MARCH_CHUNK_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.CHUNK_BUFFER_SIZE)
+               .withBuffer(MemID.LOCAL, MARCH_CHUNK_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS)
 
                .withBuffer(MemID.STAGING, BufID.STAGING, VBufferUsage.TRANSFER_SRC, storageSize + 256.MB);
 

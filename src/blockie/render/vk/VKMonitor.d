@@ -4,7 +4,7 @@ import blockie.render.all;
 
 class VKMonitor : EventStatsMonitor {
 protected:
-    VulkanContext context;
+    @Borrowed VulkanContext context;
     Text text;
 public:
     this(VulkanContext context, string name, string label) {
@@ -64,9 +64,9 @@ public:
             );
             y += 16;
         }
-        text.beforeRenderPass(renderData.as!VKRenderData.res);
+        text.beforeRenderPass(renderData.as!VKRenderData.frame);
     }
     override void render(AbsRenderData res) {
-        text.insideRenderPass(res.as!VKRenderData.res);
+        text.insideRenderPass(res.as!VKRenderData.frame);
     }
 }

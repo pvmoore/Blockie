@@ -4,7 +4,7 @@ import blockie.render.all;
 
 final class VKMiniMap : MiniMap {
 private:
-    VulkanContext context;
+    @Borrowed VulkanContext context;
 public:
     this(VulkanContext context) {
         this.context = context;

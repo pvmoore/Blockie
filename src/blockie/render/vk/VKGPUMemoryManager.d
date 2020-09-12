@@ -4,7 +4,7 @@ import blockie.render.all;
 
 final class VKGPUMemoryManager(T) : IGPUMemoryManager!T {
 private:
-    GPUData!T decorated;
+    @Borrowed GPUData!T decorated;
     Allocator allocs;
 public:
     this(GPUData!T decorated) {

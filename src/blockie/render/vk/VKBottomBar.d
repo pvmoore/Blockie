@@ -4,17 +4,17 @@ import blockie.render.all;
 
 final class VKBottomBar : BottomBar {
 private:
-    VulkanContext context;
+    @Borrowed VulkanContext context;
+    @Borrowed Font font;
     Text text;
-    Font font;
     Rectangles rectangles;
 public:
     this(VulkanContext context, VKRenderView renderView) {
         super(renderView);
 
         this.context = context;
-        this.font  = context.fonts.get("dejavusans-bold");
-        this.text  = new Text(context, font, true, 1000);
+        this.font    = context.fonts.get("dejavusans-bold");
+        this.text    = new Text(context, font, true, 1000);
 
         auto width = context.vk.windowSize.width;
         auto height = context.vk.windowSize.height;
@@ -37,11 +37,11 @@ public:
         if(rectangles) rectangles.destroy();
     }
     override void update(AbsRenderData renderData) {
-        rectangles.beforeRenderPass(renderData.as!VKRenderData.res);
-        text.beforeRenderPass(renderData.as!VKRenderData.res);
+        rectangles.beforeRenderPass(renderData.as!VKRenderData.frame);
+        text.beforeRenderPass(renderData.as!VKRenderData.frame);
     }
     override void render(AbsRenderData renderData) {
-        rectangles.insideRenderPass(renderData.as!VKRenderData.res);
-        text.insideRenderPass(renderData.as!VKRenderData.res);
+        rectangles.insideRenderPass(renderData.as!VKRenderData.frame);
+        text.insideRenderPass(renderData.as!VKRenderData.frame);
     }
 }

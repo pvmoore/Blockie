@@ -49,6 +49,6 @@ public:
             text.replaceText(cast(int)i+2, "Thread %02s |%s|".format(i, _fmt(d)), pos.x, y);
             y += 16;
         }
-        text.beforeRenderPass(renderData.as!VKRenderData.res);
+        text.beforeRenderPass(renderData.as!VKRenderData.frame);
     }
 }

@@ -458,7 +458,6 @@ public:
         return dest;
     }
     void cameraMoved() {
-        this.log("cameraMoved");
         auto screen = calculateScreen();
 
         marchProgram
@@ -482,7 +481,6 @@ public:
             .setUniform("SCREEN_YDELTA", screen.yDelta);
 
         sphereRenderer.cameraUpdate(world.camera);
-        this.log("cameraMoved end");
     }
 }
 

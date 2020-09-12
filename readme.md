@@ -22,6 +22,10 @@ Voxel renderer using Opengl3 compute shaders
 
 ## Version History
 
+##### 0.0.28
+ - Complete Vulkan implementation
+ - Add skybox textures
+
 ##### 0.0.27
 - Refactor stats monitors to isolate opengl specific code.
 - More refactoring to isolate OpenGL functionality

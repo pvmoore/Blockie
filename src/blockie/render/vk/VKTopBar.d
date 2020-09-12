@@ -4,9 +4,9 @@ import blockie.render.all;
 
 final class VKTopBar : TopBar {
 private:
-    VulkanContext context;
+    @Borrowed VulkanContext context;
+    @Borrowed Font font;
     Text text;
-    Font font;
     Rectangles rectangles;
 public:
     this(VulkanContext context, VKRenderView renderView, uint height) {
@@ -59,8 +59,8 @@ public:
         );
     }
     override void update(AbsRenderData renderData) {
-        rectangles.beforeRenderPass(renderData.as!VKRenderData.res);
-        text.beforeRenderPass(renderData.as!VKRenderData.res);
+        rectangles.beforeRenderPass(renderData.as!VKRenderData.frame);
+        text.beforeRenderPass(renderData.as!VKRenderData.frame);
     }
     override void render(AbsRenderData renderData) {
         if(world) {
@@ -72,7 +72,7 @@ public:
                 )
             );
         }
-        rectangles.insideRenderPass(renderData.as!VKRenderData.res);
-        text.insideRenderPass(renderData.as!VKRenderData.res);
+        rectangles.insideRenderPass(renderData.as!VKRenderData.frame);
+        text.insideRenderPass(renderData.as!VKRenderData.frame);
     }
 }

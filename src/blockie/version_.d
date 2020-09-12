@@ -1,6 +1,6 @@
 module blockie.version_;
 
-const string version_ = "0.0.27";
+const string version_ = "0.0.28";
 
 /**===============================================================
     Todo:

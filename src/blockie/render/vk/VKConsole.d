@@ -4,7 +4,7 @@ import blockie.render.all;
 
 final class VKConsole : Console {
 private:
-    VulkanContext context;
+    @Borrowed VulkanContext context;
 public:
     this(VulkanContext context, uint y) {
         super(y);

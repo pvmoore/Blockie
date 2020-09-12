@@ -4,10 +4,10 @@ import blockie.render.all;
 
 final class VKRenderView : RenderView {
 private:
-    Vulkan vk;
-    VulkanContext context;
+    @Borrowed Vulkan vk;
+    @Borrowed VulkanContext context;
+    @Borrowed ImageMeta cubeMap;
     SkyBox skybox;
-    ImageMeta cubeMap;
 public:
     this(VulkanContext context) {
         super(context.vk.windowSize().to!float);
@@ -20,7 +20,9 @@ public:
         this.bottomBar       = new VKBottomBar(context, this);
         this.minimap         = new VKMiniMap(context);
         this.computeRenderer = new VKComputeRenderer(context, this, renderRect);
-        //this.skybox          = new SkyBox(context, cubeMap);
+
+        this.cubeMap = context.images().getCubemap("skybox", "png");
+        this.skybox  = new SkyBox(context, cubeMap);
 
         this.memMonitor         = new VKMemMonitor(context);
         this.cpuMonitor         = new VKCpuMonitor(context);
@@ -55,7 +57,7 @@ public:
         super.setWorld(world);
 
         computeRenderer.setWorld(world);
-        if(skybox) { skybox.camera(world.camera); }
+        skybox.camera(world.camera);
     }
     void beforeRenderPass(VKRenderData renderData) {
         computeRenderer.as!VKComputeRenderer.beforeRenderPass(renderData);
@@ -66,14 +68,14 @@ public:
 protected:
     override void updateScene(AbsRenderData renderData, bool cameraMoved) {
         if(cameraMoved) {
-            if(skybox) skybox.camera(world.camera);
+            skybox.camera(world.camera);
         }
         computeRenderer.update(renderData, cameraMoved);
-        if(skybox) skybox.beforeRenderPass(renderData.as!VKRenderData.res);
+        skybox.beforeRenderPass(renderData.as!VKRenderData.frame);
     }
     override void renderScene(AbsRenderData renderData) {
 
-        if(skybox) skybox.insideRenderPass(renderData.as!VKRenderData.res);
+        skybox.insideRenderPass(renderData.as!VKRenderData.frame);
         computeRenderer.render(renderData);
     }
     override bool isKeyPressed(uint key) {

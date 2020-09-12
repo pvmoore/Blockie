@@ -4,11 +4,11 @@ import blockie.render.all;
 
 final class VKComputeRenderer : ComputeRenderer {
 private:
-    VulkanContext context;
-    Vulkan vk;
-    VkDevice device;
+    @Borrowed VulkanContext context;
+    @Borrowed Vulkan vk;
+    @Borrowed VkDevice device;
 
-    VkCommandPool computeCP, computeCPTransient;
+    VkCommandPool computeCP, computeCPTransient, transferCP;
 	Descriptors descriptors;
 	ComputePipeline marchPipeline, shadePipeline;
     VkSampler materialSampler, quadSampler;
@@ -87,6 +87,7 @@ public:
         if(voxelData) voxelData.destroy();
         if(ubo) ubo.destroy();
 
+        if(transferCP) device.destroyCommandPool(transferCP);
         if(computeCP) device.destroyCommandPool(computeCP);
         if(computeCPTransient) device.destroyCommandPool(computeCPTransient);
         if(marchPipeline) marchPipeline.destroy();
@@ -118,7 +119,7 @@ public:
     void update(AbsRenderData absRenderData, bool camMoved) {
         // We are outside the render pass here
         VKRenderData renderData = absRenderData.as!VKRenderData;
-        PerFrameResource res    = renderData.res;
+        PerFrameResource res    = renderData.frame.resource;
         FrameResource frameRes  = frameResources[res.index];
         auto b = res.adhocCB;
 
@@ -128,10 +129,12 @@ public:
         chunkManager.afterUpdate();
 
         // Upload data to the GPU
-        bool dataUploaded = false;
-        if(ubo.isStaleWrite() || voxelData.isStaleWrite() || chunkData.isStaleWrite()) {
+        VkSemaphore[] waitSemaphores;
+        VPipelineStage[] waitStages;
 
-            if(voxelData.isStaleWrite() || chunkData.isStaleWrite()) {
+        if(ubo.isUploadRequired() || voxelData.isUploadRequired() || chunkData.isUploadRequired()) {
+
+            if(voxelData.isUploadRequired() || chunkData.isUploadRequired()) {
                 this.log("Uploading GPU data");
             }
             auto t = frameRes.transferCommands;
@@ -142,18 +145,22 @@ public:
             chunkData.upload(t);
 
             t.end();
-            dataUploaded = true;
+
+            vk.getTransferQueue().submit(
+                [frameRes.transferCommands],
+                null, null,                     // don't wait for anything
+                [frameRes.transferFinished],    // signal
+                null);
+
+            waitSemaphores ~= frameRes.transferFinished;
+            waitStages     ~= VPipelineStage.COMPUTE_SHADER;
         }
 
         // Execute compute shaders
-
-        auto commandBuffers = dataUploaded ? [frameRes.transferCommands, frameRes.computeCommands]
-                                           : [frameRes.computeCommands];
-
         vk.getComputeQueue().submit(
-            commandBuffers,
-            null,                        // wait semaphores
-            null,                        // wait stages
+            [frameRes.computeCommands],
+            waitSemaphores,
+            waitStages,
             [frameRes.computeFinished],  // signal semaphores
             null                         // fence
         );
@@ -163,8 +170,9 @@ public:
         renderData.waitStages     ~= VPipelineStage.COMPUTE_SHADER;
     }
     void beforeRenderPass(VKRenderData renderData) {
-        FrameResource frameRes  = frameResources[renderData.res.index];
-        auto b = renderData.res.adhocCB;
+        auto res = renderData.frame.resource;
+        FrameResource frameRes  = frameResources[res.index];
+        auto b = res.adhocCB;
         // acquire the image from compute queue
         b.pipelineBarrier(
             VPipelineStage.COMPUTE_SHADER,
@@ -189,15 +197,17 @@ public:
     void render(AbsRenderData absRenderData) {
         // We are inside the pender pass here
         VKRenderData renderData = absRenderData.as!VKRenderData;
-        PerFrameResource res    = renderData.res;
+        Frame frame             = renderData.frame;
+        PerFrameResource res    = frame.resource;
         FrameResource frameRes  = frameResources[res.index];
         auto b = res.adhocCB;
 
-        frameRes.quad.insideRenderPass(res);
+        frameRes.quad.insideRenderPass(frame);
     }
     void afterRenderPass(VKRenderData renderData) {
-        FrameResource frameRes  = frameResources[renderData.res.index];
-        auto b = renderData.res.adhocCB;
+        auto res = renderData.frame.resource;
+        FrameResource frameRes  = frameResources[res.index];
+        auto b = res.adhocCB;
         // release the imqge
         b.pipelineBarrier(
             VPipelineStage.FRAGMENT_SHADER,
@@ -222,8 +232,8 @@ public:
     void boundsChanged(worldcoords minBB, worldcoords maxBB) {
         this.log("Bounds changed");
         ubo.write((u) {
-            u.worldBBMin     = minBB;
-            u.worldBBMax     = maxBB;
+            u.worldBBMin = minBB;
+            u.worldBBMax = maxBB;
         });
     }
 private:
@@ -233,6 +243,9 @@ private:
         this.computeCP = device.createCommandPool(vk.getComputeQueueFamily().index, 0);
 
         this.computeCPTransient = device.createCommandPool(vk.getComputeQueueFamily().index,
+            VCommandPoolCreate.TRANSIENT | VCommandPoolCreate.RESET_COMMAND_BUFFER);
+
+        this.transferCP = device.createCommandPool(vk.getTransferQueueFamily().index,
             VCommandPoolCreate.TRANSIENT | VCommandPoolCreate.RESET_COMMAND_BUFFER);
     }
     void createSamplers() {
@@ -254,9 +267,16 @@ private:
     }
     void createBuffers() {
         this.log("Creating buffers");
-        this.voxelData = new GPUData!ubyte(context, VKBlockie.MARCH_VOXEL_BUFFER, true, false, Blockie.VOXEL_BUFFER_SIZE);
-        this.chunkData = new GPUData!uint(context, VKBlockie.MARCH_CHUNK_BUFFER, true, false, Blockie.CHUNK_BUFFER_SIZE / 4);
-        this.ubo       = new GPUData!UBO(context, BufID.UNIFORM, true, false);
+        this.voxelData = new GPUData!ubyte(context, VKBlockie.MARCH_VOXEL_BUFFER, true, Blockie.VOXEL_BUFFER_SIZE)
+            .withFrameStrategy(GPUDataFrameStrategy.ONLY_ONE)
+            .withUploadStrategy(GPUDataUploadStrategy.RANGE)
+            .initialise();
+        this.chunkData = new GPUData!uint(context, VKBlockie.MARCH_CHUNK_BUFFER, true, Blockie.CHUNK_BUFFER_SIZE / 4)
+            .withFrameStrategy(GPUDataFrameStrategy.ONE_PER_FRAME)
+            .initialise();
+        this.ubo = new GPUData!UBO(context, BufID.UNIFORM, true)
+            .withFrameStrategy(GPUDataFrameStrategy.ONE_PER_FRAME)
+            .initialise();
 
         ubo.write((it) {
             it.size = uint2(renderRect.width, renderRect.height);
@@ -273,7 +293,7 @@ private:
         this.log("Setting up frame %s", res.index);
         auto fr = new FrameResource;
         fr.computeCommands = device.allocFrom(computeCP);
-        fr.transferCommands = device.allocFrom(computeCPTransient);
+        fr.transferCommands = device.allocFrom(transferCP);
         fr.computeFinished = device.createSemaphore();
         fr.transferFinished = device.createSemaphore();
         fr.marchOutBuffer = context.buffer(BufID.STORAGE).alloc(renderRect.width * renderRect.height * 8);
@@ -302,10 +322,10 @@ private:
          * 6 - (materials - not yet implemented)
          */
         descriptors.createSetFromLayout(0)
-            .add(voxelData, true)
-            .add(chunkData, true)
+            .add(voxelData)
+            .add(chunkData, res.index)
             .add(fr.marchOutBuffer.handle, fr.marchOutBuffer.offset, fr.marchOutBuffer.size)
-            .add(ubo, true)
+            .add(ubo, res.index)
             .add(fr.computeTargetImage.view, VImageLayout.GENERAL)
             .add(materialSampler, materialImages[0].image.view, VImageLayout.SHADER_READ_ONLY_OPTIMAL)
             .write();

@@ -55,8 +55,7 @@ version(VULKAN) {
     import vulkan;
 
     final class VKRenderData : AbsRenderData {
-        FrameInfo frame;
-        PerFrameResource res;
+        Frame frame;
 
         VkCommandBuffer[] commandBuffers;
         VkSemaphore[] waitSemaphores;

@@ -47,7 +47,7 @@ import events : initEvents, getEvents, EventMsg;
 
 import common :
     Allocator, Allocator_t, Archive, Array, Async,
-    BitWriter, ArrayBitWriter, ArrayByteWriter,
+    BitWriter, Borrowed, ArrayBitWriter, ArrayByteWriter,
     Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
     as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
