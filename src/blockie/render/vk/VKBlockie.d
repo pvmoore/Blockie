@@ -205,14 +205,14 @@ private:
         this.log("Creating render pass");
 
         // Create render pass without clearing the back buffer
-        // auto colorAttachment = attachmentDescription(
-        //     vk.swapchain.colorFormat,
-        //     (info) {
-        //         info.loadOp = VAttachmentLoadOp.DONT_CARE;
-        //     });
+        auto colorAttachment = attachmentDescription(
+            vk.swapchain.colorFormat,
+            (info) {
+                info.loadOp = VAttachmentLoadOp.DONT_CARE;
+            });
 
         // Create standard render pass
-        auto colorAttachment    = attachmentDescription(vk.swapchain.colorFormat);
+        //auto colorAttachment    = attachmentDescription(vk.swapchain.colorFormat);
 
         auto colorAttachmentRef = attachmentReference(0);
 

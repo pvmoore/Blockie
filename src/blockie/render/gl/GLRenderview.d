@@ -5,7 +5,6 @@ import blockie.render.all;
 final class GLRenderView : RenderView {
 protected:
     OpenGL gl;
-    SkyBox skybox;
 public:
     this(OpenGL gl) {
         super(gl.windowSize);
@@ -16,7 +15,7 @@ public:
         this.bottomBar       = new GLBottomBar(gl, this);
         this.minimap         = new GLMinimap(gl);
         this.computeRenderer = new GLComputeRenderer(gl, this, renderRect);
-        this.skybox          = new SkyBox(gl, "/pvmoore/_assets/images/skyboxes/skybox1");
+
 
         this.memMonitor         = new GLMemMonitor(gl);
         this.cpuMonitor         = new GLCpuMonitor(gl);
@@ -34,7 +33,6 @@ public:
     override void destroy() {
         super.destroy();
 
-        if(skybox) skybox.destroy();
         if(computeRenderer) computeRenderer.destroy();
     }
     @Implements("RenderView")
@@ -59,19 +57,17 @@ public:
         super.setWorld(world);
 
         computeRenderer.setWorld(world);
-        skybox.setVP(world.camera);
     }
 protected:
     override void updateScene(AbsRenderData renderData, bool cameraMoved) {
         if(cameraMoved) {
-            skybox.setVP(world.camera);
+
         }
         computeRenderer.update(renderData, cameraMoved);
     }
     override void renderScene(AbsRenderData renderData) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        skybox.render();
         computeRenderer.render(renderData);
     }
     override bool isKeyPressed(uint key) {

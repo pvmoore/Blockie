@@ -16,6 +16,8 @@ private:
     // GL specific
     OpenGL gl;
 
+    CubeMapTexture cubemap;
+
     uint[] materialTextures;
     SpriteRenderer quadRenderer;
     SphereRenderer3D sphereRenderer;
@@ -41,6 +43,7 @@ public:
         setupMarchOutputTexture();
         setupShadeOutputTexture();
         loadMaterialTextures();
+        loadCubemapTexture();
         setupSpriteRenderer();
         setupCompute();
         renderOptionsChanged();
@@ -49,6 +52,7 @@ public:
     override void destroy() {
         super.destroy();
 
+        if(cubemap) cubemap.destroy();
         if(timerQueries[0]) glDeleteQueries(timerQueries.length, timerQueries.ptr);
         if(quadRenderer) quadRenderer.destroy();
         if(sphereRenderer) sphereRenderer.destroy();
@@ -237,6 +241,10 @@ public:
         shadeProgram.setUniform("SAMPLER0", 0);
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D, materialTextures[0]);
+
+        shadeProgram.setUniform("SAMPLER1", 1);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id);
 
         glDispatchCompute(renderRect.width/8, renderRect.height/8, 1);
     }
@@ -436,6 +444,9 @@ public:
                      png.width, png.height,
                      0, format, GL_UNSIGNED_BYTE, png.data.ptr);
 
+    }
+    void loadCubemapTexture() {
+        this.cubemap = CubeMapTexture.load("/pvmoore/_assets/images/skyboxes/skybox1");
     }
     void setupSpriteRenderer() {
         quadRenderer = new SpriteRenderer(gl, false);

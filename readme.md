@@ -22,6 +22,9 @@ Voxel renderer using Opengl3 compute shaders
 
 ## Version History
 
+##### 0.0.29
+ - Write skybox pixels within the shade shader when a ray misses all scenery instead of as a separate renderer
+
 ##### 0.0.28
  - Complete Vulkan implementation
  - Add skybox textures

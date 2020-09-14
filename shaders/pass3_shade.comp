@@ -22,7 +22,9 @@ layout(set = 0, binding = 4, rgba8) uniform writeonly image2D imageOut;
 
 layout(set = 0, binding = 5) uniform sampler2D SAMPLER0;
 
-//layout(set = 0, binding = 6, rgba8) uniform readonly image2D material0;
+layout(set = 0, binding = 6) uniform samplerCube SAMPLER1;
+
+//layout(set = 0, binding = 7, rgba8) uniform readonly image2D material0;
 
 #include "_ubo.inc"
 
@@ -91,7 +93,10 @@ void main() {
     uint voxel     = voxelInfo&0xffu;
 
     if(voxel==0) {
-        imageStore(imageOut, pixel, vec4(0,0,0,0));
+        // Skybox
+        Ray ray = generateRay();
+        vec4 skybox = texture(SAMPLER1, ray.direction);
+        imageStore(imageOut, pixel, skybox);
         return;
     }
 

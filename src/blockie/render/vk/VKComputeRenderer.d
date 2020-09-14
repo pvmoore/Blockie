@@ -7,6 +7,7 @@ private:
     @Borrowed VulkanContext context;
     @Borrowed Vulkan vk;
     @Borrowed VkDevice device;
+    @Borrowed ImageMeta skyboxCubeMap;
 
     VkCommandPool computeCP, computeCPTransient, transferCP;
 	Descriptors descriptors;
@@ -67,6 +68,7 @@ public:
         createCommandPools();
         createSamplers();
         createMaterials();
+        createSkybox();
         createBuffers();
         createDescriptors();
         createPipelines();
@@ -265,6 +267,11 @@ private:
         this.log("Creating materials");
         this.materialImages ~= context.images().get("rock8.png");
     }
+    void createSkybox() {
+        this.log("Creating skybox cubemap");
+        this.skyboxCubeMap = context.images().getCubemap("skybox", "png");
+        this.skyboxCubeMap.image.view(skyboxCubeMap.format, VImageViewType.CUBE);
+    }
     void createBuffers() {
         this.log("Creating buffers");
         this.voxelData = new GPUData!ubyte(context, VKBlockie.MARCH_VOXEL_BUFFER, true, Blockie.VOXEL_BUFFER_SIZE)
@@ -319,7 +326,8 @@ private:
          * 3 - UBO
          * 4 - shade output image
          * 5 - material texture
-         * 6 - (materials - not yet implemented)
+         * 6 - skybox cubemap texture
+         * 7 - (materials - not yet implemented)
          */
         descriptors.createSetFromLayout(0)
             .add(voxelData)
@@ -328,6 +336,7 @@ private:
             .add(ubo, res.index)
             .add(fr.computeTargetImage.view, VImageLayout.GENERAL)
             .add(materialSampler, materialImages[0].image.view, VImageLayout.SHADER_READ_ONLY_OPTIMAL)
+            .add(materialSampler, skyboxCubeMap.image.view, VImageLayout.SHADER_READ_ONLY_OPTIMAL)
             .write();
 
         // Record the compute instructions
@@ -413,20 +422,22 @@ private:
      * 3 - UBO
      * 4 - shade output image
      * 5 - material texture
-     * 6 - (materials - not yet implemented)
+     * 6 - skybox cubemap texture
+     * 7 - (materials - not yet implemented)
      */
     void createDescriptors() {
         this.log("Creating descriptors");
         this.descriptors = new Descriptors(context);
         descriptors
             .createLayout()
-                .storageBuffer(VShaderStage.COMPUTE)        // voxelData
-                .storageBuffer(VShaderStage.COMPUTE)        // chunkData
-                .storageBuffer(VShaderStage.COMPUTE)        // MarchOut[]
-                .uniformBuffer(VShaderStage.COMPUTE)        // ubo
-                .storageImage(VShaderStage.COMPUTE)         // output image
-                .combinedImageSampler(VShaderStage.COMPUTE) // texture
-                //.storageBuffer(VShaderStage.COMPUTE)        // materials
+                .storageBuffer(VShaderStage.COMPUTE)            // voxelData
+                .storageBuffer(VShaderStage.COMPUTE)            // chunkData
+                .storageBuffer(VShaderStage.COMPUTE)            // MarchOut[]
+                .uniformBuffer(VShaderStage.COMPUTE)            // ubo
+                .storageImage(VShaderStage.COMPUTE)             // output image
+                .combinedImageSampler(VShaderStage.COMPUTE)     // texture
+                .combinedImageSampler(VShaderStage.COMPUTE)     // skybox cubemap texture
+                //.storageBuffer(VShaderStage.COMPUTE)          // materials
                 .sets(vk.swapchain.numImages())
             .build();
     }

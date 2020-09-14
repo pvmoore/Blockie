@@ -27,7 +27,9 @@ layout(set = 0, binding = 4, rgba8) uniform writeonly image2D imageOut;
 
 layout(set = 0, binding=5) uniform sampler2D SAMPLER0;
 
-//layout(binding = 6, rgba8) uniform readonly image2D material0;
+
+
+//layout(binding = 7, rgba8) uniform readonly image2D material0;
 
 //=======================================================================================
 

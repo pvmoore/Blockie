@@ -90,8 +90,7 @@ public:
 
         bool moved;
         float rotateRatio  = 2 * renderData.perSecond;
-        version(VULKAN) float V = -1; else float V = 1;
-        float fwdBackRatio = 400 * renderData.perSecond * V;
+        float fwdBackRatio = 400 * renderData.perSecond;
 
         if(isMouseButtonPressed(0)) {
             //auto pos = gl.mousePos;

@@ -6,8 +6,6 @@ final class VKRenderView : RenderView {
 private:
     @Borrowed Vulkan vk;
     @Borrowed VulkanContext context;
-    @Borrowed ImageMeta cubeMap;
-    SkyBox skybox;
 public:
     this(VulkanContext context) {
         super(context.vk.windowSize().to!float);
@@ -20,9 +18,6 @@ public:
         this.bottomBar       = new VKBottomBar(context, this);
         this.minimap         = new VKMiniMap(context);
         this.computeRenderer = new VKComputeRenderer(context, this, renderRect);
-
-        this.cubeMap = context.images().getCubemap("skybox", "png");
-        this.skybox  = new SkyBox(context, cubeMap);
 
         this.memMonitor         = new VKMemMonitor(context);
         this.cpuMonitor         = new VKCpuMonitor(context);
@@ -40,7 +35,6 @@ public:
     override void destroy() {
         super.destroy();
 
-        if(skybox) skybox.destroy();
         if(computeRenderer) computeRenderer.destroy();
     }
     @Implements("RenderView")
@@ -57,7 +51,6 @@ public:
         super.setWorld(world);
 
         computeRenderer.setWorld(world);
-        skybox.camera(world.camera);
     }
     void beforeRenderPass(VKRenderData renderData) {
         computeRenderer.as!VKComputeRenderer.beforeRenderPass(renderData);
@@ -68,14 +61,11 @@ public:
 protected:
     override void updateScene(AbsRenderData renderData, bool cameraMoved) {
         if(cameraMoved) {
-            skybox.camera(world.camera);
+
         }
         computeRenderer.update(renderData, cameraMoved);
-        skybox.beforeRenderPass(renderData.as!VKRenderData.frame);
     }
     override void renderScene(AbsRenderData renderData) {
-
-        skybox.insideRenderPass(renderData.as!VKRenderData.frame);
         computeRenderer.render(renderData);
     }
     override bool isKeyPressed(uint key) {
