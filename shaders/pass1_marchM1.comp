@@ -98,7 +98,8 @@ Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
 
             if(isRoot) {
                 uint dfield = GETUSHORT(voxelsIn, ((voxelsRoot+DFIELD_OFFSET)>>1) + voxel.oct);
-                dist = getMinDistToEdgeUniDirectional(ray, pos, airCellDistanceField(dfield), CELL_SIZE);
+                vec3 distances = airCellDistanceField(dfield);
+                dist = getMinDistToEdgeUniDirectional(ray, pos, distances, CELL_SIZE);
             } else {
                 dist = getMinDistToEdge(ray, pos, voxel.size);
             }

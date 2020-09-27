@@ -1,0 +1,262 @@
+#version 450 core
+
+#define GROUP_SIZE_X 8
+#define GROUP_SIZE_Y 8
+layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
+
+#include "header.inc"
+
+layout(binding = 0, std430) readonly buffer I0 {
+    // voxel data in ubytes
+	uint voxelsIn[];
+};
+layout(binding = 1, std430) readonly buffer I1 {
+    // chunk data in uints
+	uint chunkDataIn[];
+};
+layout(binding = 2, std430) writeonly buffer O0 {
+	MarchOut dataOut[];
+};
+//layout(binding = 2, rgba32f)
+//uniform writeonly image2D imageOut;
+
+layout(binding = 3, std430) writeonly buffer O1 {
+	uint debugOut[];
+};
+//=======================================================================================
+
+uniform ivec2 SIZE;             // Render window size
+uniform uvec3 WORLD_CHUNKS_XYZ; // (25, 8, 25)
+uniform vec3  WORLD_BB[2];      // world bounding box in worldcoords
+
+uniform vec3  CAMERA_POS;       // in worldcoords
+uniform vec3  SCREEN_MIDDLE;    // for calculating Ray
+uniform vec3  SCREEN_XDELTA;    // for calculating Ray
+uniform vec3  SCREEN_YDELTA;    // for calculating Ray
+
+uniform bool RENDER_OPTS[2];
+
+//uniform mat4 VIEW;
+//uniform mat4 INVVIEW;
+//uniform float TANFOV2;
+//=======================================================================================
+//
+//vec2 ASPECT_RATIO = SIZE / SIZE.y;
+
+ivec2 pixel     = ivec2(gl_GlobalInvocationID.xy);
+uint g_index    = gl_GlobalInvocationID.x +
+                  gl_GlobalInvocationID.y*SIZE.x;
+vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
+
+struct Flags {
+    uint a;
+    uint b;
+};
+#define CHUNK_FLAG(f)       (f.a & 0xffu)
+#define CHUNK_DISTANCE_X(f) (f.a >> 16)
+#define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
+#define CHUNK_DISTANCE_Z(f) (f.b >> 16)
+
+#include "useful_functions.comp"
+#include "marchM4.inc"
+#include "camera.inc"
+
+#line 1
+
+/// Return true if chunk changes
+bool updatePosition(inout Position pos, vec3 add) {
+    pos.fpos += add;
+    pos.upos  = ivec3(floor(pos.fpos-WORLD_BB[0]));
+
+    uvec3 xyz = pos.upos >> CHUNK_SIZE_SHR;
+
+	bool outOfBounds = any(greaterThanEqual(xyz, WORLD_CHUNKS_XYZ));
+
+    int prevChunk = pos.chunk;
+    pos.chunk = outOfBounds ? -1 : int(dot(xyz, CHUNKS_MUL));
+    return pos.chunk != prevChunk;
+}
+bool isAirChunk(Flags flags) {
+    return CHUNK_FLAG(flags)==0;
+}
+uvec3 getChunkDistanceField(Flags f) {
+    return uvec3(CHUNK_DISTANCE_X(f),
+                 CHUNK_DISTANCE_Y(f),
+                 CHUNK_DISTANCE_Z(f));
+}
+float getMinDistToEdge(Ray ray,
+                       Position pos,
+                       uint voxelSize)
+{
+    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 rem  = mod(p, voxelSize);
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * voxelSize;
+    vec3 dist = size-rem;
+
+    vec3 m    = dist * ray.invDirection;
+    float res = min(m.x, min(m.y, m.z));
+    return max(res, 0);
+}
+//
+// Directional distance field stored in radius
+//
+float getMinDistToEdgeOfChunkDistanceField(Ray ray,
+                                           Position pos,
+                                           uvec3 radius)
+{
+    uvec3 upradius   = radius >> 8u;        // high 8 bits = up distance
+    uvec3 downradius = radius & 0xffu;      // low  8 bits = down distance
+
+    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 rem  = mod(p, CHUNK_SIZE) + downradius*CHUNK_SIZE;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+upradius+downradius)*CHUNK_SIZE);
+    vec3 dist = size-rem;
+
+    vec3 m    = dist * ray.invDirection;
+    float res = min(m.x, min(m.y, m.z));
+    return max(res, 0);
+}
+//
+// Directional distance field stored in radius
+//
+float getMinDistToEdgeOfCellDistanceField(
+    Ray ray,
+    Position pos,
+    uvec3 up,
+    uvec3 down,
+    float CELL_SIZE)
+{
+    vec3 p    = pos.fpos-WORLD_BB[0];
+    vec3 rem  = mod(p, CELL_SIZE) + down*CELL_SIZE;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * ((1+up+down)*CELL_SIZE);
+    vec3 dist = size-rem;
+
+    vec3 m    = dist * ray.invDirection;
+    float res = min(m.x, min(m.y, m.z));
+    return max(res, 0);
+}
+///
+/// Skip dist a little bit depending on how near to the camera
+/// the ray is. This is necessary in the pathological case
+/// where the ray is parallel to and on the edge of a voxel box.
+/// Also, a small bump greatly improves speed without compromising
+/// quality (much). Adjust these values appropriately depending on the scene.
+///
+void skipLOD(float distance, inout float dist) {
+    float bump = (distance+0.00001)/1500;
+
+    // handle pathological case
+    if(dist<0.0001) {
+        //dist += clamp(bump, 0.005, 0.5);
+        dist += clamp(bump, 0.001, 2.0); // 0.001, 2.0
+    } else {
+        // skip a bit based on distance to camera
+        //dist += clamp(bump, 0.0001, 15);
+        /// The higher this value, the less accurate the results
+        //dist += clamp(bump, 0.0001, 0.5);
+
+        dist += smoothstep(0.00001, 1.5, bump); // 0.0001, 0.5
+    }
+}
+Voxel march(Ray ray, inout Position pos) {
+    Voxel voxel    = Voxel(0,0,0,0);
+    float distance = 0;
+    uint voxels    = chunkDataIn[pos.chunk] / 4;
+    Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+
+    #define CELL_DISTANCES_LEN (32768*4)
+
+    L100_BITS_LEN       = voxelsIn[voxels+(L100BITS_LEN_OFFSET/4)];
+    NUM_UNIQ_BRANCHES   = voxelsIn[voxels+(NUM_UNIQ_BRANCHES_OFFSET/4)];
+
+    L100PopcountsOffset = (L100_BITS_OFFSET + L100_BITS_LEN) / 4;
+    uniqBranchesOffset  = L100PopcountsOffset + L100_BITS_LEN/4;
+    cellDistancesOffset = uniqBranchesOffset + (NUM_UNIQ_BRANCHES*8/4);
+    branchPtrsOffset    = cellDistancesOffset + CELL_DISTANCES_LEN/4;
+    bitsPerBranch       = bitsRequiredToEncode(NUM_UNIQ_BRANCHES);
+
+    // Assume:
+    //      1) pos.chunk will always start with a valid chunk
+
+    while(true) {
+        float dist;
+
+        if(isAirChunk(flags)) {
+            dist = getMinDistToEdgeOfChunkDistanceField(ray, pos, getChunkDistanceField(flags));
+        } else {
+
+            //uint cell = getOctets(pos.upos, 8, 2);  // 2
+            //uint cell = getOctets(pos.upos, 7, 3);  // 3
+            //uint cell = getOctets(pos.upos, 6, 4);  // 4
+            uint cell = getOctets(pos.upos, 5, 5); // 5
+
+            if(isBitZero(cell, voxels + BITS_L5/4)) {
+
+                uint v      = voxelsIn[voxels + cellDistancesOffset + cell];
+                uvec3 up = uvec3(
+                    ((v>>5)&31u),
+                    ((v>>15)&31u),
+                    ((v>>25)&31u)
+                );
+                uvec3 down = uvec3(
+                    (v & 31u) ,
+                    ((v>>10)&31u),
+                    ((v>>20)&31u)
+                );
+
+                dist = getMinDistToEdgeOfCellDistanceField(ray, pos, up, down, 32);
+            } else {
+
+                uint size = getAirVoxel(pos, voxels);
+
+                if(size==0) {
+                    /// We have hit something
+                    voxel.value = 1;
+                    break;
+                }
+
+                /// We are inside an air voxel of some size
+                dist = getMinDistToEdge(ray, pos, size);
+            }
+        }
+
+        skipLOD(distance, dist);
+
+        distance += dist;
+
+        bool chunkChanged = updatePosition(pos, ray.direction*dist);
+
+        if(chunkChanged) {
+            if(pos.chunk==-1) {
+                /// We ran out of scenery
+                voxel.value = 0;
+                break;
+            }
+            voxels = chunkDataIn[pos.chunk] / 4;
+            flags  = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+
+            L100_BITS_LEN       = voxelsIn[voxels+(L100BITS_LEN_OFFSET/4)];
+            NUM_UNIQ_BRANCHES   = voxelsIn[voxels+(NUM_UNIQ_BRANCHES_OFFSET/4)];
+
+            L100PopcountsOffset = (L100_BITS_OFFSET + L100_BITS_LEN) / 4;
+            uniqBranchesOffset  = L100PopcountsOffset + L100_BITS_LEN/4;
+            cellDistancesOffset = uniqBranchesOffset + (NUM_UNIQ_BRANCHES*8/4);
+            branchPtrsOffset    = cellDistancesOffset + CELL_DISTANCES_LEN/4;
+            bitsPerBranch       = bitsRequiredToEncode(NUM_UNIQ_BRANCHES);
+        }
+	}
+
+	voxel.distance = distance;
+	return voxel;
+}
+
+void main() {
+    Ray ray      = generateRay();
+    Position pos = Position(uvec3(0), ray.start, -1);
+    updatePosition(pos, vec3(0));
+
+    Voxel voxel = march(ray, pos);
+
+    dataOut[g_index] = MarchOut(voxel.distance, //(voxel.normal<<16) + (voxel.size<<8) +
+                                voxel.value);
+}

@@ -1,51 +1,14 @@
 
 
-uint getImpliedIndex(uint bits, uint oct) {
-    uint and = 0x7fu >> (7-oct);
-    return bitCount(bits & and);
-}
 uint getImpliedIndex2(uint bits, uint bits2, uint oct) {
     return oct<32 ?
         bitCount(bits & (0x7fffffffu >> (31-oct))) :
         bitCount(bits) + bitCount(bits2 & (0x7fffffffu >> (63-oct)));
 }
-/// Get 4 bit cell octet index (0-4095)
-// 11_1100_0000 -> zzzz_yyyyxxxx
-uint oct_11_1100_0000(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 6, 4);
-    uvec3 c = a << uvec3(0,4,8);
-    return c.x + c.y + c.z;
-}
-/// Get 2 bit cell octet index (0-63)
-// 00_0011_0000 -> zzyyxx
-uint oct_00_0011_0000(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 4, 2);
-    uvec3 c = a << uvec3(0,2,4);
-    return c.x + c.y + c.z;
-}
-/// Get 2 bit cell octet index (0-63)
-// 00_0000_1100 -> zzyyxx
-uint oct_00_0000_1100(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 2, 2);
-    uvec3 c = a << uvec3(0,2,4);
-    return c.x + c.y + c.z;
-}
-/// Get 2 bit cell octet index (0-7)
-// 00_0000_0010 -> zyx
-uint oct_00_0000_0010(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 1, 1);
-    uvec3 c = a << uvec3(0,1,2);
-    return c.x + c.y + c.z;
-}
-uint oct_00_0000_0001(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 0, 1);
-    uvec3 c = a << uvec3(0,1,2);
-    return c.x + c.y + c.z;
-}
 
 bool isSolidCell1(uvec3 upos, uint voxels, inout uint cell2Offset, inout Voxel v) {
 
-    uint cellOct = oct_11_1100_0000(upos);
+    uint cellOct = getOctet_1111000000(upos);
 
     // M5SubCell1
     uint bits    = voxelsIn[voxels+2+(cellOct*3)];
@@ -53,7 +16,7 @@ bool isSolidCell1(uvec3 upos, uint voxels, inout uint cell2Offset, inout Voxel v
     uint offset  = voxelsIn[voxels+2+(cellOct*3)+2];
 
     // M5SubCell2 oct
-    uint suboct  = oct_00_0011_0000(upos);
+    uint suboct  = getOctet_0000110000(upos);
 
     bool isAnAirCell  = bits==0 && bits2==0;
     bool isASolidCell = offset==0xffffffff;
@@ -84,7 +47,7 @@ bool isSolidCell2(float distance, uvec3 upos, uint voxels, inout uint cellOffset
     bool isASolidCell = offset==0xffffffff;
 
     // M5SubCell3 oct
-    uint oct  = oct_00_0000_1100(upos);
+    uint oct  = getOctet_0000001100(upos);
 
     bool air = 0==(oct < 32 ? bitfieldExtract(bits, int(oct),     1) :
                               bitfieldExtract(bits2, int(oct-32), 1));
@@ -110,7 +73,7 @@ bool isSolidCell3(float distance, uvec3 upos, uint voxels, inout uint cellOffset
     bool isASolidCell = offset==0xffffffff;
 
     // M5Leaf oct
-    uint oct  = oct_00_0000_0010(upos);
+    uint oct  = getOctet_0000000010(upos);
 
     bool air   = (bitfieldExtract(bits, int(oct), 1)==0);
     bool solid = air || isASolidCell;
@@ -121,7 +84,7 @@ bool isSolidCell3(float distance, uvec3 upos, uint voxels, inout uint cellOffset
         v.value = uint(isASolidCell || !air);
     } else {
         // Drill down
-        cellOffset = offset*4 + getImpliedIndex(bits, oct); // M5Leaf.sizeof=1
+        cellOffset = offset*4 + getImpliedIndex_8bit(bits, oct); // M5Leaf.sizeof=1
     }
     return solid;
 }
@@ -131,7 +94,7 @@ void leaf(float distance, uvec3 upos, uint voxels, uint leafOffset, inout Voxel 
     uint a    = voxelsIn[voxels+leafOffset/4];
     uint bits = a >> (rem*8);
 
-    uint oct = oct_00_0000_0001(upos);
+    uint oct = getOctet_0000000001(upos);
 
     v.size  = 1;
     v.value = uint(bitfieldExtract(bits, int(oct), 1)!=0);

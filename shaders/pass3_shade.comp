@@ -45,7 +45,7 @@ uint g_index = gl_GlobalInvocationID.x +
 #define V_ROCK1 (11)
 #define V_GRASS1 (12)
 
-// Would this be faster if it was in a storage buffer?
+// FIXME - This would probably be faster if it was in a storage buffer
 const vec3 uint_to_pixel[] = vec3[](
     // volumetric
 	vec3(0,0, 0.25),	 // [0] V_AIR (space)
@@ -72,7 +72,7 @@ vec3 getDiffuse(uint voxel) {
     return uint_to_pixel[voxel];
 }
 
-vec3 getDiffuseColour(const uint voxel) {
+vec3 getDiffuseColour(uint voxel) {
     return getDiffuse(voxel);
 }
 //vec4 getDiffuseColour(const vec3 hitPos, const uint voxel) {

@@ -26,60 +26,14 @@ uint branchPtrsOffset;
 uint bitsPerBranch;
 
 
-uint bitsRequiredToEncode(uint value) {
-    return value<3 ? 1 : findMSB(value-1)+1;
-}
-
-/// Assumes numBits is between 1 and 32.
-uint getBits(uint byteIndex, uint bitOffset, int numBits) {
-    byteIndex += bitOffset/8;
-    bitOffset &= 7u;
-
-    uint uintIndex = byteIndex/4;
-    uint uintRem   = byteIndex&3u;
-
-    int bitpos     = int(bitOffset + (uintRem*8));
-    int numBits2   = max(0, numBits - (32-bitpos));
-    numBits -= numBits2;
-
-    return bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits) +
-          (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
-}
-
-uint getImpliedIndex(uint bits, uint oct) {
-    uint and = 0x7fffffffu >> (31-oct);
-    return bitCount(bits & and);
-}
 /// Assumes offsets are in uints
 uint getIndex(uint oct, uint voxels, uint popcountsOffset, uint bitsOffset) {
     uint popcount = oct<32 ? 0
         : voxelsIn[voxels + popcountsOffset + (oct/32)-1];
 
-    return getImpliedIndex(voxelsIn[voxels + bitsOffset + oct/32], oct&31u)
-            + popcount;
+    return getImpliedIndex_32bit(voxelsIn[voxels + bitsOffset + oct/32], oct&31u) + popcount;
 }
-/// Get 7 bit cell octet (0-2097151)
-/// 11_1111_1000 -> z_zzzz_zzyy_yyyy_yxxx_xxxx
-uint getCellOct(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 3, 7); // offset 3, 7 bits
-    uvec3 c = a << uvec3(0,7,14);
-    return c.x + c.y + c.z;
-}
-uint getOctets(uvec3 upos, int bitOffset, int numBits) {
-    uvec3 a = bitfieldExtract(upos, bitOffset, numBits);
-    uvec3 c = a << uvec3(0,numBits,numBits+numBits);
-    return c.x + c.y + c.z;
-}
-/// Get 1 bit octet index (0-7)
-/// if shr==5 (and==1<<shr):
-/// x = 0_0010_0000 \
-/// y = 0_0010_0000  >  oct = 00000zyx
-/// z = 0_0010_0000 /
-uint getOctet(uvec3 upos, int bitOffset) {
-	uvec3 a = bitfieldExtract(upos, bitOffset, 1);
-    uvec3 c = a << uvec3(0,1,2);
-    return c.x + c.y + c.z;
-}
+
 
 /// Assumes offsets are in uints
 //bool isBitSet(uint bit, uint offset) {
@@ -106,7 +60,7 @@ bool isAir(inout uvec3 p, inout uint size, uint level, uint offset) {
 ///
 uint getAirVoxel(Position pos, uint voxels) {
     uvec3 upos   = pos.upos;
-    uint cellOct = getCellOct(upos);
+    uint cellOct = getOctet_1111111000(upos);
 
 //    if(isBitZero(getOctets(upos, 9, 1), voxels + BITS_L1/4)) return 512;
 //    if(isBitZero(getOctets(upos, 8, 2), voxels + BITS_L2/4)) return 256;
@@ -133,18 +87,18 @@ uint getAirVoxel(Position pos, uint voxels) {
         return size;
     }
 
-    uint branchOct = getOctet(upos, 2);
+    uint branchOct = getOctet_0000000100(upos);
     uint index100  = 8*getIndex(cellOct, voxels, L7POPCOUNTS_OFFSET/4, BITS_L7/4);
 
     if(isBitZero(index100 + branchOct, voxels + L100_BITS_OFFSET/4)) {
         return 4;
     }
 
-    uint leafOct     = getOctet(upos, 1);
-    uint voxelOct    = getOctet(upos, 0);
+    uint leafOct     = getOctet_0000000010(upos);
+    uint voxelOct    = getOctet_0000000001(upos);
     uint index10     = getIndex(index100 + branchOct, voxels, L100PopcountsOffset, L100_BITS_OFFSET/4);
     uint ptrBitIndex = (voxels+branchPtrsOffset)*32 + index10 * bitsPerBranch;
-    uint branchPtr   = getBits(0, ptrBitIndex, int(bitsPerBranch));
+    uint branchPtr   = getBits_voxelsIn(0, ptrBitIndex, int(bitsPerBranch));
 
     uint i = voxelsIn[voxels + uniqBranchesOffset + branchPtr*2 + leafOct/4];
     uint r = (leafOct&3u) * 8;

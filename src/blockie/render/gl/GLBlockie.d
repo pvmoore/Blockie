@@ -14,8 +14,8 @@ public:
         super.initialise();
 
         this.gl = new OpenGL(this, (h) {
-            h.width         = 1200;
-            h.height        = 800;
+            h.width         = WIDTH;
+            h.height        = HEIGHT;
             h.title         = title;
             h.windowed      = true;
             h.showWindow    = false;
@@ -29,7 +29,7 @@ public:
 
         import core.cpuid: processor;
         string deviceName = cast(string)fromStringz(glGetString(GL_RENDERER));
-        title ~= " :: OpenGL :: %s :: %s".format(processor().strip(), deviceName);
+        title ~= " :: OpenGL (%sx%s) :: %s :: %s".format(WIDTH, HEIGHT, processor().strip(), deviceName);
 
         gl.setWindowTitle(title);
 

@@ -6,11 +6,11 @@ import std.file : remove, dirEntries, SpanMode;
 
 final class Generator {
     void run() {
-        initEvents(1*MB);
+        initEvents(1*1024*1024);
 
         setEagerFlushing(true);
 
-        const auto num = "8";
+        const auto num = "1";
 
         SceneGenerator scene;
         switch(num) {

@@ -1,33 +1,11 @@
 
 
-uint getImpliedIndex(uint bits, uint oct) {
-    uint and = 0x7f >> (7-oct);
-    return bitCount(bits & and);
-}
-/// Get 4 bit cell octet index (0-4095)
-// 11_1100_0000 -> zzzz_yyyyxxxx
-uint getCellOctet(uvec3 upos) {
-    uvec3 a = bitfieldExtract(upos, 6, 4);
-    uvec3 c = a << uvec3(0,4,8);
-    return c.x + c.y + c.z;
-}
-/// Get 1 bit octet index (0-7)
-/// if shr==5 (and==1<<shr):
-/// x = 0_0010_0000 \
-/// y = 0_0010_0000  >  oct = 00000zyx
-/// z = 0_0010_0000 /
-uint getOctet(uvec3 upos, int shr) {
-	uvec3 a = bitfieldExtract(upos, shr, 1);
-    uvec3 c = a << uvec3(0,1,2);
-    return c.x + c.y + c.z;
-}
-
 bool isSolidCell(uvec3 upos, uint voxels, inout uint outL5Branch, inout Voxel v) {
-    uint cellOct = getCellOctet(upos);
+    uint cellOct = getOctet_1111000000(upos);
     uint cell    = voxelsIn[voxels+2+cellOct];
 
     uint bits  = cell & 0xffu;
-    uint l5oct = getOctet(upos, 5);
+    uint l5oct = getOctet_0000100000(upos);
 
     bool air   = (bitfieldExtract(bits, int(l5oct), 1)==0);
     bool solid = air || (cell == 0xffffffff);
@@ -41,7 +19,7 @@ bool isSolidCell(uvec3 upos, uint voxels, inout uint outL5Branch, inout Voxel v)
         // Drill down
 
         // Read L5 branch
-        uint offset = (cell >> 8) + getImpliedIndex(bits, l5oct);
+        uint offset = (cell >> 8) + getImpliedIndex_8bit(bits, l5oct);
         outL5Branch = voxelsIn[voxels+offset];
     }
     return solid;
@@ -55,7 +33,7 @@ bool isSolidBranch(
     int octLevel,
     uint size)
 {
-    uint oct  = getOctet(upos, octLevel);
+    uint oct  = getOctet_n_1(upos, octLevel);
     uint bits = branch & 0xffu;
 
     bool air   = (bitfieldExtract(bits, int(oct), 1)==0);
@@ -70,7 +48,7 @@ bool isSolidBranch(
         // Drill down
 
         // Read next branch
-        uint offset = (branch >> 8) + getImpliedIndex(bits, oct);
+        uint offset = (branch >> 8) + getImpliedIndex_8bit(bits, oct);
         branch = voxelsIn[voxels+offset];
     }
     return solid;
@@ -82,7 +60,7 @@ void leaf(
     uint branch,  // L2branch in
     inout Voxel v)
 {
-    uint l1oct = getOctet(upos, 1);
+    uint l1oct = getOctet_0000000010(upos);
     uint bits = branch & 0xffu;
 
     bool air   = (bitfieldExtract(bits, int(l1oct), 1)==0);
@@ -96,10 +74,10 @@ void leaf(
     } else {
         // leaf
         uint offset     = (branch >> 8);
-        uint byteOffset = getImpliedIndex(bits, l1oct);
+        uint byteOffset = getImpliedIndex_8bit(bits, l1oct);
         uint leaf       = GETBYTE(voxelsIn, (voxels+offset)*4 + byteOffset);
 
-        uint l0oct = getOctet(upos, 0);
+        uint l0oct = getOctet_0000000001(upos);
 
         v.size  = 1;
         v.value = bitfieldExtract(leaf, int(l0oct), 1);

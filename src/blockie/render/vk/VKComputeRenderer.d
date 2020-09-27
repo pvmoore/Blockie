@@ -197,7 +197,7 @@ public:
     }
     @Implements("IRenderer")
     void render(AbsRenderData absRenderData) {
-        // We are inside the pender pass here
+        // We are inside the render pass here
         VKRenderData renderData = absRenderData.as!VKRenderData;
         Frame frame             = renderData.frame;
         PerFrameResource res    = frame.resource;
@@ -446,7 +446,7 @@ private:
         auto marchShader = "pass1_marchM%s.comp".format(getModelName());
         version(MODEL1) {
             auto shadeShader = "pass3_shade.comp";
-        } else version(MODEL1) {
+        } else version(MODEL1a) {
             auto shadeShader = "pass3_shade.comp";
         } else {
             auto shadeShader = "pass3_shadeM2.comp";

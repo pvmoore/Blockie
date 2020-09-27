@@ -11,6 +11,8 @@ protected:
     RenderView renderView;
 public:
     enum {
+        WIDTH = 1200,
+        HEIGHT = 800,
         VOXEL_BUFFER_SIZE = 1300.MB,
         CHUNK_BUFFER_SIZE = 4.MB
     }
@@ -34,17 +36,12 @@ public:
     }
     abstract void run();
 protected:
-    //void doSomething(void delegate(int a) call) {
-    //    // doSomething(it => writefln("%s", it));
-    //    // doSomething((it) {writefln("%s", it);});
-    //    call(10);
-    //}
     void initWorld(float2 windowSize) {
 
         log("windowSize = %s", windowSize.to!int);
 
         try{
-            string w = "8";
+            string w = "1";
 
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;

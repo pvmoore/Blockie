@@ -42,7 +42,7 @@ bool isSolidBranch(
     inout Voxel v,
     const uint SZ)
 {
-    const uint oct   = getOctet_1_n(upos, SZ);
+    const uint oct   = getOctet_1_and(upos, SZ);
     const uint data  = voxelsIn[voxelsPtr/4];
     const bool solid =
         //distance>(SZ*500) ||

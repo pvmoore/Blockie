@@ -11,6 +11,11 @@ uint getImpliedIndex_32bit(const uint bits, const uint oct) {
     const uint and = 0x7fffffff >> (31-oct);
     return bitCount(bits & and);
 }
+
+uint bitsRequiredToEncode(uint value) {
+    return value<3 ? 1 : findMSB(value-1)+1;
+}
+
 /**
  *  Assumes numBits is between 1 and 32.
  */
@@ -128,8 +133,8 @@ float getMinDistToEdge5BitsBiDirectional(Ray ray, Position pos, uvec3 radius, ui
 //
 float getMinDistToEdge4BitsBiDirectional(Ray ray, Position pos, uvec3 radius, uint voxelSize) {
     // Extract distance values
-    vec3 up   = radius >> 4;   // high 45 bits = up distance
-    vec3 down = radius & 15;   // low  45 bits = down distance
+    vec3 up   = radius >> 4;   // high 4 bits = up distance
+    vec3 down = radius & 15;   // low  4 bits = down distance
 
     vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
     vec3 rem  = mod(p, voxelSize) + down*voxelSize;
@@ -140,26 +145,21 @@ float getMinDistToEdge4BitsBiDirectional(Ray ray, Position pos, uvec3 radius, ui
     float res = min(m.x, min(m.y, m.z));
     return max(res, 0);
 }
-
-float getMinDistToEdgeUniDirectional(
-    const Ray ray,
-    const Position pos,
-    const vec3 radius,
-    const uint sideSize)    // CHUNK_SIZE or CELL_SIZE
-{
+// @param sideSize : CHUNK_SIZE or CELL_SIZE
+float getMinDistToEdgeUniDirectional(Ray ray, Position pos, vec3 radius, uint sideSize) {
     // radius = 0 = 1 air chunk  (r=0,    r2=0)
     //        = 1 = 3 air chunks (r=512,  r2=1024)
     //        = 2 = 5 air chunks (r=1024, r2 = 2048)
     //          etc...
-    const vec3 r    = radius*sideSize;
-    const vec3 r2   = r*2;
-    const vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
-    const vec3 rem  = mod(p, sideSize) + r;
-    const vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * (sideSize+r2);
-    const vec3 dist = size-rem;
+    vec3 r    = radius*sideSize;
+    vec3 r2   = r*2;
+    vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
+    vec3 rem  = mod(p, sideSize) + r;
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * (sideSize+r2);
+    vec3 dist = size-rem;
 
-    const vec3 m    = dist * ray.invDirection;
-    const float res = min(m.x, min(m.y, m.z));
+    vec3 m    = dist * ray.invDirection;
+    float res = min(m.x, min(m.y, m.z));
     return max(res, 0);
 }
 // void clampPositionToVoxelEntryPoint(Ray ray, Position pos, uint voxelSize, inout float distance) {
@@ -181,6 +181,12 @@ float getMinDistToEdgeUniDirectional(
 //     //updatePosition(pos, dir*f);
 // }
 
+// (0-2097151)
+uint getOctet_1111111000(uvec3 upos) {
+    uvec3 a = bitfieldExtract(upos, 3, 7); // offset 3, 7 bits
+    uvec3 c = a << uvec3(0,7,14);
+    return c.x + c.y + c.z;
+}
 /// (0-32767)
 uint getOctet_1111100000(uvec3 upos) {
     // 11_1110_0000 -> 0zzz_zzyy_yyyx_xxxx
@@ -203,45 +209,97 @@ uint getOctet_1111000000(const uvec3 inXYZ) {
     const uvec3 c = a << uvec3(0,4,8);
     return c.x + c.y + c.z;
 }
+// (0-63)
+uint getOctet_0000110000(uvec3 upos) {
+    uvec3 a = bitfieldExtract(upos, 4, 2);
+    uvec3 c = a << uvec3(0,2,4);
+    return c.x + c.y + c.z;
+}
+// (0-63)
+uint getOctet_0000001100(uvec3 upos) {
+    uvec3 a = bitfieldExtract(upos, 2, 2);
+    uvec3 c = a << uvec3(0,2,4);
+    return c.x + c.y + c.z;
+}
 /// (0-7)
-uint getOctet_0000000010(const uvec3 inXYZ) {
-	// x = 0000_0010 \
-	// y = 0000_0010  >  oct = 00000zyx
-	// z = 0000_0010 /
-	const uvec3 a = bitfieldExtract(inXYZ, 1, 1);
-	const uvec3 c = a << uvec3(0,1,2);
+uint getOctet_0000100000(uvec3 inXYZ) {
+	// x = 0010_0000
+	// y = 0010_0000  >  oct = 00000zyx
+	// z = 0010_0000
+	const uvec3 a = bitfieldExtract(inXYZ, 5, 1);
+    const uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+/// (0-7)
+uint getOctet_0000010000(uvec3 inXYZ) {
+	// x = 0001_0000
+	// y = 0001_0000  >  oct = 00000zyx
+	// z = 0001_0000
+	const uvec3 a = bitfieldExtract(inXYZ, 4, 1);
+    const uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+/// (0-7)
+uint getOctet_0000001000(uvec3 inXYZ) {
+	// x = 0000_1000
+	// y = 0000_1000  >  oct = 00000zyx
+	// z = 0000_1000
+	const uvec3 a = bitfieldExtract(inXYZ, 3, 1);
+    const uvec3 c = a << uvec3(0,1,2);
     return c.x + c.y + c.z;
 }
 /// (0-7)
 uint getOctet_0000000100(const uvec3 inXYZ) {
-	// x = 0000_0100 \
+	// x = 0000_0100
 	// y = 0000_0100  >  oct = 00000zyx
-	// z = 0000_0100 /
+	// z = 0000_0100
 	const uvec3 a = bitfieldExtract(inXYZ, 2, 1);
     const uvec3 c = a << uvec3(0,1,2);
     return c.x + c.y + c.z;
 }
 /// (0-7)
-uint getOctet_1_n(const uvec3 inXYZ, const uint and) {
-    // if and==32:
-	// x = 0_0010_0000 \
-	// y = 0_0010_0000  >  oct = 00000zyx
-	// z = 0_0010_0000 /
-	const int SHR = findLSB(and);
-	const uvec3 a = bitfieldExtract(inXYZ, SHR, 1);
-    const uvec3 c = a << uvec3(0,1,2);
+uint getOctet_0000000010(const uvec3 inXYZ) {
+	// x = 0000_0010
+	// y = 0000_0010  >  oct = 00000zyx
+	// z = 0000_0010
+	const uvec3 a = bitfieldExtract(inXYZ, 1, 1);
+	const uvec3 c = a << uvec3(0,1,2);
     return c.x + c.y + c.z;
 }
 /// (0-7)
 uint getOctet_0000000001(const uvec3 inXYZ) {
-	// x = 0000_0001 \
+	// x = 0000_0001
 	// y = 0000_0001  >  oct = 00000zyx
-	// z = 0000_0001 /
+	// z = 0000_0001
 	//const uvec3 a = inXYZ & 1u;
 	const uvec3 a = bitfieldExtract(inXYZ, 0, 1);
 	const uvec3 c = a << uvec3(0,1,2);
 	return c.x + c.y + c.z;
 }
+
+/// (0-7)
+uint getOctet_1_and(const uvec3 inXYZ, const uint and) {
+    // if and==32:
+	// x = 0_0010_0000
+	// y = 0_0010_0000  >  oct = 00000zyx
+	// z = 0_0010_0000
+	const int SHR = findLSB(and);
+	const uvec3 a = bitfieldExtract(inXYZ, SHR, 1);
+    const uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+// (0-7)
+uint getOctet_n_1(uvec3 upos, int bitpos) {
+	uvec3 a = bitfieldExtract(upos, bitpos, 1);
+    uvec3 c = a << uvec3(0,1,2);
+    return c.x + c.y + c.z;
+}
+uint getOctet_n_n(uvec3 upos, int bitOffset, int numBits) {
+    uvec3 a = bitfieldExtract(upos, bitOffset, numBits);
+    uvec3 c = a << uvec3(0,numBits,numBits+numBits);
+    return c.x + c.y + c.z;
+}
+
 
 uint get3Bytes(uint voxels, uint index) {
     uint a  = (index & 3);

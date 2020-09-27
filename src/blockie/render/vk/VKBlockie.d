@@ -27,8 +27,8 @@ public:
         super.initialise();
 
         WindowProperties wprops = {
-            width:        1200,
-            height:       800,
+            width:        WIDTH,
+            height:       HEIGHT,
             fullscreen:   false,
             vsync:        false,
             title:        title,
@@ -50,7 +50,7 @@ public:
         import std : fromStringz, format;
         import core.cpuid: processor;
         string gpuName = cast(string)vk.properties.deviceName.ptr.fromStringz;
-        vk.setWindowTitle("%s :: Vulkan :: %s, %s".format(title, processor().strip(), gpuName));
+        vk.setWindowTitle("%s :: Vulkan (%sx%s) :: %s, %s".format(title, WIDTH, HEIGHT, processor().strip(), gpuName));
 
         initWorld(vk.windowSize().to!float);
 
@@ -134,9 +134,9 @@ public:
         renderData.waitStages.length     = 1;
 
         // Standard command buffer and wait semaphores
-        renderData.commandBuffers [0] = b;
-        renderData.waitSemaphores [0] = res.imageAvailable;
-        renderData.waitStages[0]      = VPipelineStage.COLOR_ATTACHMENT_OUTPUT;
+        renderData.commandBuffers[0] = b;
+        renderData.waitSemaphores[0] = res.imageAvailable;
+        renderData.waitStages[0]     = VPipelineStage.COLOR_ATTACHMENT_OUTPUT;
 
         // Outside render pass
         view.update(renderData);

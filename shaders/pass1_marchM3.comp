@@ -1,58 +1,51 @@
 #version 450 core
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 
+#ifdef VULKAN
+    #extension GL_GOOGLE_include_directive : require
+#else
+    #extension GL_KHR_vulkan_glsl : enable
+#endif
 /*
     Set by program:
+
+    CHUNK_SIZE          1024
+    CHUNK_SIZE_SHR      10
+    OctreeTwigSize      12
+    OctreeLeafSize      8
+    DFIELD_OFFSET       5148
 */
 
-#define GROUP_SIZE_X 8
-#define GROUP_SIZE_Y 8
-layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y) in;
+layout(local_size_x = 8, local_size_y = 8) in;
 
 #include "_header.inc"
 
 #define CELL_SIZE (CHUNK_SIZE>>5)  // 32
 
-layout(binding = 0, std430) readonly buffer I0 {
+layout(set = 0, binding = 0, std430) readonly buffer I0 {
     // voxel data in ubytes
 	uint voxelsIn[];
 };
-layout(binding = 1, std430) readonly buffer I1 {
+layout(set = 0, binding = 1, std430) readonly buffer I1 {
     // chunk data in uints
 	uint chunkDataIn[];
 };
-layout(binding = 2, std430) writeonly buffer O0 {
+layout(set = 0, binding = 2, std430) writeonly buffer O0 {
 	MarchOut dataOut[];
 };
-//layout(binding = 2, rgba32f)
-//uniform writeonly image2D imageOut;
+//layout(set = 0, binding = 2, rgba32f) uniform writeonly image2D imageOut;
 
-layout(binding = 3, std430) writeonly buffer O1 {
-	uint debugOut[];
-};
-//=======================================================================================
+//layout(set = 1, binding = 0, std430) writeonly buffer O0 {
+//	uint debugOut[];
+//};
 
-uniform ivec2 SIZE;             // Render window size
-uniform uvec3 WORLD_CHUNKS_XYZ; // (25, 8, 25)
-uniform vec3  WORLD_BB[2];      // world bounding box in worldcoords
-
-uniform vec3  CAMERA_POS;       // in worldcoords
-uniform vec3  SCREEN_MIDDLE;    // for calculating Ray
-uniform vec3  SCREEN_XDELTA;    // for calculating Ray
-uniform vec3  SCREEN_YDELTA;    // for calculating Ray
-
-uniform bool RENDER_OPTS[2];
-
-//uniform mat4 VIEW;
-//uniform mat4 INVVIEW;
-//uniform float TANFOV2;
-//=======================================================================================
-//
-//vec2 ASPECT_RATIO = SIZE / SIZE.y;
+#include "_ubo.inc"
 
 ivec2 pixel     = ivec2(gl_GlobalInvocationID.xy);
 uint g_index    = gl_GlobalInvocationID.x +
                   gl_GlobalInvocationID.y * ubo_SIZE.x;
-vec3 CHUNKS_MUL = vec3(1, WORLD_CHUNKS_XYZ.x, WORLD_CHUNKS_XYZ.x * WORLD_CHUNKS_XYZ.y);
+vec3 CHUNKS_MUL = vec3(1, ubo_WORLD_CHUNKS_XYZ.x, ubo_WORLD_CHUNKS_XYZ.x * ubo_WORLD_CHUNKS_XYZ.y);
 
 struct Flags {
     uint a;
