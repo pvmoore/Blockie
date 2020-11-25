@@ -13,27 +13,31 @@ import blockie.model;
         Distance6
     8:
     (chunk cell data:)
-        uint[1024] cellFlags; // 1 bit per cell: 0=air, 1=mixed
-            (if flag=1 and cellOffset = 0xffffff then cell is SOLID and there is no mixed cell data)
+        uint[1024] cellFlags;
+            // 1 bit per cell: 0=air, 1=mixed
+            // (if flag=1 and cellOffset = 0xffffff then cell is SOLID and there is no mixed cell data)
 
     8+4096:
         // 32768 * 3 bytes (use cellFlags to determine type)
         Offset3[] cellOffsets;       // offset/4 of mixed cell data
         Distance3[] cellDistances;   // one per air cell
 
-    8+4096+98304:
+    8+4096+98304: (NUM_UNIQ_OFFSETS)
         uint numUniqXYBits;
         uint numUniqZBits;
         uint numUniqCounts;
 
-    // A = 8+4096+98304 + 3*uint (102420)
-    // B = A + numUniqXYBits*4 + numUniqZBits*4 + numUniqCounts * 10bits (round up to uint)
+    // A = UNIQ_BITS_AND_COUNTS_OFFSET = 8+4096+98304 + 3*uint (102420 = 25605*4)
+    // B = CELL_DATA_OFFSET = A + numUniqXYBits*4 + numUniqZBits*4 + numUniqCounts * 10bits (round up to uint)
 
+    UNIQ_BITS_AND_COUNTS_OFFSET:
     A:
         uint[] xyBits       // uniq uint bit values
         uint[] zBits;       // uniq uint bit values
         10bit[] xyCounts    // uniq 10-bit count values
+
     B:
+    CELL_DATA_OFFSET: (aligned to uint)
 
     // align(uint) per cell
     (per mixed cell): (cellOffset points here)
@@ -44,11 +48,11 @@ import blockie.model;
         4-bits bitsPerZValues (BPZ-1)
         4-bits bitsPerCount (BPC-1)
         4-bits _reserved
-    C1: C0 + 10:
+    C1: C0 + 10:                            // xyBits offset
         32 xyBits codings
-    C2: C1 + 32*BPXY: (byte aligned)
+    C2: C1 + 32*BPXY: (byte aligned)        // xyCounts offset
         32 xyCounts codings
-    C3: C2 + 32*BPC (byte aligned)
+    C3: C2 + 32*BPC (byte aligned)          // zBits offset
         0..1023 zBits codings
 
 */
@@ -64,6 +68,7 @@ private:
     uint[uint] zIndexes;
     uint[uint] countIndexes;
 
+    // Stats
     static uint totalChunks;
     static uint totalNonAirChunks;
     static uint totalCells;
@@ -71,6 +76,8 @@ private:
     static uint totalMixedCells;
     static uint totalSolidCells;
     static ulong totalVoxelsLength;
+
+    const DEBUG_CELL = 11778;
 public:
     this(M6ChunkEditView view) {
         this.view = view;
@@ -82,6 +89,11 @@ public:
         if(view.isAir()) {
             return cast(ubyte[])[M6Flag.AIR, 0] ~ view.airRoot.distance.toBytes();
         }
+
+        GC.collect();
+        ulong used = GC.stats.usedSize;
+        ulong free = GC.stats.freeSize;
+        writefln("used = %s, free = %s", used, free);
 
         totalNonAirChunks++;
 
@@ -108,20 +120,28 @@ private:
                     continue;
                 }
 
-                uint a = getMaxIndex(cell.xyBits, xyIndexes);
+                uint a = getMaxIndex(cell.xyBits, xyIndexes) + 1;
                 numBits += 4 + bitsRequiredToEncode2(a) * 32;
 
-                uint b = getMaxIndex(cell.xyCounts, countIndexes);
+                uint b = getMaxIndex(cell.xyCounts, countIndexes) + 1;
                 numBits += 4 + bitsRequiredToEncode2(b) * 32;
 
-                uint c = getMaxIndex(cell.zValues, zIndexes);
+                uint c = getMaxIndex(cell.zValues, zIndexes) + 1;
                 numBits += cell.zValues.length == 0 ? 0 : 4;
                 numBits += bitsRequiredToEncode2(c) * cell.zValues.length;
+
+                // align to uint
+                numBits += 31;
+                numBits &= ~31;
             }
         }
+        // unique bits and counts
         numBits += xyIndexes.length * 32;
         numBits += zIndexes.length * 32;
-        numBits += countIndexes.length * 10;
+        numBits += ((countIndexes.length * 10 + 31) & ~31);
+
+        // Header
+        numBits += 25605*32;
 
         static uint total = 0;
 
@@ -140,6 +160,10 @@ private:
         // 6  =  45,794,558 ==>  48,229,210   55,013,436
         // 7  =  53,213,288 ==>  56,811,410   63,890,388
         // 8  =     758,569 ==>     882,604      947,040
+
+        //writefln("");
+
+        //1,294,456
     }
     uint getMaxIndex(uint[] values, uint[uint] indexes) {
         uint max = 0;
@@ -207,9 +231,40 @@ private:
         this.countIndexes   = createIndexes(counts.map!(it=>it[0]).array);
         this.xyIndexes      = createIndexes(xy.map!(it=>it[0]).array);
         this.zIndexes       = createIndexes(z.map!(it=>it[0]).array);
+
+        writefln("Num uniq XY Bits = %s", uniqXYBits.length);
+        writefln("Num uniq XY Counts = %s", uniqCounts.length);
+        writefln("Num uniq Z Bits = %s", uniqZBits.length);
+
+        uint totalXY = xyHash.values().sum();
+        uint totalZ  = zHash.values().sum();
+        uint totalC  = countsHash.values().sum();
+
+        writefln("xy.length = %s", totalXY);
+        writefln("z.length  = %s", totalZ);
+        writefln("C.length  = %s", totalC);
+
+        writefln("uniqXYBits = %s", uniqXYBits);
+        writefln("");
+        writefln("XYBits ratios = %s", xy.map!(it=>it[1]).array);
+        writefln("");
+        writefln("XYBits ratios %% = %s", xy.map!(it=>it[1]).map!(it=>(it*100.0)/totalXY).array);
+        writefln("");
+        writefln("uniqZBits = %s", uniqZBits);
+        writefln("");
+        writefln("zBits ratios = %s", z.map!(it=>it[1]).array);
+        writefln("");
+        writefln("zBits ratios %% = %s", z.map!(it=>it[1]).map!(it=>(it*100.0)/totalZ).array);
+        writefln("");
+        writefln("uniqCounts = %s", uniqCounts);
+        writefln("");
+        writefln("counts ratios = %s", counts.map!(it=>it[1]).array);
+        writefln("");
+        writefln("counts ratios %% = %s", counts.map!(it=>it[1]).map!(it=>(it*100.0)/totalC).array);
+        writefln("");
     }
     ubyte[] rewriteVoxels() {
-        writefln("rewriting voxels"); flushConsole();
+        writefln("rewriting voxels");
         ubyte[] voxels = new ubyte[8];
         M6Root* root   = view.mixedRoot;
         uint numSolidCells;
@@ -233,6 +288,8 @@ private:
         Offset3[M6_CELLS_PER_CHUNK] offsets;
         Distance3* distances = offsets.ptr.as!(Distance3*);
 
+        expect(offsets.sizeof == 3 * M6_CELLS_PER_CHUNK);
+
         auto mixed = new ArrayBitWriter(65536);
 
         // set distances, offsets and mixed cell data
@@ -252,6 +309,27 @@ private:
                     assert(offset%4==0);
                     offsets[i] = Offset3(offset/4);
 
+                    if(i==DEBUG_CELL) {
+                        writefln("C0 = %s", mixed.length);
+                        writefln("DEBUG_CELL ------> offset %s xRank %032b yRank %032b", offsets[i],
+                            cell.getXRankBits(), cell.getYRankBits()
+                            );
+                        foreach(n, j; cell.xyBits) {
+                            writefln("[%s]  %032b", n, j);
+                        }
+                        writefln("zValues -->");
+                        foreach(n, k;cell.zValues) {
+                            writefln("[%s]  %032b", n, k);
+                        }
+
+                        writefln("xyCounts -->");
+                        foreach(n, k;cell.xyCounts) {
+                            writefln("[%s]  %s", n, k);
+                        }
+
+                        //writefln("xyBits[16] = %s", cell.xyBits[16]);
+                    }
+
                     // xRanks
                     mixed.write(cell.getXRankBits(), 32);
                     // yRanks
@@ -261,9 +339,9 @@ private:
                     // 4-bits bitsPerZValues (BPZ)
                     // 4-bits bitsPerCount (BPC)
                     // 4-bits _reserved
-                    uint bpxy = bitsRequiredToEncode2(getMaxIndex(cell.xyBits, xyIndexes));
-                    uint bpz = bitsRequiredToEncode2(getMaxIndex(cell.zValues, zIndexes));
-                    uint bpc = bitsRequiredToEncode2(getMaxIndex(cell.xyCounts, countIndexes));
+                    uint bpxy = bitsRequiredToEncode2(getMaxIndex(cell.xyBits, xyIndexes) + 1);
+                    uint bpz = bitsRequiredToEncode2(getMaxIndex(cell.zValues, zIndexes) + 1);
+                    uint bpc = bitsRequiredToEncode2(getMaxIndex(cell.xyCounts, countIndexes) + 1);
                     expect(bpxy>0);
                     expect(bpz>0);
                     expect(bpc>0);
@@ -275,32 +353,48 @@ private:
                     mixed.write(bpc-1, 4);    // 4-bits bitsPerCount (BPC)
                     mixed.write(0, 4);        // 4-bits _reserved
 
+                    if(i==DEBUG_CELL) {
+                        writefln("bpxy = %s", bpxy);
+                        writefln("bpz  = %s", bpz);
+                        writefln("bpc  = %s", bpc);
+                    }
+
                     // xyBits codings
-                    foreach(j; cell.xyBits) {
+                    foreach(n, j; cell.xyBits) {
+                        if(i==DEBUG_CELL) {
+                            writefln("[%s] xyBits index = %s (%08x)", n, xyIndexes[j], j);
+                        }
                         mixed.write(xyIndexes[j], bpxy);
                     }
                     assert(mixed.bitsWritten%8==0);
 
                     // xyCounts codings (byte aligned)
-                    foreach(j; cell.xyCounts) {
+                    foreach(n, j; cell.xyCounts) {
+                        if(i==DEBUG_CELL) {
+                             writefln("[%s] xyCounts index = %s (%s)", n, countIndexes[j], j);
+                        }
                         mixed.write(countIndexes[j], bpc);
                     }
                     assert(mixed.bitsWritten%8==0);
 
                     // zValues codings (byte aligned)
-                    foreach(j; cell.zValues) {
+                    foreach(n, j; cell.zValues) {
+                        if(i==DEBUG_CELL) {
+                            writefln("[%s] zValues index = %s (%08x)", n, zIndexes[j], j);
+                        }
                         mixed.write(zIndexes[j], bpz);
                     }
-                    mixed.alignTo(8);
-                    assert(mixed.bitsWritten%8==0);
 
                     // move to next multiple of uint
                     mixed.alignTo(32);
+                    assert(mixed.bitsWritten%32==0);
                 }
             }
         }
 
         voxels ~= cast(ubyte[])offsets;
+
+        writefln("OFFSET %s = %s", DEBUG_CELL, offsets[DEBUG_CELL]);
 
         uint numUniqXYBits = uniqXYBits.length.as!uint;
         uint numUniqZBits  = uniqZBits.length.as!uint;
@@ -310,12 +404,13 @@ private:
         chat("numUniqZBits ... %s", numUniqZBits);
         chat("numUniqCounts .. %s", numUniqCounts);
 
-        uint[] nums = [numUniqXYBits.as!uint, numUniqZBits, numUniqCounts];
+        uint[] nums = [numUniqXYBits, numUniqZBits, numUniqCounts];
 
         voxels ~= cast(ubyte[])nums;
 
         // A = 8+4096+98304 + 3*uint (102420)
         uint A = 8+4096+ 32768*3 + uint.sizeof*3;
+        expect(A%4==0);
         expect(voxels.length == 102420);
         chat("A = %s", A);
 

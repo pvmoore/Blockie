@@ -62,6 +62,12 @@ struct M6Root { align(1):
             flag = M6Flag.AIR;
         } else {
             flag = M6Flag.MIXED;
+
+            foreach(i, ref c; cells) {
+                if(!isAirCell(i.as!int)) {
+                    c.mixed.editFinished();
+                }
+            }
         }
     }
     string toString() const {
@@ -91,47 +97,71 @@ union M6Cell {
  * bits:   | 0111 | 1001 | 1110 | 0010 |
  * counts: |    0 |    3 |    5 |    8 |  (bit count at index-1)
 
-xyBits (1 bits per z):
-   0  1  2
- -------------x
- | 0 0 ..   y = 0
- | 0 0 ..   y = 1
- |
- y
+xyBits (1 bit per Z row):  Each bit represents 32 bits on the z axis
 
- Each bit represents 32 bits on the z axis
-
-
+     0 1 2 .. 31
+   -----------x
+ 0 | 0 0 0 ..       xyBits[0]
+ 1 | 0 0 0 ..       xyBits[1]
+ 2 | 0 0 0 ..       xyBits[2]
+ ..| . . . ..       ..
+ 31|
+   y
  */
 struct M6MixedCell { align(1):
-    uint[32] xyBits;
+    uint[32] xyBits;    // 1024 bits, each one represents a Z row or 32 voxels (32768 voxels in total)
     uint[32] xyCounts;
-    uint[] zValues;         // 0..1023 uints
+    uint[] zValues;     // 0..1024 uints
+    uint[ushort] zHash;
 
     uint getXRankBits() {
         uint rank;
         foreach(i; 0..32) {
-            if(xyBits[i] != 0) rank |= (1<<i);
+            rank |= xyBits[i];
+            //if(xyBits[i] != 0) rank |= (1<<i);
         }
         return rank;
     }
     uint getYRankBits() {
         uint rank;
-        foreach(x; 0..32) {
-            uint v = 0;
-            foreach(y; 0..32) {
-                if(xyBits[y] & (1<<x)) { v = 1; break; }
+        foreach(y; 0..32) {
+            if(xyBits[y] != 0) {
+                rank |= (1<<y);
             }
-            rank |= (v<<x);
+            // uint v = 0;
+            // foreach(x; 0..32) {
+            //     if(xyBits[y] & (1<<x)) { v = 1; break; }
+            // }
+            // rank |= (v<<x);
         }
         return rank;
     }
 
+    /** Convert zHash values to zValues array and set xyCounts*/
+    void editFinished() {
+        uint count = 0;
+        foreach(y; 0..32) {
+
+            xyCounts[y] = count;
+
+            count += popcnt(xyBits[y]);
+
+            foreach(x; 0..32) {
+                if(xyBits[y] & (1<<x)) {
+                    ushort key = ((y<<5) + x).as!ushort;
+                    uint zRow = zHash[key];
+                    zValues ~= zRow;
+                }
+            }
+        }
+        zHash = null;
+    }
+
     /** Solid if all bits are set */
     bool isSolid() {
-        if(zValues.length < 1024) return false;
-        foreach(i; 0..zValues.length) {
-            if(zValues[i] != 0xffff_ffff) return false;
+        if(zHash.length < 1024) return false;
+        foreach(z; zHash.values) {
+            if(z != 0xffff_ffff) return false;
         }
         return true;
     }
@@ -150,31 +180,26 @@ struct M6MixedCell { align(1):
     //     return 0 != (zValues[j] & (1<<(index&31)) );
     // }
 
+    /**
+     *  Set voxel at index (0..32767) (0 .. 2^^15-1)
+     */
     void set(uint index, bool value) {
         assert(index<M6_VOXELS_PER_CELL);
         if(!value) { unset(index); return; }
 
-        const x   = index & 31;
-        const y   = (index >>> 5) & 31;
-        const z   = index >>> 10;
+        const x = index & 31;
+        const y = (index >>> 5) & 31;
+        const z = index >>> 10;
 
-        const bit = 0 != (xyBits[y] & (1<<x));
-
-        const i2  = xyCounts[y] + getImpliedIndex_32bit(xyBits[y], x);
-
-
-        if(!bit) {
-            // set bit
-            xyBits[y] |= (1<<x);
-            // update xyCounts
-            foreach(i; y+1..xyCounts.length) xyCounts[i]++;
-
-            // add the uint and set the value
-            zValues.insertAt(i2, 1<<z);
+        ushort key = ((y<<5) + x).as!ushort;
+        auto h = key in zHash;
+        if(h) {
+            (*h) |= (1<<z);
         } else {
-            // set the value
-            zValues[i2] |= (1<<z);
+            zHash[key] = 1<<z;
         }
+
+        xyBits[y] |= (1<<x);
     }
     string toString() {
         string s;
@@ -182,7 +207,7 @@ struct M6MixedCell { align(1):
             s ~= "  [%02s] %08x %s\n".format(i, xyBits[i], xyCounts[i]);
         }
         string s2;
-        foreach(i, v; zValues) s2 ~= "  [%02s] %032b\n".format(i, v);
+        //foreach(i, v; zValues) s2 ~= "  [%02s] %032b\n".format(i, v);
         return "M6MixedCell(\n%s\n%s)".format(s, s2);
     }
 private:

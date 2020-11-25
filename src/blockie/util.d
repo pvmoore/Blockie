@@ -16,8 +16,8 @@ uint bitsRequiredToEncode(ulong count) {
     return bsr(count-1)+1;
 }
 
-uint bitsRequiredToEncode2(ulong value) {
-    return value<3 ? 1 : bsr(value-1)+1;
+uint bitsRequiredToEncode2(ulong count) {
+    return count<3 ? 1 : bsr(count-1)+1;
 }
 
 uint getImpliedIndex_32bit(uint bits, uint index) {

@@ -20,6 +20,7 @@ private:
 
     FrameResource[] frameResources;
     ImageMeta[] materialImages;
+    ShaderPrintf shaderPrintf;
 
     final static class FrameResource {
         VkCommandBuffer computeCommands;
@@ -70,6 +71,7 @@ public:
         createMaterials();
         createSkybox();
         createBuffers();
+        createShaderPrintf();
         createDescriptors();
         createPipelines();
         createFrameResources();
@@ -89,6 +91,7 @@ public:
         if(voxelData) voxelData.destroy();
         if(ubo) ubo.destroy();
 
+        if(shaderPrintf) shaderPrintf.destroy();
         if(transferCP) device.destroyCommandPool(transferCP);
         if(computeCP) device.destroyCommandPool(computeCP);
         if(computeCPTransient) device.destroyCommandPool(computeCPTransient);
@@ -229,6 +232,16 @@ public:
                 )
             ]
         );
+
+        if(shaderPrintf) {
+            auto output =  shaderPrintf.getDebugString();
+            if(output) {
+                log("\nShader debug output:");
+                log("===========================");
+                log("%s", shaderPrintf.getDebugString());
+                log("\n===========================\n");
+            }
+        }
     }
     @Implements("SceneChangeListener")
     void boundsChanged(worldcoords minBB, worldcoords maxBB) {
@@ -288,6 +301,9 @@ private:
         ubo.write((it) {
             it.size = uint2(renderRect.width, renderRect.height);
         });
+    }
+    void createShaderPrintf() {
+        //this.shaderPrintf = new ShaderPrintf(context);
     }
     void createFrameResources() {
         this.log("Creating frame resources");
@@ -351,6 +367,15 @@ private:
             [descriptors.getSet(0,res.index)],
             null
         );
+        if(shaderPrintf) {
+            b.bindDescriptorSets(
+                VPipelineBindPoint.COMPUTE,
+                marchPipeline.layout,
+                1,
+                [descriptors.getSet(1,0)],  // layout 1, set 0
+                null
+            );
+        }
 
         //##########################################################################################
         // March shader
@@ -438,8 +463,20 @@ private:
                 .combinedImageSampler(VShaderStage.COMPUTE)     // texture
                 .combinedImageSampler(VShaderStage.COMPUTE)     // skybox cubemap texture
                 //.storageBuffer(VShaderStage.COMPUTE)          // materials
-                .sets(vk.swapchain.numImages())
+                .sets(vk.swapchain.numImages());
+
+        // Create another layout for shader printf
+        if(shaderPrintf) {
+            shaderPrintf.createLayout(descriptors, VShaderStage.COMPUTE);
+        }
+
+        descriptors
             .build();
+
+        // Create a set from layout 1 for shader printf
+        if(shaderPrintf) {
+            shaderPrintf.createDescriptorSet(descriptors, 1);
+        }
     }
     void createPipelines() {
         this.log("Creating pipelines");

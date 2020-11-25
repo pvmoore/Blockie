@@ -141,9 +141,9 @@ private:
 
         if(_isAir) {
             // convert to mixed root
-            _isAir        = false;
-            airRoot.flag  = M6Flag.MIXED;
-            mixedRoot     = new M6Root;
+            _isAir         = false;
+            airRoot.flag   = M6Flag.MIXED;
+            mixedRoot      = new M6Root;
             mixedRoot.flag = M6Flag.MIXED;
         }
 

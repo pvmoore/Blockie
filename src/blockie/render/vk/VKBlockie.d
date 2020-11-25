@@ -178,11 +178,23 @@ private:
     void createContext() {
         auto mem = new MemoryAllocator(vk);
 
-        auto storageSize = Blockie.VOXEL_BUFFER_SIZE + Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS + 8*NUM_FRAME_BUFFERS.MB;
+        auto storageSize =
+            Blockie.VOXEL_BUFFER_SIZE
+            + Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS
+            + 8*NUM_FRAME_BUFFERS.MB
+            + 4.MB;
+
+        auto stagingSize =
+            storageSize
+            + 256.MB
+            + 5.MB;
+
+        this.log("Storage size = %s", storageSize);
+        this.log("Staging size = %s", stagingSize);
 
         this.context = new VulkanContext(vk)
             .withMemory(MemID.LOCAL, mem.allocStdDeviceLocal("Blockie_Local", storageSize + 256.MB))
-            .withMemory(MemID.STAGING, mem.allocStdStagingUpload("Blockie_Staging", storageSize + 256.MB));
+            .withMemory(MemID.STAGING, mem.allocStdStagingUpload("Blockie_Staging", stagingSize));
 
         context.withBuffer(MemID.LOCAL, BufID.VERTEX, VBufferUsage.VERTEX | VBufferUsage.TRANSFER_DST, 16.MB)
                .withBuffer(MemID.LOCAL, BufID.INDEX, VBufferUsage.INDEX | VBufferUsage.TRANSFER_DST, 16.MB)
@@ -192,7 +204,7 @@ private:
                .withBuffer(MemID.LOCAL, MARCH_VOXEL_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.VOXEL_BUFFER_SIZE)
                .withBuffer(MemID.LOCAL, MARCH_CHUNK_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS)
 
-               .withBuffer(MemID.STAGING, BufID.STAGING, VBufferUsage.TRANSFER_SRC, storageSize + 256.MB);
+               .withBuffer(MemID.STAGING, BufID.STAGING, VBufferUsage.TRANSFER_SRC, stagingSize - 5.MB);
 
         context.withRenderPass(renderPass)
                .withFonts("resources/fonts/")

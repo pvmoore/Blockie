@@ -8,12 +8,25 @@ uint getImpliedIndex_16bit(const uint bits, const uint oct) {
     return bitCount(bits & and);
 }
 uint getImpliedIndex_32bit(const uint bits, const uint oct) {
-    const uint and = 0x7fffffff >> (31-oct);
+    uint and = 0x7fffffffu >> (31-oct);
     return bitCount(bits & and);
 }
 
 uint bitsRequiredToEncode(uint value) {
     return value<3 ? 1 : findMSB(value-1)+1;
+}
+
+/**
+ *  Return lowest multiple of 8 bits that will contain _numBits_. eg. 10 = 2 bytes
+ */
+uint countBytes(uint numBits) {
+    return ((numBits + 7) & ~7u) >> 3;
+}
+/**
+ *  Return lowest multiple of 32 bits that will contain _numBits_. eg. 63 = 2 uints
+ */
+uint countUints(uint numBits) {
+    return ((numBits + 31) & ~31u) >> 5;
 }
 
 /**
@@ -76,12 +89,26 @@ void skipLOD(float distance, inout float dist) {
 }
 
 //
-// Calculate the minimum distance to the edge of the current voxel of size _voxelSize_.
+// Calculate the minimum distance to the edge of the current volume of size _volumeSize_.
 //
-float getMinDistToEdge(Ray ray, Position pos, uint voxelSize) {
+float getMinDistToEdge(Ray ray, Position pos, uint volumeSize) {
     vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
-    vec3 rem  = mod(p, voxelSize);
-    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * voxelSize;
+    vec3 rem  = mod(p, volumeSize);
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * volumeSize;
+    vec3 dist = size-rem;
+
+    vec3 m    = dist * ray.invDirection;
+    float res = min(m.x, min(m.y, m.z));
+    return max(res, 0);
+}
+
+//
+// Calculate the minimum distance to the edge of the current volumn of size _volumeSize_
+//
+float getMinDistToEdge(Ray ray, Position pos, uvec3 volumeSize) {
+    vec3 p    = pos.fpos-ubo_WORLD_BB_MIN;
+    vec3 rem  = mod(p, volumeSize);
+    vec3 size = vec3(greaterThanEqual(ray.direction, vec3(0))) * volumeSize;
     vec3 dist = size-rem;
 
     vec3 m    = dist * ray.invDirection;
@@ -305,7 +332,7 @@ uint get3Bytes(uint voxels, uint index) {
     uint a  = (index & 3);
     uint i  = (index * 3) >> 2;
     uint d1 = voxelsIn[voxels + i];
-    uint d2 = a==1 || 1==2 ? voxelsIn[voxels + i + 1] : 0;
+    uint d2 = a==1 || a==2 ? voxelsIn[voxels + i + 1] : 0;
 
     return a == 0 ? d1 & 0xffffffu :
            a == 1 ? (d1>>24)   | ((d2 & 0xffffu) << 8) :

@@ -71,11 +71,11 @@ uvec3 airChunkDistanceField(Flags flags) {
                  CHUNK_DISTANCE_Y(flags),
                  CHUNK_DISTANCE_Z(flags));
 }
-vec3 airCellDistanceField(const uint v) {
+vec3 airCellDistanceField(uint v) {
     return vec3(v & 31u, (v>>5) & 31u, (v>>10) & 31u);
 }
 
-Voxel march(const Ray ray, inout Position pos, const float maxDistance) {
+Voxel march(Ray ray, inout Position pos, float maxDistance) {
     Voxel voxel      = Voxel(0,0,0,0);
     float distance   = 0;
     uint voxelsRoot  = chunkDataIn[pos.chunk];

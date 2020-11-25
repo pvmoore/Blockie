@@ -38,10 +38,10 @@ public:
 protected:
     void initWorld(float2 windowSize) {
 
-        log("windowSize = %s", windowSize.to!int);
+        this.log("windowSize = %s", windowSize.to!int);
 
         try{
-            string w = "1";
+            string w = "8";
 
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;
@@ -69,9 +69,10 @@ protected:
 
             renderView.setWorld(world);
             nextView = renderView;
+
         }catch(Throwable e) {
             writefln("Error: %s",e);
-            log("Error: %s, e");
+            this.log("Error: %s, e");
         }
     }
 }

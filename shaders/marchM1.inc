@@ -5,123 +5,123 @@
 #define FLAGS_SIZE (8)
 
 bool isSolidRoot(
-    const uvec3 upos,
-    const uint branchesOffset,
+    uvec3 upos,
+    uint branchesOffset,
     inout uint voxelsPtr,
     inout Voxel v)
 {
-    const uint oct = getOctet_1111000000(upos);
-    const uint BB  = 512;    // 512 bytes for bits
+    uint oct = getOctet_1111000000(upos);
+    uint BB  = 512;    // 512 bytes for bits
 
-    const uint BITS_OFFSET = FLAGS_SIZE + 6*4; // octree flag + offset bytes
+    uint BITS_OFFSET = FLAGS_SIZE + 6*4; // octree flag + offset bytes
 
-    const uint uintIndex = (voxelsPtr+BITS_OFFSET)/4 + (oct>>4);
-    const uint bitIndex  = oct&15u;
-    const uint data      = voxelsIn[uintIndex];
-    const uint bits      = data & 0xffffu;
+    uint uintIndex = (voxelsPtr+BITS_OFFSET)/4 + (oct>>4);
+    uint bitIndex  = oct&15u;
+    uint data      = voxelsIn[uintIndex];
+    uint bits      = data & 0xffffu;
 
-    const bool solid     = !bool(bitfieldExtract(bits, int(bitIndex), 1));
+    bool solid     = !bool(bitfieldExtract(bits, int(bitIndex), 1));
 
     if(solid) {
-        const uint voxelPtr = voxelsPtr+BITS_OFFSET+BB+BB+oct;
+        uint voxelPtr = voxelsPtr+BITS_OFFSET+BB+BB+oct;
         v.size  = CELL_SIZE;
         v.value = GETBYTE(voxelsIn, voxelPtr);
         v.oct   = oct;
     } else {
-        const uint popcnt = data >> 16;
+        uint popcnt = data >> 16;
         voxelsPtr = branchesOffset +
                     (getImpliedIndex_16bit(bits, bitIndex)+popcnt) * OctreeTwigSize;
     }
     return solid;
 }
 bool isSolidBranch(
-    const float distance,
-    const uvec3 upos,
-    const uint branchesOffset,
+    float distance,
+    uvec3 upos,
+    uint branchesOffset,
     inout uint voxelsPtr,
     inout Voxel v,
-    const uint SZ)
+    uint SZ)
 {
-    const uint oct   = getOctet_1_and(upos, SZ);
-    const uint data  = voxelsIn[voxelsPtr/4];
-    const bool solid =
+    uint oct   = getOctet_1_and(upos, SZ);
+    uint data  = voxelsIn[voxelsPtr/4];
+    bool solid =
         //distance>(SZ*500) ||
         !bool(bitfieldExtract(data, int(oct), 1));
 
     if(solid) {
-        const uint voxelPtr = voxelsPtr+1+3+oct;
+        uint voxelPtr = voxelsPtr+1+3+oct;
         v.size  = SZ;
         v.value = GETBYTE(voxelsIn, voxelPtr);
     } else {
-        const uint bits = data & 0xffu;
+        uint bits = data & 0xffu;
         voxelsPtr = branchesOffset +
                     ((data>>8) + getImpliedIndex_8bit(bits, oct)) * OctreeTwigSize;
     }
     return solid;
 }
 bool isSolidBranch2AboveLeaf(
-    const float distance,
-    const uvec3 upos,
-    const uint bitCounts,
-    const uint l2IndexOffset,
-    const uint l2TwigsOffset,
+    float distance,
+    uvec3 upos,
+    uint bitCounts,
+    uint l2IndexOffset,
+    uint l2TwigsOffset,
     inout uint voxelsPtr,
     inout Voxel v)
 {
-    const uint oct   = getOctet_0000000100(upos);
-    const uint data  = voxelsIn[voxelsPtr/4];
-    const bool solid =
+    uint oct   = getOctet_0000000100(upos);
+    uint data  = voxelsIn[voxelsPtr/4];
+    bool solid =
         //distance>3000 ||
         !bool(bitfieldExtract(data, int(oct), 1));
 
     if(solid) {
-        const uint voxelPtr = voxelsPtr+1+3+oct;
+        uint voxelPtr = voxelsPtr+1+3+oct;
         v.size  = 4;
         v.value = GETBYTE(voxelsIn, voxelPtr);
     } else {
-        const uint bits         = data & 0xffu;
-        const uint numIndexBits = (bitCounts >> 8) & 0xffu;
-        const uint bitOffset    = ((data>>8) + getImpliedIndex_8bit(bits, oct)) * numIndexBits;
-        const uint index        = getBits_voxelsIn(l2IndexOffset, bitOffset, int(numIndexBits));
+        uint bits         = data & 0xffu;
+        uint numIndexBits = (bitCounts >> 8) & 0xffu;
+        uint bitOffset    = ((data>>8) + getImpliedIndex_8bit(bits, oct)) * numIndexBits;
+        uint index        = getBits_voxelsIn(l2IndexOffset, bitOffset, int(numIndexBits));
 
         voxelsPtr = l2TwigsOffset + index * OctreeTwigSize;
     }
     return solid;
 }
 bool isSolidBranch1AboveLeaf(
-    const float distance,
-    const uvec3 upos,
-    const uint bitCounts,
-    const uint leafIndexOffset,
-    const uint leavesOffset,
+    float distance,
+    uvec3 upos,
+    uint bitCounts,
+    uint leafIndexOffset,
+    uint leavesOffset,
     inout uint voxelsPtr,
     inout Voxel v)
 {
-    const uint oct   = getOctet_0000000010(upos);
-    const uint data  = voxelsIn[voxelsPtr/4];
-    const bool solid =
+    uint oct   = getOctet_0000000010(upos);
+    uint data  = voxelsIn[voxelsPtr/4];
+    bool solid =
         //distance>2000 ||
         !bool(bitfieldExtract(data, int(oct), 1));
 
     if(solid) {
-        const uint voxelPtr = voxelsPtr+1+3+oct;
+        uint voxelPtr = voxelsPtr+1+3+oct;
         v.size  = 2;
         v.value = GETBYTE(voxelsIn, voxelPtr);
     } else {
-        const uint bits         = data & 0xffu;
-        const uint numIndexBits = bitCounts & 0xffu;
-        const uint bitOffset    = ((data>>8) + getImpliedIndex_8bit(bits, oct)) * numIndexBits;
-        const uint leafIndex    = getBits_voxelsIn(leafIndexOffset, bitOffset, int(numIndexBits));
+        uint bits         = data & 0xffu;
+        uint numIndexBits = bitCounts & 0xffu;
+        uint bitOffset    = ((data>>8) + getImpliedIndex_8bit(bits, oct)) * numIndexBits;
+        uint leafIndex    = getBits_voxelsIn(leafIndexOffset, bitOffset, int(numIndexBits));
 
         voxelsPtr = leavesOffset + leafIndex * OctreeLeafSize;
     }
     return solid;
 }
-void gavLeaf(const uvec3 upos,
-             const uint voxelsPtr,
+void gavLeaf(uvec3 upos,
+             uint voxelsPtr,
              inout Voxel v)
 {
-    const uint oct = getOctet_0000000001(upos);
+    uint oct = getOctet_0000000001(upos);
 
     v.size  = 1;
     v.value = GETBYTE(voxelsIn, voxelsPtr+oct);
@@ -131,10 +131,10 @@ void gavLeaf(const uvec3 upos,
  *  Voxel is set accordingly.
  */
 bool getAirVoxel(
-    const Position pos,
+    Position pos,
     inout Voxel voxel,
-    const float distance,
-    const uint voxelsRoot)
+    float distance,
+    uint voxelsRoot)
 {
 /*
     voxelsIn[voxelsRoot/4 + 0] = flags (8 bytes)
@@ -145,7 +145,7 @@ bool getAirVoxel(
     voxelsIn[voxelsRoot/4 + 6] = leafIndexOffset;
     voxelsIn[voxelsRoot/4 + 7] = (leafEncodeBits | (l2EncodeBits<<8));
 */
-    const uint offsets = voxelsRoot/4;
+    uint offsets = voxelsRoot/4;
 
     #define l2twigsOffset    voxelsRoot + voxelsIn[offsets+3]
     #define leavesOffset     voxelsRoot + voxelsIn[offsets+4]
@@ -155,9 +155,9 @@ bool getAirVoxel(
     #define GETTWIGSOFFSET (voxelsRoot + voxelsIn[offsets+2])
     #define GETBITCOUNTS (voxelsIn[offsets+7])
 
-    const uvec3 upos       = pos.upos;
-    const uint twigsOffset = GETTWIGSOFFSET;
-    uint voxelsPtr         = voxelsRoot;
+    uvec3 upos       = pos.upos;
+    uint twigsOffset = GETTWIGSOFFSET;
+    uint voxelsPtr   = voxelsRoot;
 
     if(isSolidRoot(upos, twigsOffset, voxelsPtr, voxel)) return voxel.value==0;
 
@@ -167,7 +167,7 @@ bool getAirVoxel(
 
     if(isSolidBranch(distance, upos, twigsOffset, voxelsPtr, voxel, 8)) return voxel.value==0;
 
-    const uint bitCounts = GETBITCOUNTS;
+    uint bitCounts = GETBITCOUNTS;
 
     if(isSolidBranch2AboveLeaf(
         distance,

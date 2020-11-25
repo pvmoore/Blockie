@@ -74,6 +74,7 @@ private:
     /// Returns list of unique leaves in order, map of old index to new index.
     ///
     Tuple!(OctreeLeaf[],uint[]) getUniqueLeaves() {
+
         static struct Unique {
             OctreeLeaf leaf;
             uint count;
@@ -132,6 +133,9 @@ private:
         auto sorted        = map.values.sort!((a,b)=>a.count > b.count).array;
         auto uniqueLeaves  = sorted.map!(it=>it.leaf).array;
         auto oldIndexToNew = new uint[view.leaves.length];
+
+        auto t = sorted.map!(it=>it.count).sum();
+        writefln("sorted leaves = %s", sorted.map!(it=>(it.count*100.0)/t).array);
 
         foreach(i,ref v; sorted) {
             foreach(from; v.indexes[]) {
@@ -193,6 +197,7 @@ private:
         uint count;
         uint lvl;
         uint[OctreeBranch] map; // value is uint index of branch
+        uint[OctreeBranch] countMap;
 
         // Assuming CHUNK_SIZE_SHR=10 and OCTREE_ROOT_BITS=4:
         // 11_1100_0000  toLevel=6
@@ -210,10 +215,12 @@ private:
                 uint* p = *branch in map;
                 if(p) {
                     parentIdx.offset = *p;
+                    countMap[*branch]++;
                     return;
                 } else {
                     parentIdx.offset = cast(uint)map.length;
                     map[*branch] = cast(uint)map.length;//view.toIndex(branch);
+                    countMap[*branch] = 1;
                 }
             }
 
@@ -247,6 +254,10 @@ private:
             view.l2Branches[v] = k;
         }
         //writefln("Written %s unique level2 branches", view.l2Branches.length);
+
+        //uint[] sortedCounts = countMap.values().sort!().array;
+        //uint counts = sortedCounts.sum();
+        //writefln("counts = %s", sortedCounts.map!(it=>(it*100.0)/counts).array);
     }
     ///
     /// Convert to compact root.
@@ -276,6 +287,9 @@ private:
             leafIndexes ~= b;
         }
         auto leafIndexBitWriter = new BitWriter(&leafByteReady);
+
+        writefln("l2EncodeBits   = %s (%s branches)", l2EncodeBits, view.l2Branches.length);
+        writefln("leafEncodeBits = %s (%s leaves)", leafEncodeBits, view.leaves.length);
 
         ubyte recurseL2Branch(OctreeBranch* branch, uint l2BranchIndex) {
             expect(l2BranchIndex<l2twigVoxels.length);
@@ -383,6 +397,9 @@ private:
         leafIndexBitWriter.flush();
         while((l2Indexes.data.length&3)!=0) l2IndexBitWriter.write(0, 8);
         while((leafIndexes.data.length&3)!=0) leafIndexBitWriter.write(0, 8);
+
+        writefln("l2IndexBitWriter.length   = %s", l2IndexBitWriter.bytesWritten); // 330272
+        writefln("leafIndexBitWriter.length = %s", leafIndexBitWriter.bitsWritten); // 1,041,536
 
         //    writefln("num twigs = %s", twigIndex);
         //    writefln("num l2twigs = %s", l2twigs.length);
