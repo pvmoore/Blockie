@@ -20,11 +20,12 @@ public:
 
         this.text
             .setColour(WHITE*0.98)
-            .appendText("Average  |0|")
+            .add("Average  |0|", 0, 0);
+        this.text
             .setColour(WHITE*0.93);
 
         for(auto i=0; i<numCPUs; i++) {
-            text.appendText("");
+            text.add("", 0, 0);
         }
 
         return this;
@@ -42,11 +43,13 @@ public:
             return "O".repeat(a) ~ ".".repeat(10-a);
         }
 
-        text.replaceText(1, "Average   |%s|".format(_fmt(total)), pos.x, pos.y+16);
+        text.replace(1, "Average   |%s|".format(_fmt(total)))
+            .move(1, pos.x, pos.y+16);
 
         int y = pos.y+16+16;
         foreach(i, d; cores) {
-            text.replaceText(cast(int)i+2, "Thread %02s |%s|".format(i, _fmt(d)), pos.x, y);
+            text.replace(cast(int)i+2, "Thread %02s |%s|".format(i, _fmt(d)))
+                .move(cast(int)i+2, pos.x, y);
             y += 16;
         }
         text.beforeRenderPass(renderData.as!VKRenderData.frame);

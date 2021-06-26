@@ -78,28 +78,38 @@ public:
     override void run() {
         vk.mainLoop();
     }
-    @Implements("IVulkanApplication")
-    void keyPress(uint keyCode, uint scanCode, KeyAction action, uint mods) {
-        renderView.keyPress(keyCode, KeyAction.PRESS, mods);
-    }
-    @Implements("IVulkanApplication")
-    void mouseButton(MouseButton button, float x, float y, bool down, uint mods) {
 
-    }
-    @Implements("IVulkanApplication")
-    void mouseMoved(float x, float y) {
 
-    }
-    @Implements("IVulkanApplication")
-    void mouseWheel(float xdelta, float ydelta, float x, float y) {
+    // @Implements("IVulkanApplication")
+    // void keyPress(uint keyCode, uint scanCode, KeyAction action, uint mods) {
+    //     renderView.keyPress(keyCode, KeyAction.PRESS, mods);
+    // }
+    // @Implements("IVulkanApplication")
+    // void mouseButton(MouseButton button, float x, float y, bool down, uint mods) {
 
-    }
+    // }
+    // @Implements("IVulkanApplication")
+    // void mouseMoved(float x, float y) {
+
+    // }
+    // @Implements("IVulkanApplication")
+    // void mouseWheel(float xdelta, float ydelta, float x, float y) {
+
+    // }
+
+
     @Implements("IVulkanApplication")
     void deviceReady(VkDevice device, PerFrameResource[] frameResources) {
         this.log("deviceReady");
         this.device = device;
 
         createContext();
+
+        vk.addWindowEventListener(new class WindowEventListener {
+            override void keyPress(uint keyCode, uint scanCode, KeyAction action, uint mods) {
+                renderView.keyPress(keyCode, action==KeyAction.PRESS, mods);
+            }
+        });
 
         this.renderView = new VKRenderView(context);
     }

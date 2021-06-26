@@ -20,18 +20,24 @@ public:
 
         this.textRenderer
             .setColour(WHITE*0.98)
-            .appendText("Average  |0|")
+            .appendText("Average  |0|", 0, 0)
             .setColour(WHITE*0.93);
 
         for(auto i=0; i<numCPUs; i++) {
-            textRenderer.appendText("");
+            textRenderer.appendText("", 0, 0);
         }
+
+        // !!! For some reason this does not work any more.
+        // It returns a PDH_CSTATUS_NO_COUNTER error.
+        // This works fine when testing in the common project though.
+
+        //pdh.start();
 
         return this;
     }
     override void destroy() {
         super.destroy();
-        pdh.destroy();
+        if(pdh) pdh.destroy();
     }
     override void update(AbsRenderData renderData) {
         double total   = pdh.getCPUTotalPercentage();

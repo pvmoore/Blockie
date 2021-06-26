@@ -15,6 +15,7 @@ final class World {
     }
 
     static World load(string name) {
+        log("Loading world '%s'", name);
         World w = new World(name);
 
         string dirName  = "data/" ~ name ~ "/";
@@ -60,8 +61,8 @@ final class World {
             lines["camera_far"].to!float
         );
 
-        writefln("sunPos=%s", w.sunPos);
-        writefln("camera=%s", w.camera);
+        log("sunPos=%s", w.sunPos);
+        log("camera=%s", w.camera);
         return w;
     }
     void save() {

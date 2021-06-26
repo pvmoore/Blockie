@@ -48,7 +48,7 @@ public:
     }
     override void update(AbsRenderData renderData) {
         super.update(renderData);
-        
+
         uint n = 0;
         int y = pos.y;
 

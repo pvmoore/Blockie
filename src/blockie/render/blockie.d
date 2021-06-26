@@ -19,8 +19,8 @@ public:
 
     void initialise() {
         setEagerFlushing(true);
-        log("Starting %s", title);
-        writefln("\n%s", title);
+        this.log("Starting %s", title);
+        this.log("\n%s", title);
 
         initEvents(1.MB.as!int);
     }
@@ -57,6 +57,8 @@ protected:
                 default: break;
             }
 
+            this.log("w = %s", w);
+
             version(MODEL1) pragma(msg, "MODEL1");
             version(MODEL1a) pragma(msg, "MODEL1a");
             version(MODEL2) pragma(msg, "MODEL2");
@@ -71,7 +73,6 @@ protected:
             nextView = renderView;
 
         }catch(Throwable e) {
-            writefln("Error: %s",e);
             this.log("Error: %s, e");
         }
     }

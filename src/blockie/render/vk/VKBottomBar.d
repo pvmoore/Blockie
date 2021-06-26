@@ -20,17 +20,18 @@ public:
         auto height = context.vk.windowSize.height;
         auto camera = Camera2D.forVulkan(context.vk.windowSize());
 
-        text.setCamera(camera);
+        text.camera(camera);
         text.setSize(FONT_SIZE);
         text.setColour(WHITE*0.9);
         text.setDropShadowColour(RGBA(0,0,0, 0.8));
         text.setDropShadowOffset(vec2(-0.0025, 0.0025));
-        text.appendText("Bottom bar", 2, cast(int)height-20);
+        text.add("Bottom bar", 2, cast(int)height-20);
 
         this.rectangles = new Rectangles(context, 1)
-            .setCamera(camera)
-            .setColour(RGBA(0.1, 0.1, 0.3, 1))
-            .addRect(float2(0,height-20), float2(width, height-20), float2(width, height), float2(0, height));
+            .camera(camera)
+            .setColour(RGBA(0.1, 0.1, 0.3, 1));
+        rectangles
+            .add(float2(0,height-20), float2(width, height-20), float2(width, height), float2(0, height));
     }
     override void destroy() {
         if(text) text.destroy();
