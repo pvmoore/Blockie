@@ -17,7 +17,7 @@ uint fetchUniqXYBitsValue(uint chunkVoxels, uint i) {
 }
 uint fetchUniqXYCountsValue(uint chunkVoxels, uint numUniqXYBits, uint numUniqZBits, uint i) {
     uint uintOffset = chunkVoxels + UNIQ_BITS_AND_COUNTS_OFFSET + numUniqXYBits + numUniqZBits;
-    return getBits_voxelsIn(uintOffset*4, i*10, 10);
+    return getBits(uintOffset*4, i*10, 10);
 }
 uint fetchUniqZBitsValue(uint chunkVoxels, uint numUniqXYBits, uint i) {
     return voxelsIn[chunkVoxels + UNIQ_BITS_AND_COUNTS_OFFSET + numUniqXYBits + i];
@@ -25,14 +25,14 @@ uint fetchUniqZBitsValue(uint chunkVoxels, uint numUniqXYBits, uint i) {
 
 uint getXYBits(uint chunkVoxels, uint C1, uint bitsPerXYBits, uint y) {
     // Get the unique index
-    uint i = getBits_voxelsIn(C1, y*bitsPerXYBits, int(bitsPerXYBits));
+    uint i = getBits(C1, y*bitsPerXYBits, int(bitsPerXYBits));
 
     // Now lookup the unique xyBits value
     return fetchUniqXYBitsValue(chunkVoxels, i);
 }
 uint getXYCount(uint chunkVoxels, uint C2, uint bitsPerXYCount, uint numUniqXYBits, uint numUniqZBits, uint y) {
     // Get the unique index
-    uint i = getBits_voxelsIn(C2, y*bitsPerXYCount, int(bitsPerXYCount));
+    uint i = getBits(C2, y*bitsPerXYCount, int(bitsPerXYCount));
 
     // Now lookup the unique xyCounts value
     return fetchUniqXYCountsValue(chunkVoxels, numUniqXYBits, numUniqZBits, i);
@@ -42,7 +42,7 @@ uint getZBits(uint chunkVoxels, uint C3, uint numUniqXYBits, uint bitsPerZValues
     uint i = xyCount + getImpliedIndex_32bit(xyBits, x);
 
     // read encoded value at index i
-    uint j = getBits_voxelsIn(C3, i*bitsPerZValues, int(bitsPerZValues));
+    uint j = getBits(C3, i*bitsPerZValues, int(bitsPerZValues));
 
     // Get the z row
     return fetchUniqZBitsValue(chunkVoxels, numUniqXYBits, j);
@@ -56,7 +56,7 @@ uint getZBits(uint chunkVoxels, uint C3, uint numUniqXYBits, uint bitsPerZValues
 ///
 float marchCell(const Ray ray, const Position pos, inout Voxel voxel, const uint chunkVoxels, const uint cell, const float inDistance) {
 
-    uint offset = get3Bytes(CELL_OFFSETS, cell);
+    uint offset = get3Bytes(CELL_OFFSETS, cell*3);
 
     if(offset==0xffffff) {
         // The cell is SOLID

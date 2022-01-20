@@ -10,10 +10,7 @@
             "archType": "x86_64",
             "buildType": "debug",
             "configuration": "blockie_vk",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "group": "build"
         },
         {
             "label": "**** Run OpenGL ****",

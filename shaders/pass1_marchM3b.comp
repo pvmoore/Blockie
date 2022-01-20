@@ -1,0 +1,218 @@
+#version 450 core
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+#ifdef VULKAN
+    #extension GL_GOOGLE_include_directive : require
+#else
+    #extension GL_KHR_vulkan_glsl : enable
+#endif
+/*
+    Set by program:
+
+    CHUNK_SIZE          1024
+    CHUNK_SIZE_SHR      10
+    OctreeTwigSize      12
+    OctreeLeafSize      8
+    DFIELD_OFFSET       5148
+*/
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+#include "_header.inc"
+
+#define CELL_SIZE (CHUNK_SIZE>>5)  // 32
+
+layout(set = 0, binding = 0, std430) readonly buffer I0 {
+    // voxel data in ubytes
+	uint voxelsIn[];
+};
+layout(set = 0, binding = 1, std430) readonly buffer I1 {
+    // chunk data in uints
+	uint chunkDataIn[];
+};
+layout(set = 0, binding = 2, std430) writeonly buffer O0 {
+	MarchOut dataOut[];
+};
+//layout(set = 0, binding = 2, rgba32f) uniform writeonly image2D imageOut;
+
+//layout(set = 1, binding = 0, std430) writeonly buffer O0 {
+//	uint debugOut[];
+//};
+
+// ==============================================  printf start
+// layout(set=1, binding=0, std430) writeonly buffer PRINTF_BUFFER {
+// 	float buf[];
+// } printf;
+// layout(set=1, binding=1, std430) buffer PRINTF_STATS {
+//   uint buf[];
+// } printf_stats;
+// #include "_printf.inc"
+// ============================================== printf end
+
+#include "_ubo.inc"
+
+ivec2 pixel     = ivec2(gl_GlobalInvocationID.xy);
+uint g_index    = gl_GlobalInvocationID.x +
+                  gl_GlobalInvocationID.y * ubo_SIZE.x;
+vec3 CHUNKS_MUL = vec3(1, ubo_WORLD_CHUNKS_XYZ.x, ubo_WORLD_CHUNKS_XYZ.x * ubo_WORLD_CHUNKS_XYZ.y);
+
+//--------------------------------------------------------------------------------------------------
+// [0] M3Flag
+// [1] _reserved
+// [2] Distance6
+struct Flags {
+    uint a;
+    uint b;
+};
+#define CHUNK_FLAG(f)       (f.a & 0xffu)
+#define CHUNK_DISTANCE_X(f) (f.a >> 16)
+#define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
+#define CHUNK_DISTANCE_Z(f) (f.b >> 16)
+//--------------------------------------------------------------------------------------------------
+
+#include "pass1_march_common.inc"
+#include "marchM3b.inc"
+#include "_camera.inc"
+
+#line 1
+
+bool isAirChunk(Flags flags) {
+    return CHUNK_FLAG(flags)==0;
+}
+uvec3 getChunkDistanceField(Flags f) {
+    return uvec3(CHUNK_DISTANCE_X(f),
+                 CHUNK_DISTANCE_Y(f),
+                 CHUNK_DISTANCE_Z(f));
+}
+/**
+ * Chunk {
+ *     Header {
+ *          [00000] M3Flag, 3 reserved bytes (4 bytes)
+ *          [00004] Cell solid flags         (4096 bytes) 1 = solid cell, 0 = air or mixed
+ *          [04100] Cell bit flags           (4096 bytes) 0 = air, 1 = mixed
+ *          [08196] Cell flag pop counts     (4092 bytes)
+ *          [12288] offsetPopcountsA         (uint)
+ *          [12292] offsetPopcountsB         (uint)
+ *          [12296] offsetPopcountsC         (uint)
+ *          [12300] offsetBitsA              (uint)
+ *          [12304] offsetBitsB              (uint)
+ *          [12308] offsetBitsC              (uint)
+ *          [12312] offsetIndexes            (uint)
+ *          [12316] offsetLeaves             (uint)
+ *          [12320] numIndexBits             (uint)
+ *      }
+ *
+ *     [12324]              Cell distances (variable length * 3 bytes)
+ *     -align(4)-
+ *     [offsetPopcountsA]   Popcounts A
+ *     [offsetPopcountsB]   Popcounts B
+ *     [offsetPopcountsC]   Popcounts C
+ *     [offsetBitsA]        Bits A
+ *     -align(4)-
+ *     [offsetBitsB]        Bits B
+ *     -align(4)-
+ *     [offsetBitsC]        Bits C
+ *     -align(4)-
+ *     [offsetIndexes]      Indexes     (numIndexBits per index)
+ *     -align(4)-
+ *     [offsetLeaves]       Leaf bundles (8 bytes each)
+ * }
+ */
+Voxel march(Ray ray, inout Position pos) {
+    Voxel voxel    = Voxel(0,0,0,0);
+    float distance = 0;
+    uint voxels    = chunkDataIn[pos.chunk] / 4;
+    Flags flags    = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+
+    // Assume:
+    //      1) pos.chunk will always start with a valid chunk
+
+    offsetBitsA = voxelsIn[voxels + UINTOFFSET_BITSA];
+    offsetBitsB = voxelsIn[voxels + UINTOFFSET_BITSB];
+    offsetBitsC = voxelsIn[voxels + UINTOFFSET_BITSC];
+    offsetPopcountsA = voxelsIn[voxels + UINTOFFSET_POPCOUNTSA];
+    offsetPopcountsB = voxelsIn[voxels + UINTOFFSET_POPCOUNTSB];
+    offsetPopcountsC = voxelsIn[voxels + UINTOFFSET_POPCOUNTSC];
+    offsetIndexes = voxelsIn[voxels + UINTOFFSET_INDEXES];
+    offsetLeaves = voxelsIn[voxels + UINTOFFSET_LEAVES];
+    bitsPerIndex = voxelsIn[voxels + BITS_PER_INDEX];
+
+    while(true) {
+        float dist;
+
+        if(isAirChunk(flags)) {
+            dist = getMinDistToEdge8BitsBiDirectional(ray, pos, getChunkDistanceField(flags), CHUNK_SIZE);
+        } else {
+
+            if(!getAirVoxel(pos, voxel, distance, voxels)) {
+                /// We have hit something
+                break;
+            }
+
+            /// We are inside an air voxel of some size
+
+            bool isCell = (voxel.size == CELL_SIZE);
+
+            if(isCell) {
+                // This cell is completely air which means there will be a distance field
+
+                uint distanceFieldByteIndex = countUnsetBits(
+                    voxels + UINTOFFSET_CELL_BIT_FLAGS, // cell bit flags
+                    voxels + UINTOFFSET_CELL_POPCOUNTS, // cell bit flag popcounts
+                    voxel.oct);
+
+                uint d = get3Bytes(voxels + UINTOFFSET_CELL_DISTANCES, distanceFieldByteIndex*3);
+                uvec3 distances = uvec3(
+                    d & 0xff,           // up,down x
+                    (d >> 8) & 0xff,    // up,down y
+                    (d >> 16) & 0xff    // up,down z
+                );
+
+                dist = getMinDistToEdge4BitsBiDirectional(ray, pos, distances, CELL_SIZE);
+            } else {
+                dist = getMinDistToEdge(ray, pos, voxel.size);
+            }
+        }
+
+        skipLOD(distance, dist);
+
+        distance += dist;
+
+        bool chunkChanged = updatePosition(pos, ray.direction*dist);
+
+        if(chunkChanged) {
+            if(pos.chunk==-1) {
+                /// We ran out of scenery
+                voxel.value=0;
+                break;
+            }
+            voxels = chunkDataIn[pos.chunk] / 4;
+            flags  = Flags(voxelsIn[voxels], voxelsIn[voxels+1]);
+
+            offsetBitsA = voxelsIn[voxels + UINTOFFSET_BITSA];
+            offsetBitsB = voxelsIn[voxels + UINTOFFSET_BITSB];
+            offsetBitsC = voxelsIn[voxels + UINTOFFSET_BITSC];
+            offsetPopcountsA = voxelsIn[voxels + UINTOFFSET_POPCOUNTSA];
+            offsetPopcountsB = voxelsIn[voxels + UINTOFFSET_POPCOUNTSB];
+            offsetPopcountsC = voxelsIn[voxels + UINTOFFSET_POPCOUNTSC];
+            offsetIndexes = voxelsIn[voxels + UINTOFFSET_INDEXES];
+            offsetLeaves = voxelsIn[voxels + UINTOFFSET_LEAVES];
+            bitsPerIndex = voxelsIn[voxels + BITS_PER_INDEX];
+        }
+	}
+
+	voxel.distance = distance;
+	return voxel;
+}
+
+void main() {
+    Ray ray      = generateRay();
+    Position pos = Position(uvec3(0), ray.start, -1);
+    updatePosition(pos, vec3(0));
+
+    Voxel voxel = march(ray, pos);
+
+    dataOut[g_index] = MarchOut(voxel.distance, //(voxel.normal<<16) + (voxel.size<<8) +
+                                voxel.value);
+}

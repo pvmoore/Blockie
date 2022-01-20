@@ -27,9 +27,9 @@ public:
         procMemInfo.update();
 
         text.replace(1, "Used ...... %6.1f".format(procMemInfo.usedRAM()/MB))
-            .move(1, pos.x, pos.y+16);
+            .moveTo(1, pos.x, pos.y+16);
 
         text.replace(2, "Reserved .. %6.1f".format(procMemInfo.usedVirtMem()/MB))
-            .move(2, pos.x, pos.y+16+16);
+            .moveTo(2, pos.x, pos.y+16+16);
     }
 }

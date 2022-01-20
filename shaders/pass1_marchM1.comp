@@ -56,7 +56,6 @@ struct Flags {
 #define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
 #define CHUNK_DISTANCE_Z(f) (f.b >> 16)
 
-#include "useful_functions.comp"
 #include "pass1_march_common.inc"
 #include "marchM1.inc"
 #include "_camera.inc"
@@ -97,7 +96,7 @@ Voxel march(Ray ray, inout Position pos, float maxDistance) {
             const bool isRoot = (voxel.size == CELL_SIZE);
 
             if(isRoot) {
-                uint dfield = GETUSHORT(voxelsIn, ((voxelsRoot+DFIELD_OFFSET)>>1) + voxel.oct);
+                uint dfield = getUshort(0, ((voxelsRoot+DFIELD_OFFSET)>>1) + voxel.oct);
                 vec3 distances = airCellDistanceField(dfield);
                 dist = getMinDistToEdgeUniDirectional(ray, pos, distances, CELL_SIZE);
             } else {

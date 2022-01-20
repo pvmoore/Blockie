@@ -44,12 +44,12 @@ public:
         }
 
         text.replace(1, "Average   |%s|".format(_fmt(total)))
-            .move(1, pos.x, pos.y+16);
+            .moveTo(1, pos.x, pos.y+16);
 
         int y = pos.y+16+16;
         foreach(i, d; cores) {
             text.replace(cast(int)i+2, "Thread %02s |%s|".format(i, _fmt(d)))
-                .move(cast(int)i+2, pos.x, y);
+                .moveTo(cast(int)i+2, pos.x, y);
             y += 16;
         }
         text.beforeRenderPass(renderData.as!VKRenderData.frame);

@@ -310,12 +310,21 @@ public:
                 defines
             );
         } else version(MODEL3) {
-            marchProgram.loadCompute(
-                "pass1_marchM3.comp",
-                ["shaders/",
-                "C:/pvmoore/_assets/shaders/"],
-                defines
-            );
+            version(MODEL_B) {
+                marchProgram.loadCompute(
+                    "pass1_marchM3b.comp",
+                    ["shaders/",
+                    "C:/pvmoore/_assets/shaders/"],
+                    defines
+                );
+            } else {
+                marchProgram.loadCompute(
+                    "pass1_marchM3.comp",
+                    ["shaders/",
+                    "C:/pvmoore/_assets/shaders/"],
+                    defines
+                );
+            }
             shadeProgram.loadCompute(
                 "pass3_shadeM2.comp",
                 ["shaders/",

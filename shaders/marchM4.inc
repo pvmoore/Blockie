@@ -98,7 +98,7 @@ uint getAirVoxel(Position pos, uint voxels) {
     uint voxelOct    = getOctet_0000000001(upos);
     uint index10     = getIndex(index100 + branchOct, voxels, L100PopcountsOffset, L100_BITS_OFFSET/4);
     uint ptrBitIndex = (voxels+branchPtrsOffset)*32 + index10 * bitsPerBranch;
-    uint branchPtr   = getBits_voxelsIn(0, ptrBitIndex, int(bitsPerBranch));
+    uint branchPtr   = getBits(0, ptrBitIndex, int(bitsPerBranch));
 
     uint i = voxelsIn[voxels + uniqBranchesOffset + branchPtr*2 + leafOct/4];
     uint r = (leafOct&3u) * 8;

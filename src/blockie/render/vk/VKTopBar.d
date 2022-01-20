@@ -47,10 +47,15 @@ public:
     override void setWorld(World world) {
         super.setWorld(world);
 
-        auto s = "%s (MODEL %s)".format(world.name, getModelName());
+        version(MODEL_B) {
+            string b = "-B";
+        } else {
+            string b = "";
+        }
+        auto s = "%s (MODEL %s%s)".format(world.name, getModelName(), b);
         float x = world.camera.windowSize().width/2 - font.sdf.getDimension(s, FONT_SIZE).width/2;
         text.replace(1, s)
-            .move(1, cast(int)x, 1);
+            .moveTo(1, cast(int)x, 1);
     }
     override void renderOptionsChanged() {
         bool opt1 = renderView.getRenderOption(RenderOption.DISPLAY_VOXEL_SIZES);

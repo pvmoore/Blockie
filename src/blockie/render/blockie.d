@@ -67,6 +67,8 @@ protected:
             version(MODEL5) pragma(msg, "MODEL5");
             version(MODEL6) pragma(msg, "MODEL6");
 
+            version(MODEL_B) pragma(msg, "[Submodel B]");
+
             world.camera.resize(windowSize);
 
             renderView.setWorld(world);

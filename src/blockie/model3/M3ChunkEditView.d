@@ -120,6 +120,7 @@ public:
     }
 
 
+
     /*
     void dumpbr(M3Branch* b, int level) {
         writefln("%s", b.toString);
@@ -164,6 +165,68 @@ public:
         writefln("%s", allocator.toString);
     }
     */
+
+    /**
+     * Return true if the voxel at _offset_ is set
+     */
+    bool getVoxel(uint3 offset) {
+        // Root
+        if(getRoot().isAir) {
+            return false;
+        }
+
+        /// MIXED
+
+        /// Level 5 - cell
+        uint oct     = getCellOct(offset);
+        //writefln("octc = %s", oct);
+        M3Cell* cell = getRoot().getCell(voxels.ptr, oct);
+        if(cell.isAir()) return false;
+        if(cell.isSolid()) return true;
+
+        // Level 4 - BitsA
+        oct = getOct(offset, 0b00_0001_0000, 4);
+        //writefln("oct4 = %s, bitsA = %x", oct, cell.bits);
+        if(cell.isAir(oct)) return false;
+
+        auto branchA = cell.getBranch(voxels.ptr, oct);
+        if(branchA.isSolid()) return true;
+
+        //
+
+        // Level 3 - BitsB
+        oct = getOct(offset, 0b00_0000_1000, 3);
+        //writefln("oct3 = %s bitsB = %x", oct, branchA.bits);
+        if(branchA.isAir(oct)) return false;
+
+        auto branchB = branchA.getBranch(voxels.ptr, oct);
+        if(branchB.isSolid()) return true;
+
+        //
+
+        // Level 2 - BitsC
+        oct = getOct(offset, 0b00_0000_0100, 2);
+        //writefln("oct2 = %s, bitsC = %x", oct, branchB.bits);
+        if(branchB.isAir(oct)) return false;
+
+        auto branchC = branchB.getBranch(voxels.ptr, oct);
+        if(branchC.isSolid()) return true;
+
+        //
+
+        /// Level 1
+        oct = getOct(offset, 0b00_0000_0010, 1);
+        //writefln("oct1 = %s, bitsD = %x", oct, branchC.bits);
+        if(branchC.isAir(oct)) return false;
+
+        M3Leaf* leaf = branchC.getLeaf(voxels.ptr, oct);
+
+        // Level 0 - Voxel
+        oct = getOct(offset, 0b00_0000_0001, 0);
+        //writefln("oct0 = %s, leaf bits = %x", oct, leaf.bits);
+
+        return leaf.isSet(oct);
+    }
     override string toString() {
         return "View %s".format(chunk.pos);
     }

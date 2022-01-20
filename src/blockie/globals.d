@@ -50,8 +50,9 @@ import common :
     BitWriter, Borrowed, ArrayBitWriter, ArrayByteWriter,
     Comment, From,
     IQueue, Implements, PDH, Set, Stack, Timing,
-    as, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
-    makeSPSCQueue, nextHighestPowerOf2, repeat, todo, toString;
+    as, bitfieldExtract, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
+    makeSPSCQueue, nextHighestPowerOf2, repeat, todo, toString,
+    containsKey, entriesSortedByValue;
 
 import blockie.model;
 import blockie.util;

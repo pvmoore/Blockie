@@ -41,7 +41,7 @@ public:
 
         if(label) {
             text.replace(0, label)
-                .move(0, pos.x, pos.y);
+                .moveTo(0, pos.x, pos.y);
         }
         return this;
     }
@@ -58,7 +58,7 @@ public:
 
         foreach(i, v; values) {
             text.replace(n, prefixes[i] ~ ("%"~fmt).format(v) ~ suffixes[i])
-                .move(n, pos.x, y);
+                .moveTo(n, pos.x, y);
 
             n++;
             y += 16;

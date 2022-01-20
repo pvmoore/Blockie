@@ -2,7 +2,7 @@ module blockie.generate.Generator;
 
 import blockie.generate.all;
 
-import std.file : remove, dirEntries, SpanMode;
+import std.file : remove, exists, dirEntries, SpanMode;
 
 final class Generator {
     void run() {
@@ -10,7 +10,13 @@ final class Generator {
 
         setEagerFlushing(true);
 
-        const auto num = "8";
+        const auto num = "8"; // "6";
+
+        float f = 0;
+        if(f<1) {
+            // testing();
+            // return;
+        }
 
         SceneGenerator scene;
         switch(num) {
@@ -34,43 +40,36 @@ final class Generator {
         string dirName  = "data/" ~ world.name ~ "/";
 
         version(MODEL1) {
-            foreach(string name; dirEntries(dirName, "M1*", SpanMode.shallow)) {
-                remove(name);
-            }
+            removeFile(dirName ~ "M1.chunks.zip");
             generateModel1(scene, world);
         } else version(MODEL1A) {
-            foreach(string name; dirEntries(dirName, "M1A*", SpanMode.shallow)) {
-                remove(name);
-            }
+            removeFile(dirName ~ "M1A.chunks.zip");
             generateModel1A(scene, world);
         } else version(MODEL2) {
-            foreach(string name; dirEntries(dirName, "M2*", SpanMode.shallow)) {
-                remove(name);
-            }
+            removeFile(dirName ~ "M2.chunks.zip");
             generateModel2(scene, world);
         } else version(MODEL3) {
-            foreach (string name; dirEntries(dirName, "M3*", SpanMode.shallow)) {
-                remove(name);
+            version(MODEL_B) {
+                removeFile(dirName ~ "M3b.chunks.zip");
+            } else {
+                removeFile(dirName ~ "M3.chunks.zip");
             }
             generateModel3(scene, world);
         } else version(MODEL4) {
-            foreach(string name; dirEntries(dirName, "M4*", SpanMode.shallow)) {
-                remove(name);
-            }
+            removeFile(dirName ~ "M4.chunks.zip");
             generateModel4(scene, world);
         } else version(MODEL5) {
-            foreach(string name; dirEntries(dirName, "M5*", SpanMode.shallow)) {
-                remove(name);
-            }
+            removeFile(dirName ~ "M5.chunks.zip");
             generateModel5(scene, world);
         } else version(MODEL6) {
-            foreach(string name; dirEntries(dirName, "M6*", SpanMode.shallow)) {
-                remove(name);
-            }
+            removeFile(dirName ~ "M6.chunks.zip");
             generateModel6(scene, world);
         } else assert(false);
 
         writefln("\nFinished OK");
+    }
+    void removeFile(string filename) {
+        if(exists(filename)) remove(filename);
     }
     void generateModel1(SceneGenerator sceneGenerator, World world) {
         writefln("\n=========================================");
@@ -186,4 +185,7 @@ final class Generator {
 
         sceneGenerator.build(editor);
     }
+}
+void testing() {
+
 }

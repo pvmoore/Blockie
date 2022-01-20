@@ -189,6 +189,11 @@ struct M3Leaf { static assert(M3Leaf.sizeof==1); align(1):
     ubyte bits;   // 1 bit per voxel
     //-----------------------------------------------------------------------------------
 
+    bool isSet(uint oct) {
+        assert(oct<8);
+        return (bits & (1<<oct)) != 0;
+    }
+
     bool isSolid() const {
         return bits==0xff;
     }

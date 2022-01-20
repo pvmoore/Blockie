@@ -25,7 +25,7 @@ bool isSolidRoot(
     if(solid) {
         uint voxelPtr = voxelsPtr+BITS_OFFSET+BB+BB+oct;
         v.size  = CELL_SIZE;
-        v.value = GETBYTE(voxelsIn, voxelPtr);
+        v.value = getByte(0, voxelPtr);
         v.oct   = oct;
     } else {
         uint popcnt = data >> 16;
@@ -51,7 +51,7 @@ bool isSolidBranch(
     if(solid) {
         uint voxelPtr = voxelsPtr+1+3+oct;
         v.size  = SZ;
-        v.value = GETBYTE(voxelsIn, voxelPtr);
+        v.value = getByte(0, voxelPtr);
     } else {
         uint bits = data & 0xffu;
         voxelsPtr = branchesOffset +
@@ -77,12 +77,12 @@ bool isSolidBranch2AboveLeaf(
     if(solid) {
         uint voxelPtr = voxelsPtr+1+3+oct;
         v.size  = 4;
-        v.value = GETBYTE(voxelsIn, voxelPtr);
+        v.value = getByte(0, voxelPtr);
     } else {
         uint bits         = data & 0xffu;
         uint numIndexBits = (bitCounts >> 8) & 0xffu;
         uint bitOffset    = ((data>>8) + getImpliedIndex_8bit(bits, oct)) * numIndexBits;
-        uint index        = getBits_voxelsIn(l2IndexOffset, bitOffset, int(numIndexBits));
+        uint index        = getBits(l2IndexOffset, bitOffset, int(numIndexBits));
 
         voxelsPtr = l2TwigsOffset + index * OctreeTwigSize;
     }
@@ -106,12 +106,12 @@ bool isSolidBranch1AboveLeaf(
     if(solid) {
         uint voxelPtr = voxelsPtr+1+3+oct;
         v.size  = 2;
-        v.value = GETBYTE(voxelsIn, voxelPtr);
+        v.value = getByte(0, voxelPtr);
     } else {
         uint bits         = data & 0xffu;
         uint numIndexBits = bitCounts & 0xffu;
         uint bitOffset    = ((data>>8) + getImpliedIndex_8bit(bits, oct)) * numIndexBits;
-        uint leafIndex    = getBits_voxelsIn(leafIndexOffset, bitOffset, int(numIndexBits));
+        uint leafIndex    = getBits(leafIndexOffset, bitOffset, int(numIndexBits));
 
         voxelsPtr = leavesOffset + leafIndex * OctreeLeafSize;
     }
@@ -124,7 +124,7 @@ void gavLeaf(uvec3 upos,
     uint oct = getOctet_0000000001(upos);
 
     v.size  = 1;
-    v.value = GETBYTE(voxelsIn, voxelsPtr+oct);
+    v.value = getByte(0, voxelsPtr+oct);
 }
 /**
  *  Return true if we are inside an air voxel of some size.

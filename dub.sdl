@@ -12,14 +12,15 @@ buildType "release" {
     dflags "-mcpu=haswell"                  platform="ldc"
     dflags "-mattr=+fma,+avx2"              platform="ldc"
     #dflags "-expensive-combines"            platform="ldc"
-    dflags "-enable-cross-module-inlining"  platform="ldc"
+    #dflags "-enable-cross-module-inlining"  platform="ldc"
     dflags "-cache=.dub/cache"              platform="ldc"
     dflags "-ffast-math"                    platform="ldc"
 
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "MODEL1" "GC_STATS" #"RELEASE_ASSERT"
+versions "MODEL3" "GC_STATS" #"RELEASE_ASSERT"
+#versions "MODEL3" "MODEL_B" "GC_STATS" #"RELEASE_ASSERT"
 
 targetType "executable"
 

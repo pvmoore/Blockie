@@ -56,7 +56,6 @@ struct Flags {
 #define CHUNK_DISTANCE_Y(f) (f.b & 0xffffu)
 #define CHUNK_DISTANCE_Z(f) (f.b >> 16)
 
-#include "useful_functions.comp"
 #include "pass1_march_common.inc"
 #include "marchM5.inc"
 #include "_camera.inc"

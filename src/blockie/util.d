@@ -41,6 +41,18 @@ string toHexString(T)(T[] array) if(isInteger!T) {
     return buf.data;
 }
 
+/**
+ * Align byte array to multiple of 4 by adding zeroes if necessary
+ */
+void alignToUint(ref ubyte[] bytes) {
+    auto rem = bytes.length&3;
+    if(rem==0) return;
+
+    foreach(i; 0..4-rem) {
+        bytes ~= 0.as!ubyte;
+    }
+}
+
 pragma(inline, true) void ASSERT(bool b, string file=__FILE__, int line=__LINE__) {
     // If we are in debug
     assert(b, "Woops %s:%s".format(file, line));

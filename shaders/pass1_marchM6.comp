@@ -70,8 +70,6 @@ struct Flags {
 #define CELL_DISTANCES      (chunkVoxels + 1026)
 #define CELL_OFFSETS        (chunkVoxels + 1026)
 
-
-#include "useful_functions.comp"
 #include "pass1_march_common.inc"
 #include "marchM6.inc"
 #include "_camera.inc"
@@ -98,7 +96,7 @@ uvec3 getCellDistanceField(uint chunkVoxels, uint cell) {
     // 8+4096 (1026):
     //Distance3[] cellDistances;
 
-    uint b = get3Bytes(CELL_DISTANCES, cell);
+    uint b = get3Bytes(CELL_DISTANCES, cell*3);
     return uvec3(b & 0xffu, (b>>8) & 0xffu, (b>>16) & 0xffu);
 }
 

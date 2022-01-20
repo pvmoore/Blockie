@@ -81,7 +81,7 @@ void leaf(
         // leaf
         uint offset     = (branch >> 8);
         uint byteOffset = getImpliedIndex_8bit(bits, l1oct);
-        uint leaf       = GETBYTE(voxelsIn, (voxels+offset)*4 + byteOffset);
+        uint leaf       = getByte(0, (voxels+offset)*4 + byteOffset);
 
         uint l0oct = getOctet_0000000001(upos);
 

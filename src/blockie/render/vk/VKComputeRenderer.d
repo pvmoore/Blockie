@@ -2,6 +2,8 @@ module blockie.render.vk.VKComputeRenderer;
 
 import blockie.render.all;
 
+private enum ENABLE_SHADER_PRINTF = false;
+
 final class VKComputeRenderer : ComputeRenderer {
 private:
     @Borrowed VulkanContext context;
@@ -303,7 +305,9 @@ private:
         });
     }
     void createShaderPrintf() {
-        //this.shaderPrintf = new ShaderPrintf(context);
+        static if(ENABLE_SHADER_PRINTF) {
+            this.shaderPrintf = new ShaderPrintf(context);
+        }
     }
     void createFrameResources() {
         this.log("Creating frame resources");
@@ -481,6 +485,12 @@ private:
     void createPipelines() {
         this.log("Creating pipelines");
         auto marchShader = "pass1_marchM%s.comp".format(getModelName());
+
+        version(MODEL_B) {
+            // todo - change me
+            marchShader = "pass1_marchM3b.comp";
+        }
+
         version(MODEL1) {
             auto shadeShader = "pass3_shade.comp";
         } else version(MODEL1a) {

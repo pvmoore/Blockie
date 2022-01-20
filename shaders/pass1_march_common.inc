@@ -29,22 +29,6 @@ uint countUints(uint numBits) {
     return ((numBits + 31) & ~31u) >> 5;
 }
 
-/**
- *  Assumes numBits is between 1 and 32.
- */
-uint getBits_voxelsIn(uint byteIndex, uint bitOffset, int numBits) {
-    byteIndex += bitOffset/8;
-    bitOffset &= 7u;
-    const uint uintIndex = byteIndex/4;
-    const uint uintRem   = byteIndex&3u;
-    const int bitpos     = int(bitOffset + (uintRem*8));
-    const int numBits2   = max(0, numBits - (32-bitpos));
-    numBits -= numBits2;
-
-    return bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits) +
-          (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
-}
-
 /// Return true if chunk changes
 bool updatePosition(inout Position pos, vec3 add) {
     pos.fpos += add;
@@ -228,6 +212,15 @@ uint getOctet_0000011111(uvec3 upos) {
     uvec3 c = a << uvec3(0,5,10);
     return c.x + c.y + c.z;
 }
+/// (0-63)
+uint getOctet_0000000011(uvec3 inXYZ) {
+	// x = 0000_0011
+	// y = 0000_0011  >  oct = 00zzyyxx
+	// z = 0000_0011
+	uvec3 a = bitfieldExtract(inXYZ, 0, 2);
+	uvec3 c = a << uvec3(0,2,4);
+    return c.x + c.y + c.z;
+}
 
 /// (0-4095)
 uint getOctet_1111000000(const uvec3 inXYZ) {
@@ -327,15 +320,70 @@ uint getOctet_n_n(uvec3 upos, int bitOffset, int numBits) {
     return c.x + c.y + c.z;
 }
 
+/*=================================================================================================
+    These functions below fetch data from the 'voxelsIn' array
+==================================================================================================*/
 
-uint get3Bytes(uint voxels, uint index) {
-    uint a  = (index & 3);
-    uint i  = (index * 3) >> 2;
+/**
+ *  Fetch 1 byte of data at voxels + 'byteIndex'
+ */
+uint getByte(uint voxels, uint byteIndex) {
+    uint uintIndex = byteIndex / 4;
+    uint shift = (byteIndex & 3) * 8;
+    return (voxelsIn[voxels + uintIndex] >> shift) & 0xffu;
+}
+
+/**
+ *  Fetch 2 bytes of data at voxels + 'wordIndex'
+ */
+uint getUshort(uint voxels, uint wordIndex) {
+    uint uintIndex = wordIndex / 2;
+    uint shift = (wordIndex & 1) * 16;
+    return (voxelsIn[voxels + uintIndex] >> shift) & 0xffffu;
+}
+
+/**
+ *  Fetch bit at bitIndex
+ */
+bool getBit(uint voxels, uint bitIndex) {
+    uint byteIndex = bitIndex >> 3;
+    bitIndex &= 7;
+    return (getByte(voxels, byteIndex) & (1<<bitIndex)) != 0;
+}
+/**
+ *  Assumes numBits is between 1 and 32.
+ */
+uint getBits(uint byteIndex, uint bitOffset, int numBits) {
+    byteIndex += bitOffset/8;
+    bitOffset &= 7u;
+    const uint uintIndex = byteIndex/4;
+    const uint uintRem   = byteIndex&3u;
+    const int bitpos     = int(bitOffset + (uintRem*8));
+    const int numBits2   = max(0, numBits - (32-bitpos));
+    numBits -= numBits2;
+
+    return bitfieldExtract(voxelsIn[uintIndex], bitpos, numBits) +
+          (bitfieldExtract(voxelsIn[uintIndex+1], 0, numBits2) << numBits);
+}
+
+/**
+ * Fetch 3 bytes of data starting from the byte at index
+ *
+ * mod     d1     d2
+ *  0 -> [.OOO] [....]
+ *  1 -> [OOO.] [....]
+ *  2 -> [OO..] [...O]
+ *  3 -> [O...] [..OO]
+ */
+uint get3Bytes(uint voxels, uint byteIndex) {
+    uint mod = byteIndex & 3;
+    uint i   = byteIndex >> 2;
+
     uint d1 = voxelsIn[voxels + i];
-    uint d2 = a==1 || a==2 ? voxelsIn[voxels + i + 1] : 0;
+    uint d2 = mod>1 ? voxelsIn[voxels + i + 1] : 0;
 
-    return a == 0 ? d1 & 0xffffffu :
-           a == 1 ? (d1>>24)   | ((d2 & 0xffffu) << 8) :
-           a == 2 ? (d1 >> 16) | ((d2 & 0xffu) << 16) :
-                    d1 >> 8;
+    return mod == 0 ? d1 & 0x00ffffffu :
+           mod == 1 ? d1 >> 8 :
+           mod == 2 ? (d1 >> 16) | ((d2 & 0xffu) << 16) :
+                      (d1 >> 24) | ((d2 & 0xffffu) << 8);
 }
