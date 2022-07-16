@@ -137,7 +137,7 @@ public:
 
         // Upload data to the GPU
         VkSemaphore[] waitSemaphores;
-        VPipelineStage[] waitStages;
+        VkPipelineStageFlags[] waitStages;
 
         if(ubo.isUploadRequired() || voxelData.isUploadRequired() || chunkData.isUploadRequired()) {
 
@@ -160,7 +160,7 @@ public:
                 null);
 
             waitSemaphores ~= frameRes.transferFinished;
-            waitStages     ~= VPipelineStage.COMPUTE_SHADER;
+            waitStages     ~= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         }
 
         // Execute compute shaders
@@ -174,7 +174,7 @@ public:
 
         // Graphics commands need to wait for this to finish
         renderData.waitSemaphores ~= frameRes.computeFinished;
-        renderData.waitStages     ~= VPipelineStage.COMPUTE_SHADER;
+        renderData.waitStages     ~= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
     void beforeRenderPass(VKRenderData renderData) {
         auto res = renderData.frame.resource;
@@ -182,18 +182,18 @@ public:
         auto b = res.adhocCB;
         // acquire the image from compute queue
         b.pipelineBarrier(
-            VPipelineStage.COMPUTE_SHADER,
-            VPipelineStage.FRAGMENT_SHADER,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             0,      // dependency flags
             null,   // memory barriers
             null,   // buffer barriers
             [
                 imageMemoryBarrier(
                     frameRes.computeTargetImage.handle,
-                    VAccess.SHADER_WRITE,
-                    VAccess.SHADER_READ,
-                    VImageLayout.GENERAL,
-                    VImageLayout.SHADER_READ_ONLY_OPTIMAL,
+                    VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_ACCESS_SHADER_READ_BIT,
+                    VK_IMAGE_LAYOUT_GENERAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     vk.getComputeQueueFamily().index,
                     vk.getGraphicsQueueFamily().index
                 )
@@ -217,18 +217,18 @@ public:
         auto b = res.adhocCB;
         // release the imqge
         b.pipelineBarrier(
-            VPipelineStage.FRAGMENT_SHADER,
-            VPipelineStage.COMPUTE_SHADER,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             0,      // dependency flags
             null,   // memory barriers
             null,   // buffer barriers
             [
                 imageMemoryBarrier(
                     frameRes.computeTargetImage.handle,
-                    VAccess.SHADER_READ,
-                    VAccess.SHADER_WRITE,
-                    VImageLayout.SHADER_READ_ONLY_OPTIMAL,
-                    VImageLayout.GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT,
+                    VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_IMAGE_LAYOUT_GENERAL,
                     vk.getGraphicsQueueFamily().index,
                     vk.getComputeQueueFamily().index
                 )
@@ -260,22 +260,22 @@ private:
         this.computeCP = device.createCommandPool(vk.getComputeQueueFamily().index, 0);
 
         this.computeCPTransient = device.createCommandPool(vk.getComputeQueueFamily().index,
-            VCommandPoolCreate.TRANSIENT | VCommandPoolCreate.RESET_COMMAND_BUFFER);
+            VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
         this.transferCP = device.createCommandPool(vk.getTransferQueueFamily().index,
-            VCommandPoolCreate.TRANSIENT | VCommandPoolCreate.RESET_COMMAND_BUFFER);
+            VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     }
     void createSamplers() {
         this.log("Creating samplers");
         this.materialSampler = device.createSampler(samplerCreateInfo((info){
-            info.addressModeU     = VSamplerAddressMode.REPEAT;
-            info.addressModeV     = VSamplerAddressMode.REPEAT;
+            info.addressModeU     = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            info.addressModeV     = VK_SAMPLER_ADDRESS_MODE_REPEAT;
             info.anisotropyEnable = VK_TRUE;
             info.maxAnisotropy    = 16;
         }));
         this.quadSampler = device.createSampler(samplerCreateInfo((info) {
-            info.addressModeU = VSamplerAddressMode.CLAMP_TO_EDGE;
-            info.addressModeV = VSamplerAddressMode.CLAMP_TO_EDGE;
+            info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         }));
     }
     void createMaterials() {
@@ -285,7 +285,7 @@ private:
     void createSkybox() {
         this.log("Creating skybox cubemap");
         this.skyboxCubeMap = context.images().getCubemap("skybox", "png");
-        this.skyboxCubeMap.image.view(skyboxCubeMap.format, VImageViewType.CUBE);
+        this.skyboxCubeMap.image.view(skyboxCubeMap.format, VK_IMAGE_VIEW_TYPE_CUBE);
     }
     void createBuffers() {
         this.log("Creating buffers");
@@ -328,11 +328,11 @@ private:
         fr.computeTargetImage = context.memory(MemID.LOCAL).allocImage(
             "computeTargetImage%s".format(res.index),
             [renderRect.width, renderRect.height],
-            VImageUsage.STORAGE | VImageUsage.SAMPLED,
-            VFormat.R8G8B8A8_UNORM);
-        fr.computeTargetImage.createView(VFormat.R8G8B8A8_UNORM, VImageViewType._2D, VImageAspect.COLOR);
+            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_FORMAT_R8G8B8A8_UNORM);
+        fr.computeTargetImage.createView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
-        fr.quad = new Quad(context, ImageMeta(fr.computeTargetImage, VFormat.R8G8B8A8_UNORM), quadSampler);
+        fr.quad = new Quad(context, ImageMeta(fr.computeTargetImage, VK_FORMAT_R8G8B8A8_UNORM), quadSampler);
 
         auto camera = Camera2D.forVulkan(renderRect.dimension);
         auto scale  = mat4.scale(vec3(renderRect.dimension.to!float, 0));
@@ -354,9 +354,9 @@ private:
             .add(chunkData, res.index)
             .add(fr.marchOutBuffer.handle, fr.marchOutBuffer.offset, fr.marchOutBuffer.size)
             .add(ubo, res.index)
-            .add(fr.computeTargetImage.view, VImageLayout.GENERAL)
-            .add(materialSampler, materialImages[0].image.view, VImageLayout.SHADER_READ_ONLY_OPTIMAL)
-            .add(materialSampler, skyboxCubeMap.image.view, VImageLayout.SHADER_READ_ONLY_OPTIMAL)
+            .add(fr.computeTargetImage.view, VK_IMAGE_LAYOUT_GENERAL)
+            .add(materialSampler, materialImages[0].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .add(materialSampler, skyboxCubeMap.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .write();
 
         // Record the compute instructions
@@ -365,7 +365,7 @@ private:
 
         // Both shaders use the same Pipeline layout
         b.bindDescriptorSets(
-            VPipelineBindPoint.COMPUTE,
+            VK_PIPELINE_BIND_POINT_COMPUTE,
             marchPipeline.layout,
             0,
             [descriptors.getSet(0,res.index)],
@@ -373,7 +373,7 @@ private:
         );
         if(shaderPrintf) {
             b.bindDescriptorSets(
-                VPipelineBindPoint.COMPUTE,
+                VK_PIPELINE_BIND_POINT_COMPUTE,
                 marchPipeline.layout,
                 1,
                 [descriptors.getSet(1,0)],  // layout 1, set 0
@@ -398,18 +398,18 @@ private:
 
         // acquire the image from graphics queue
         b.pipelineBarrier(
-            VPipelineStage.FRAGMENT_SHADER,
-            VPipelineStage.COMPUTE_SHADER,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             0,      // dependency flags
             null,   // memory barriers
             null,   // buffer barriers
             [
                 imageMemoryBarrier(
                     fr.computeTargetImage.handle,
-                    VAccess.NONE,
-                    VAccess.SHADER_WRITE,
-                    VImageLayout.UNDEFINED,
-                    VImageLayout.GENERAL,
+                    VK_ACCESS_NONE,
+                    VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_GENERAL,
                     vk.getGraphicsQueueFamily().index,
                     vk.getComputeQueueFamily().index
                 )
@@ -420,18 +420,18 @@ private:
 
         // release the image
         b.pipelineBarrier(
-            VPipelineStage.COMPUTE_SHADER,
-            VPipelineStage.FRAGMENT_SHADER,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             0,      // dependency flags
             null,   // memory barriers
             null,   // buffer barriers
             [
                 imageMemoryBarrier(
                     fr.computeTargetImage.handle,
-                    VAccess.SHADER_WRITE,
-                    VAccess.SHADER_READ,
-                    VImageLayout.GENERAL,
-                    VImageLayout.GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_ACCESS_SHADER_READ_BIT,
+                    VK_IMAGE_LAYOUT_GENERAL,
+                    VK_IMAGE_LAYOUT_GENERAL,
                     vk.getComputeQueueFamily().index,
                     vk.getGraphicsQueueFamily().index
                 )
@@ -459,19 +459,19 @@ private:
         this.descriptors = new Descriptors(context);
         descriptors
             .createLayout()
-                .storageBuffer(VShaderStage.COMPUTE)            // voxelData
-                .storageBuffer(VShaderStage.COMPUTE)            // chunkData
-                .storageBuffer(VShaderStage.COMPUTE)            // MarchOut[]
-                .uniformBuffer(VShaderStage.COMPUTE)            // ubo
-                .storageImage(VShaderStage.COMPUTE)             // output image
-                .combinedImageSampler(VShaderStage.COMPUTE)     // texture
-                .combinedImageSampler(VShaderStage.COMPUTE)     // skybox cubemap texture
-                //.storageBuffer(VShaderStage.COMPUTE)          // materials
+                .storageBuffer(VK_SHADER_STAGE_COMPUTE_BIT)            // voxelData
+                .storageBuffer(VK_SHADER_STAGE_COMPUTE_BIT)            // chunkData
+                .storageBuffer(VK_SHADER_STAGE_COMPUTE_BIT)            // MarchOut[]
+                .uniformBuffer(VK_SHADER_STAGE_COMPUTE_BIT)            // ubo
+                .storageImage(VK_SHADER_STAGE_COMPUTE_BIT)             // output image
+                .combinedImageSampler(VK_SHADER_STAGE_COMPUTE_BIT)     // texture
+                .combinedImageSampler(VK_SHADER_STAGE_COMPUTE_BIT)     // skybox cubemap texture
+                //.storageBuffer(VK_SHADER_STAGE_COMPUTE_BIT)          // materials
                 .sets(vk.swapchain.numImages());
 
         // Create another layout for shader printf
         if(shaderPrintf) {
-            shaderPrintf.createLayout(descriptors, VShaderStage.COMPUTE);
+            shaderPrintf.createLayout(descriptors, VK_SHADER_STAGE_COMPUTE_BIT);
         }
 
         descriptors

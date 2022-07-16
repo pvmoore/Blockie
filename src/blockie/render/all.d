@@ -59,7 +59,7 @@ version(VULKAN) {
 
         VkCommandBuffer[] commandBuffers;
         VkSemaphore[] waitSemaphores;
-        VPipelineStage[] waitStages;
+        VkPipelineStageFlags[] waitStages;
     }
 
     import blockie.render.vk.VKBlockie;

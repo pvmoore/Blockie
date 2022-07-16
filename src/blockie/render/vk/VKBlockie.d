@@ -146,7 +146,7 @@ public:
         // Standard command buffer and wait semaphores
         renderData.commandBuffers[0] = b;
         renderData.waitSemaphores[0] = res.imageAvailable;
-        renderData.waitStages[0]     = VPipelineStage.COLOR_ATTACHMENT_OUTPUT;
+        renderData.waitStages[0]     = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
         // Outside render pass
         view.update(renderData);
@@ -159,7 +159,7 @@ public:
             res.frameBuffer,
             toVkRect2D(0,0, vk.windowSize.toVkExtent2D),
             [ clearColour(0.5f,0,0,1) ],
-            VSubpassContents.INLINE //VSubpassContents.SECONDARY_COMMAND_BUFFERS
+            VK_SUBPASS_CONTENTS_INLINE
         );
 
         view.render(renderData);
@@ -206,15 +206,15 @@ private:
             .withMemory(MemID.LOCAL, mem.allocStdDeviceLocal("Blockie_Local", storageSize + 256.MB))
             .withMemory(MemID.STAGING, mem.allocStdStagingUpload("Blockie_Staging", stagingSize));
 
-        context.withBuffer(MemID.LOCAL, BufID.VERTEX, VBufferUsage.VERTEX | VBufferUsage.TRANSFER_DST, 16.MB)
-               .withBuffer(MemID.LOCAL, BufID.INDEX, VBufferUsage.INDEX | VBufferUsage.TRANSFER_DST, 16.MB)
-               .withBuffer(MemID.LOCAL, BufID.UNIFORM, VBufferUsage.UNIFORM | VBufferUsage.TRANSFER_DST, 1.MB)
-               .withBuffer(MemID.LOCAL, BufID.STORAGE, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, 8*NUM_FRAME_BUFFERS.MB)
+        context.withBuffer(MemID.LOCAL, BufID.VERTEX, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 16.MB)
+               .withBuffer(MemID.LOCAL, BufID.INDEX, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 16.MB)
+               .withBuffer(MemID.LOCAL, BufID.UNIFORM, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 1.MB)
+               .withBuffer(MemID.LOCAL, BufID.STORAGE, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 8*NUM_FRAME_BUFFERS.MB)
 
-               .withBuffer(MemID.LOCAL, MARCH_VOXEL_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.VOXEL_BUFFER_SIZE)
-               .withBuffer(MemID.LOCAL, MARCH_CHUNK_BUFFER, VBufferUsage.STORAGE | VBufferUsage.TRANSFER_DST, Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS)
+               .withBuffer(MemID.LOCAL, MARCH_VOXEL_BUFFER, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, Blockie.VOXEL_BUFFER_SIZE)
+               .withBuffer(MemID.LOCAL, MARCH_CHUNK_BUFFER, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS)
 
-               .withBuffer(MemID.STAGING, BufID.STAGING, VBufferUsage.TRANSFER_SRC, stagingSize - 5.MB);
+               .withBuffer(MemID.STAGING, BufID.STAGING, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, stagingSize - 5.MB);
 
         context.withRenderPass(renderPass)
                .withFonts("resources/fonts/")
@@ -230,7 +230,7 @@ private:
         auto colorAttachment = attachmentDescription(
             vk.swapchain.colorFormat,
             (info) {
-                info.loadOp = VAttachmentLoadOp.DONT_CARE;
+                info.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             });
 
         // Create standard render pass
