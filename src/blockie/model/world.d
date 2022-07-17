@@ -43,17 +43,10 @@ final class World {
         w.description = lines["description"];
         w.sunPos      = getFloat3(lines["sun_position"]);
 
-        // version(VULKAN) {
-        //     w.camera = Camera3D.forVulkan(
-        //         getFloat3(lines["camera_position"]),
-        //         getFloat3(lines["camera_focal_point"]) * float3(1,-1,-1)
-        //     );
-        // } else {
-            w.camera = new Camera3D(
-                getFloat3(lines["camera_position"]),
-                getFloat3(lines["camera_focal_point"])
-            );
-        //}
+        w.camera = new Camera3D(
+            getFloat3(lines["camera_position"]),
+            getFloat3(lines["camera_focal_point"])
+        );
 
         w.camera.fovNearFar(
             (lines["camera_fov"].to!float).degrees,

@@ -13,16 +13,14 @@
     DFIELD_OFFSET   = 5152
 */
 
-#ifdef VULKAN
-    // All models
-    #define CHUNK_SIZE      (1024)
-    #define CHUNK_SIZE_SHR  (10)
+// All models
+#define CHUNK_SIZE      (1024)
+#define CHUNK_SIZE_SHR  (10)
 
-    // MODEL1 only:
-    #define OctreeTwigSize  (12)
-    #define OctreeLeafSize  (8)
-    #define DFIELD_OFFSET   (5152)
-#endif
+// MODEL1 only:
+#define OctreeTwigSize  (12)
+#define OctreeLeafSize  (8)
+#define DFIELD_OFFSET   (5152)
 
 #define MAX_DISTANCE (15000)
 

@@ -13,45 +13,6 @@
             "group": "build"
         },
         {
-            "label": "**** Run OpenGL ****",
-            "type": "shell",
-            "windows": {
-                "command": "dub run --build=debug --config=blockie_gl --compiler=dmd --arch=x86_64 --parallel",
-            },
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-             "label": "**** Run OpenGL (Force Rebuild) ****",
-            "type": "shell",
-            "windows": {
-                "command": "dub run --force --build=debug --config=blockie_gl --compiler=dmd --arch=x86_64 --parallel",
-            },
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "**** Run OpenGL (Release) ****",
-            "type": "shell",
-            "windows": {
-                "command": "dub run --build=release --config=blockie_gl --compiler=ldc2 --arch=x86_64 --parallel",
-            },
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "**** Run Vulkan ****",
             "type": "shell",
             "windows": {

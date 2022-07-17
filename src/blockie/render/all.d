@@ -49,54 +49,24 @@ import blockie.render.MiniMap;
 import blockie.render.RenderView;
 import blockie.render.TopBar;
 
-version(VULKAN) {
-    pragma(msg, "VULKAN");
+import vulkan;
 
-    import vulkan;
+final class VKRenderData : AbsRenderData {
+    Frame frame;
 
-    final class VKRenderData : AbsRenderData {
-        Frame frame;
-
-        VkCommandBuffer[] commandBuffers;
-        VkSemaphore[] waitSemaphores;
-        VkPipelineStageFlags[] waitStages;
-    }
-
-    import blockie.render.vk.VKBlockie;
-    import blockie.render.vk.VKBottomBar;
-    import blockie.render.vk.VKComputeRenderer;
-    import blockie.render.vk.VKConsole;
-    import blockie.render.vk.VKCpuMonitor;
-    import blockie.render.vk.VKGPUMemoryManager;
-    import blockie.render.vk.VKMemMonitor;
-    import blockie.render.vk.VKMonitor;
-    import blockie.render.vk.VKMiniMap;
-    import blockie.render.vk.VKRenderView;
-    import blockie.render.vk.VKTopBar;
+    VkCommandBuffer[] commandBuffers;
+    VkSemaphore[] waitSemaphores;
+    VkPipelineStageFlags[] waitStages;
 }
-version(OPENGL) {
-    pragma(msg, "OPENGL");
 
-    final class GLRenderData : AbsRenderData {
-        ulong frameNumber;
-        float seconds;
-    }
-
-    import gl;
-    import gl.geom : BitmapSprite;
-    import derelict.opengl;
-    import derelict.glfw3;
-
-    import blockie.render.gl.GLBlockie;
-    import blockie.render.gl.GLBottomBar;
-    import blockie.render.gl.GLBoxRenderer;
-    import blockie.render.gl.GLConsole;
-    import blockie.render.gl.GLCPUMonitor;
-    import blockie.render.gl.GLComputeRenderer;
-    import blockie.render.gl.GLGPUMemoryManager;
-    import blockie.render.gl.GLMinimap;
-    import blockie.render.gl.GLMemMonitor;
-    import blockie.render.gl.GLMonitor;
-    import blockie.render.gl.GLRenderview;
-    import blockie.render.gl.GLTopBar;
-}
+import blockie.render.vk.VKBlockie;
+import blockie.render.vk.VKBottomBar;
+import blockie.render.vk.VKComputeRenderer;
+import blockie.render.vk.VKConsole;
+import blockie.render.vk.VKCpuMonitor;
+import blockie.render.vk.VKGPUMemoryManager;
+import blockie.render.vk.VKMemMonitor;
+import blockie.render.vk.VKMonitor;
+import blockie.render.vk.VKMiniMap;
+import blockie.render.vk.VKRenderView;
+import blockie.render.vk.VKTopBar;

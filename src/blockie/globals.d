@@ -72,17 +72,6 @@ enum CHUNK_SIZE_SHR     = 10;   // 6 to 10
 enum CHUNK_SIZE         = 2^^CHUNK_SIZE_SHR;
 enum CHUNK_SIZE_SQUARED = CHUNK_SIZE*CHUNK_SIZE;
 
-version(VULKAN) {
-
-} else {
-    ulong MB(ulong v) {
-        return v*1024*1024;
-    }
-    ulong KB(ulong v) {
-        return v*1024;
-    }
-}
-
 alias worldcoords = int3;
 alias chunkcoords = int3;
 

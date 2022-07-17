@@ -24,19 +24,11 @@ versions "MODEL3" "GC_STATS" #"RELEASE_ASSERT"
 
 targetType "executable"
 
-configuration "blockie_gl" {
-	#mainSourceFile "src/main.d"
-	excludedSourceFiles "src/gen.d" "src/blockie/generate/*" "*/vk/*"
-	targetName "blockie"
-    versions "OPENGL" "RENDER"
-
-    dependency "opengl3" version="~master"
-}
 configuration "blockie_vk" {
 	#mainSourceFile "src/main.d"
 	excludedSourceFiles "src/gen.d" "src/blockie/generate/*" "*/gl/*"
 	targetName "blockie"
-    versions "VULKAN" "RENDER"
+    versions "RENDER"
 
     dependency "vulkan" version="~master"
 }

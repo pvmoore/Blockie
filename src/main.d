@@ -17,13 +17,7 @@ int WinMain(HINSTANCE theHInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
 	try{
 		Runtime.initialize();
 
-		version(OPENGL) {
-			app = new GLBlockie();
-		} else version(VULKAN) {
-			app = new VKBlockie();
-		} else {
-			static assert(false);
-		}
+		app = new VKBlockie();
 
 		app.initialise();
 		app.run();

@@ -1,6 +1,6 @@
 module blockie.version_;
 
-const string version_ = "0.0.30";
+const string version_ = "0.0.31";
 
 /**===============================================================
 
@@ -8,7 +8,7 @@ const string version_ = "0.0.30";
    ===============================================================
 
     - Add voxel de-optimiser code
-    - Use Imgui for the UI when using the Vulkan
+    - Use Imgui for the UI
     - Create a single solid chunk test scene
     - Create a single solid cell test scene
 
@@ -26,6 +26,7 @@ const string version_ = "0.0.30";
     - It might be necessary to reduce the size of a chunk if editing a 10^^3 chunk in real-time
       is too slow.
 
+0.0.31 - Remove OpenGL renderer
 
 0.0.30 - Add Model3b which is described in blockie.generate.model.model3b.md
 
