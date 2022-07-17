@@ -1,6 +1,6 @@
 # Blockie
 
-Voxel renderer using Opengl3 compute shaders
+Voxel renderer using Vulkan compute shaders
 
 ![Scene4](screenshots/scene4.png)
 ![Scene4c](screenshots/scene4c.png)
@@ -8,8 +8,18 @@ Voxel renderer using Opengl3 compute shaders
 ![Scene7](screenshots/scene7.png)
 
 ## Requirements
+- Windows
 - Dlang https://dlang.org/
-- OpenGL3
+- Vulkan Runtime dll (provided by your GPU vendor if supported)
+- GLFW dll (provided by dlang-vulkan)
+- CImgui dll (provided by dlang-vulkan)
+- https://github.com/pvmoore/dlang-vulkan
+- https://github.com/pvmoore/dlang-common
+- https://github.com/pvmoore/dlang-logging
+- https://github.com/pvmoore/dlang-maths
+- https://github.com/pvmoore/dlang-fonts
+- https://github.com/pvmoore/dlang-events
+- https://github.com/pvmoore/dlang-resources
 
 ## Features
 - Sparse voxel octrees
@@ -21,6 +31,14 @@ Voxel renderer using Opengl3 compute shaders
 - Currently no secondary shadow rays are used
 
 ## Version History
+
+##### 0.0.31
+- Remove OpenGL renderer
+
+##### 0.0.30
+- Add Model3b which is described in blockie.generate.model.model3b.md
+- Add 'useful_functions.comp' code to the project as these functions would not have been
+      visible to anyone other than myself
 
 ##### 0.0.29
  - Write skybox pixels within the shade shader when a ray misses all scenery instead of as a separate renderer
