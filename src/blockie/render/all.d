@@ -40,14 +40,9 @@ interface IGPUMemoryManager(T) {
 import blockie.globals;
 
 import blockie.render.Blockie;
-import blockie.render.BottomBar;
 import blockie.render.ChunkManager;
 import blockie.render.ComputeRenderer;
-import blockie.render.Console;
-import blockie.render.EventStatsMonitor;
-import blockie.render.MiniMap;
 import blockie.render.RenderView;
-import blockie.render.TopBar;
 
 import vulkan;
 
@@ -59,14 +54,25 @@ final class VKRenderData : AbsRenderData {
     VkPipelineStageFlags[] waitStages;
 }
 
+import blockie.render.ui.StatsUI;
+import blockie.render.ui.BottomBar;
+import blockie.render.ui.HistogramUI;
+import blockie.render.ui.TopBar;
+
+import blockie.render.ui.Console;
+import blockie.render.ui.MemStatsUI;
+import blockie.render.ui.StatsMonitorUI;
+import blockie.render.ui.VKTopBar;
+import blockie.render.ui.VKBottomBar;
+import blockie.render.ui.VKConsole;
+
+import blockie.render.legacy.EventStatsMonitor;
+import blockie.render.legacy.VKCpuMonitor;
+import blockie.render.legacy.VKMonitor;
+import blockie.render.legacy.MiniMap;
+import blockie.render.legacy.VKMiniMap;
+
 import blockie.render.vk.VKBlockie;
-import blockie.render.vk.VKBottomBar;
 import blockie.render.vk.VKComputeRenderer;
-import blockie.render.vk.VKConsole;
-import blockie.render.vk.VKCpuMonitor;
 import blockie.render.vk.VKGPUMemoryManager;
-import blockie.render.vk.VKMemMonitor;
-import blockie.render.vk.VKMonitor;
-import blockie.render.vk.VKMiniMap;
 import blockie.render.vk.VKRenderView;
-import blockie.render.vk.VKTopBar;

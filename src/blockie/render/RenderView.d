@@ -17,7 +17,6 @@ protected:
     Timing frameTiming, updateTiming;
 
     IMonitor cpuMonitor;
-    IMonitor memMonitor;
     IMonitor fpsMonitor;
     IMonitor frametimeMonitor;
     IMonitor updateTimeMonitor;
@@ -32,6 +31,8 @@ protected:
     BottomBar bottomBar;
     MiniMap minimap;
     IRenderer computeRenderer;
+
+    StatsUI statsUI;
 public:
     this(float2 windowSize) {
         this.windowSize   = windowSize;
@@ -44,7 +45,6 @@ public:
         calculateRenderRect(windowSize);
     }
     void destroy() {
-        if(memMonitor) memMonitor.destroy();
         if(cpuMonitor) cpuMonitor.destroy();
         if(fpsMonitor) fpsMonitor.destroy();
         if(frametimeMonitor) frametimeMonitor.destroy();
@@ -142,7 +142,6 @@ public:
         updateTimeMonitor.update(renderData);
         computeTimeMonitor.update(renderData);
         cpuMonitor.update(renderData);
-        memMonitor.update(renderData);
         diskMonitor.update(renderData);
         gpuIoMonitor.update(renderData);
         chunksMonitor.update(renderData);
@@ -174,10 +173,12 @@ public:
         updateTimeMonitor.render(renderData);
         computeTimeMonitor.render(renderData);
         cpuMonitor.render(renderData);
-        memMonitor.render(renderData);
         diskMonitor.render(renderData);
         gpuIoMonitor.render(renderData);
         chunksMonitor.render(renderData);
+
+        statsUI.renderFrame(renderData);
+
 
         renderWatch.stop();
         frameTiming.endFrame(renderWatch.peek().total!"nsecs");
@@ -209,10 +210,6 @@ protected:
         this.log("Initialising monitors");
         int width = windowSize.x.as!int;
         enum Y = 22;
-
-        memMonitor
-            .initialise()
-            .move(int2(width-180, Y+16*6));
 
         cpuMonitor
             .initialise()

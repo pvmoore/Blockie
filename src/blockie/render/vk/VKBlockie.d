@@ -26,6 +26,20 @@ public:
     override void initialise() {
         super.initialise();
 
+        ImguiOptions imguiOptions = {
+            enabled: true,
+            configFlags:
+                ImGuiConfigFlags_NoMouseCursorChange |
+                ImGuiConfigFlags_DockingEnable |
+                ImGuiConfigFlags_ViewportsEnable,
+            fontPaths: [
+                "/pvmoore/_assets/fonts/JetBrainsMono-Bold.ttf"
+            ],
+            fontSizes: [
+                18
+            ]
+        };
+
         WindowProperties wprops = {
             width:        WIDTH,
             height:       HEIGHT,
@@ -37,7 +51,8 @@ public:
             frameBuffers: NUM_FRAME_BUFFERS
         };
         VulkanProperties vprops = {
-            appName: "Blockie"
+            appName: "Blockie",
+            imgui: imguiOptions
         };
 
         vprops.features.samplerAnisotropy = VK_TRUE;

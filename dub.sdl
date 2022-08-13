@@ -49,4 +49,3 @@ dependency "events" version="~master"
 dependency "resources" version="~master"
 
 # external
-dependency "resusage" version="~master"

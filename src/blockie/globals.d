@@ -41,14 +41,13 @@ import resources : DDS, PNG, HGT;
 
 import logging : flushLog, log, setEagerFlushing, FileLogger;
 
-import resusage.memory : ProcessMemInfo, processMemInfo;
-
 import events : initEvents, getEvents, EventMsg;
 
 import common :
     Allocator, Allocator_t, Archive, Array, Async,
     BitWriter, Borrowed, ArrayBitWriter, ArrayByteWriter,
-    Comment, From,
+    Comment, ContiguousCircularBuffer,
+    From,
     IQueue, Implements, PDH, Set, Stack, Timing,
     as, bitfieldExtract, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, todo, toString,

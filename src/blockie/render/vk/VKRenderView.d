@@ -19,7 +19,6 @@ public:
         this.minimap         = new VKMiniMap(context);
         this.computeRenderer = new VKComputeRenderer(context, this, renderRect);
 
-        this.memMonitor         = new VKMemMonitor(context);
         this.cpuMonitor         = new VKCpuMonitor(context);
         this.fpsMonitor         = new VKMonitor(context, "FPS", null);
         this.frametimeMonitor   = new VKMonitor(context, "FrameTime", null);
@@ -28,6 +27,8 @@ public:
         this.diskMonitor        = new VKMonitor(context, "DiskUsage", "Disk (MB) ");
         this.gpuIoMonitor       = new VKMonitor(context, "GPUUsage", "GPU (MB)");
         this.chunksMonitor      = new VKMonitor(context, "ChunksUsage", "Chunks");
+
+        statsUI = new StatsUI(context);
 
         initialiseMonitors();
     }
@@ -59,11 +60,24 @@ public:
         computeRenderer.as!VKComputeRenderer.afterRenderPass(renderData);
     }
 protected:
-    override void updateScene(AbsRenderData renderData, bool cameraMoved) {
+    int seconds;
+    override void updateScene(AbsRenderData absRenderData, bool cameraMoved) {
+        auto renderData = absRenderData.as!VKRenderData;
+        Frame frame = renderData.frame;
+
         if(cameraMoved) {
 
         }
-        computeRenderer.update(renderData, cameraMoved);
+
+        auto time = (frame.seconds*16).as!int;
+        if(time > seconds) {
+            // tick (16 per second)
+            seconds = time;
+
+            takeSnapshot();
+        }
+
+        computeRenderer.update(absRenderData, cameraMoved);
     }
     override void renderScene(AbsRenderData renderData) {
         computeRenderer.render(renderData);
@@ -75,6 +89,18 @@ protected:
         return vk.isMouseButtonPressed(0);
     }
     override float getFps() {
-        return vk.getFPS();
+        return vk.getFPSSnapshot();
+    }
+private:
+    void takeSnapshot() {
+        float fps = 1_000_000_000.0 / vk.getFrameTimeNanos();
+
+        statsUI.fpsHistogram.updateValue(fps);
+        statsUI.frameTimeHistogram.updateValue(frameTiming.average(2));
+        statsUI.updateTimeHistogram.updateValue(updateTiming.average(0));
+        statsUI.memStats.tick();
+        statsUI.diskMonitor.tick();
+        statsUI.gpuIoMonitor.tick();
+        statsUI.chunksMonitor.tick();
     }
 }
