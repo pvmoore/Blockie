@@ -7,6 +7,7 @@ private:
     const int NUM_DATAPOINTS;
     string title;
     string fmt;
+    StatProvider statProvider;
 
     ContiguousCircularBuffer!float buf;
     ContiguousCircularBuffer!float avgBuf;
@@ -15,12 +16,13 @@ private:
     float maximum = 1;
     float average = 0;
     float averageTotal = 0;
-    bool open = true;
+    bool open;
 public:
-    this(string title, int numDataPoints, string fmt) {
+    this(string title, int numDataPoints, string fmt, StatProvider statProvider) {
         this.title = title;
         this.NUM_DATAPOINTS = numDataPoints;
         this.fmt = fmt ~ "\0";
+        this.statProvider = statProvider;
         this.buf = new ContiguousCircularBuffer!float(NUM_DATAPOINTS);
         this.avgBuf = new ContiguousCircularBuffer!float(NUM_DATAPOINTS);
 
@@ -32,8 +34,13 @@ public:
             buf.take();
         }
     }
-    void updateValue(float value) {
-        this.value = value;
+    auto setOpen() {
+        this.open = true;
+        return this;
+    }
+    void tick() {
+        statProvider.tick();
+        this.value = statProvider.getValue(0);
 
         float sub = 0;
 
@@ -51,12 +58,12 @@ public:
         }
         avgBuf.add(average);
 
-        if(average*2 > maximum) {
-            maximum = average*2;
+        if(average*1.1 > maximum) {
+            maximum = average*1.1;
         }
     }
     void render() {
-        if(igCollapsingHeader(title.ptr, ImGuiTreeNodeFlags_DefaultOpen)) {
+        if(igCollapsingHeader(title.ptr, open ? ImGuiTreeNodeFlags_DefaultOpen : 0)) {
 
             igPlotHistogram_FloatPtr(
                 "",

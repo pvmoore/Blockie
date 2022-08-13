@@ -43,6 +43,7 @@ import blockie.render.Blockie;
 import blockie.render.ChunkManager;
 import blockie.render.ComputeRenderer;
 import blockie.render.RenderView;
+import blockie.render.stat_providers;
 
 import vulkan;
 
@@ -59,18 +60,9 @@ import blockie.render.ui.BottomBar;
 import blockie.render.ui.HistogramUI;
 import blockie.render.ui.TopBar;
 
-import blockie.render.ui.Console;
-import blockie.render.ui.MemStatsUI;
-import blockie.render.ui.StatsMonitorUI;
+import blockie.render.ui.EventMonitorUI;
 import blockie.render.ui.VKTopBar;
 import blockie.render.ui.VKBottomBar;
-import blockie.render.ui.VKConsole;
-
-import blockie.render.legacy.EventStatsMonitor;
-import blockie.render.legacy.VKCpuMonitor;
-import blockie.render.legacy.VKMonitor;
-import blockie.render.legacy.MiniMap;
-import blockie.render.legacy.VKMiniMap;
 
 import blockie.render.vk.VKBlockie;
 import blockie.render.vk.VKComputeRenderer;

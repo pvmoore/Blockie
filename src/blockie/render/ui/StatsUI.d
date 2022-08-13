@@ -7,36 +7,48 @@ private:
     @Borrowed VulkanContext context;
     @Borrowed Vulkan vk;
     @Borrowed VkDevice device;
-public:
+
     HistogramUI fpsHistogram;
     HistogramUI frameTimeHistogram;
     HistogramUI updateTimeHistogram;
-    MemStatsUI memStats;
-    StatusMonitorUI diskMonitor;
-    StatusMonitorUI gpuIoMonitor;
-    StatusMonitorUI chunksMonitor;
+    HistogramUI computeTimeHistogram;
+    EventMonitorUI diskMonitor;
+    EventMonitorUI gpuIoMonitor;
+    EventMonitorUI chunksMonitor;
+    EventMonitorUI memMonitor;
+public:
 
-    this(VulkanContext context) {
+    this(VulkanContext context, Timing frameTiming, Timing updateTiming) {
         this.context = context;
         this.vk = context.vk;
         this.device = context.device;
-        this.fpsHistogram = new HistogramUI("FPS", 32, "%.0f");
-        this.frameTimeHistogram = new HistogramUI("Frame Time", 32, "%.2f");
-        this.updateTimeHistogram = new HistogramUI("Update Time", 16, "%.2f");
-        this.memStats = new MemStatsUI();
-        this.diskMonitor = new StatusMonitorUI("Disk (MB)");
-        this.gpuIoMonitor = new StatusMonitorUI("GPU (MB)");
-        this.chunksMonitor = new StatusMonitorUI("Chunks");
+
+        this.fpsHistogram = new HistogramUI("FPS", 32, "%.0f", new FpsStatProvider(vk)).setOpen();
+        this.frameTimeHistogram = new HistogramUI("Frame Time", 32, "%.2f", new TimingStatProvider(frameTiming, 2));
+        this.computeTimeHistogram = new HistogramUI("Compute Time", 32, "%.2f", new EventStatProvider("ComputeStats").addEvent(EventID.COMPUTE_TIME).initialise());
+        this.updateTimeHistogram = new HistogramUI("Update Time", 16, "%.2f", new TimingStatProvider(updateTiming, 0));
+
+        this.memMonitor = new EventMonitorUI("GC Memory");
+        this.diskMonitor = new EventMonitorUI("Disk");
+        this.gpuIoMonitor = new EventMonitorUI("GPU");
+        this.chunksMonitor = new EventMonitorUI("Chunks");
+
+        memMonitor
+            .addValue(EventID.MEM_USED, "Used ......... ", "%.0f", "")
+            .addValue(EventID.MEM_RESERVED, "Reserved .. ", "%.0f", "")
+            .addValue(EventID.MEM_TOTAL_COLLECTIONS, "# Collections .. ", "%.0f", "")
+            .addValue(EventID.MEM_TOTAL_COLLECTION_TIME, "Collection time .. ", "%.0f", " ms")
+            .initialise();
 
         diskMonitor
-            .addValue(EventID.STORAGE_READ,  "Read .. ", "%3.1f", "")
-            .addValue(EventID.STORAGE_WRITE, "Write .. ", "%3.1f", "")
+            .addValue(EventID.STORAGE_READ, "Read ... ", "%.2f", " MB")
+            .addValue(EventID.STORAGE_WRITE, "Write .. ", "%.2f", " MB")
             .initialise();
 
         gpuIoMonitor
-            .addValue(EventID.GPU_WRITES, "Writes ..... ", "%4.2f", "")
-            .addValue(EventID.GPU_VOXELS_USAGE, "Used (vx) .. ", "%4.2f", "")
-            .addValue(EventID.GPU_CHUNKS_USAGE, "Used (ch) .. ", "%4.2f", "K")
+            .addValue(EventID.GPU_WRITES, "Writes ..... ", "%4.2f", " MB")
+            .addValue(EventID.GPU_VOXELS_USAGE, "Used (vx) .. ", "%4.2f", " MB")
+            .addValue(EventID.GPU_CHUNKS_USAGE, "Used (ch) .. ", "%4.2f", " K")
             .addValue(EventID.CM_CAMERA_MOVE_UPDATE_TIME, "Cam updt ... ", "%4.2f", " ms")
             .addValue(EventID.CM_CHUNK_UPDATE_TIME, "Chk updt ... ", "%4.2f", " ms")
             .initialise();
@@ -51,8 +63,16 @@ public:
     void destroy() {
         // Nothing to destroy
     }
-    void update(AbsRenderData renderData) {
-        // Nothing to update
+    void update() {
+        fpsHistogram.tick();
+        frameTimeHistogram.tick();
+        updateTimeHistogram.tick();
+        computeTimeHistogram.tick();
+
+        memMonitor.tick();
+        diskMonitor.tick();
+        gpuIoMonitor.tick();
+        chunksMonitor.tick();
     }
     void renderFrame(AbsRenderData absRenderData) {
         if(!vk.vprops.imgui.enabled) return;
@@ -77,7 +97,7 @@ private:
             //| ImGuiWindowFlags_NoTitleBar
             //| ImGuiWindowFlags_NoCollapse
             | ImGuiWindowFlags_NoResize
-            //| ImGuiWindowFlags_NoBackground
+            | ImGuiWindowFlags_NoBackground
             //| ImGuiWindowFlags_NoMove;
             ;
 
@@ -87,12 +107,15 @@ private:
         if(igBegin("Stats", null, windowFlags)) {
 
             fpsHistogram.render();
+            computeTimeHistogram.render();
             frameTimeHistogram.render();
             updateTimeHistogram.render();
-            memStats.render();
+
+            memMonitor.render();
             diskMonitor.render();
             gpuIoMonitor.render();
             chunksMonitor.render();
+
         }
         igEnd();
 

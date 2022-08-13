@@ -1,6 +1,6 @@
 module blockie.version_;
 
-const string version_ = "0.0.31";
+const string version_ = "0.0.32";
 
 /**===============================================================
 
@@ -25,6 +25,8 @@ const string version_ = "0.0.31";
     ===============================================================
     - It might be necessary to reduce the size of a chunk if editing a 10^^3 chunk in real-time
       is too slow.
+
+0.0.32 - Use Imgui for UI
 
 0.0.31 - Remove OpenGL renderer
 

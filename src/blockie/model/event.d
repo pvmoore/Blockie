@@ -24,6 +24,10 @@ enum EventID : ulong {
     CHUNKS_READY        = 1<<19,
     CHUNKS_FLYWEIGHT    = 1<<20,
 
-    COMPUTE_RENDER_TIME = 1<<24,
-    COMPUTE_TIME        = 1<<25,
+    COMPUTE_TIME        = 1<<21,
+
+    MEM_USED                    = 1<<22,
+    MEM_RESERVED                = 1<<23,
+    MEM_TOTAL_COLLECTIONS       = 1<<24,
+    MEM_TOTAL_COLLECTION_TIME   = 1<<25,
 }

@@ -12,25 +12,12 @@ public:
 
         this.vk              = context.vk;
         this.context         = context;
-        this.console         = new VKConsole(context, renderRect.y);
         this.topBar          = new VKTopBar(context, this, renderRect.y+1);
 
         this.bottomBar       = new VKBottomBar(context, this);
-        this.minimap         = new VKMiniMap(context);
         this.computeRenderer = new VKComputeRenderer(context, this, renderRect);
 
-        this.cpuMonitor         = new VKCpuMonitor(context);
-        this.fpsMonitor         = new VKMonitor(context, "FPS", null);
-        this.frametimeMonitor   = new VKMonitor(context, "FrameTime", null);
-        this.updateTimeMonitor  = new VKMonitor(context, "UpdateTime", null);
-        this.computeTimeMonitor = new VKMonitor(context, "ComputeTime", "Compute");
-        this.diskMonitor        = new VKMonitor(context, "DiskUsage", "Disk (MB) ");
-        this.gpuIoMonitor       = new VKMonitor(context, "GPUUsage", "GPU (MB)");
-        this.chunksMonitor      = new VKMonitor(context, "ChunksUsage", "Chunks");
-
-        statsUI = new StatsUI(context);
-
-        initialiseMonitors();
+        statsUI = new StatsUI(context, frameTiming, updateTiming);
     }
     @Implements("RenderView")
     override void destroy() {
@@ -61,6 +48,7 @@ public:
     }
 protected:
     int seconds;
+    int seconds16;
     override void updateScene(AbsRenderData absRenderData, bool cameraMoved) {
         auto renderData = absRenderData.as!VKRenderData;
         Frame frame = renderData.frame;
@@ -69,12 +57,19 @@ protected:
 
         }
 
-        auto time = (frame.seconds*16).as!int;
+        auto time = frame.seconds.as!int;
         if(time > seconds) {
-            // tick (16 per second)
+            // tick per second
             seconds = time;
+            takeSnapshotPerSecond();
+        }
 
-            takeSnapshot();
+        time = (frame.seconds*16).as!int;
+        if(time > seconds16) {
+            // tick (16 per second)
+            seconds16 = time;
+
+            takeSnapshotPer16thsOfSecond();
         }
 
         computeRenderer.update(absRenderData, cameraMoved);
@@ -92,15 +87,22 @@ protected:
         return vk.getFPSSnapshot();
     }
 private:
-    void takeSnapshot() {
-        float fps = 1_000_000_000.0 / vk.getFrameTimeNanos();
+    void takeSnapshotPerSecond() {
+        import core.memory : GC;
+        uint free = (GC.stats.freeSize / (1024*1024)).to!uint;
+        uint used = (GC.stats.usedSize / (1024*1024)).to!uint;
 
-        statsUI.fpsHistogram.updateValue(fps);
-        statsUI.frameTimeHistogram.updateValue(frameTiming.average(2));
-        statsUI.updateTimeHistogram.updateValue(updateTiming.average(0));
-        statsUI.memStats.tick();
-        statsUI.diskMonitor.tick();
-        statsUI.gpuIoMonitor.tick();
-        statsUI.chunksMonitor.tick();
+        uint reserved = (free+used);
+
+        auto numCollections = GC.profileStats.numCollections.to!uint;
+        auto totalCollectionTime = GC.profileStats.totalCollectionTime.total!"msecs";
+
+        getEvents().fire(EventID.MEM_USED, used.to!double);
+        getEvents().fire(EventID.MEM_RESERVED, reserved.to!double);
+        getEvents().fire(EventID.MEM_TOTAL_COLLECTIONS, numCollections.to!double);
+        getEvents().fire(EventID.MEM_TOTAL_COLLECTION_TIME, totalCollectionTime.to!double);
+    }
+    void takeSnapshotPer16thsOfSecond() {
+        statsUI.update();
     }
 }

@@ -23,6 +23,7 @@ private:
     FrameResource[] frameResources;
     ImageMeta[] materialImages;
     ShaderPrintf shaderPrintf;
+    VkQueryPool queryPool;
 
     final static class FrameResource {
         VkCommandBuffer computeCommands;
@@ -69,6 +70,7 @@ public:
         this.renderRect = renderRect;
 
         createCommandPools();
+        createQueryPool();
         createSamplers();
         createMaterials();
         createSkybox();
@@ -93,6 +95,7 @@ public:
         if(voxelData) voxelData.destroy();
         if(ubo) ubo.destroy();
 
+        if(queryPool) device.destroyQueryPool(queryPool);
         if(shaderPrintf) shaderPrintf.destroy();
         if(transferCP) device.destroyCommandPool(transferCP);
         if(computeCP) device.destroyCommandPool(computeCP);
@@ -161,6 +164,13 @@ public:
 
             waitSemaphores ~= frameRes.transferFinished;
             waitStages     ~= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+
+        ulong[2] queryData;
+        if(VK_SUCCESS==device.getQueryPoolResults(queryPool, res.index*2, 2, 16, queryData.ptr, 8, VK_QUERY_RESULT_64_BIT)) {
+            ulong computeTime = cast(ulong)((queryData[1]-queryData[0])*vk.limits.timestampPeriod);
+
+            getEvents().fire(EventID.COMPUTE_TIME, computeTime.as!double / 1_000_000.0);
         }
 
         // Execute compute shaders
@@ -265,6 +275,13 @@ private:
         this.transferCP = device.createCommandPool(vk.getTransferQueueFamily().index,
             VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     }
+    void createQueryPool() {
+        this.log("Creating query pool");
+        this.queryPool = device.createQueryPool(
+            VK_QUERY_TYPE_TIMESTAMP,    // queryType
+            vk.swapchain.numImages*2    // num queries
+        );
+    }
     void createSamplers() {
         this.log("Creating samplers");
         this.materialSampler = device.createSampler(samplerCreateInfo((info){
@@ -363,6 +380,13 @@ private:
         auto b = fr.computeCommands;
         b.begin();
 
+        b.resetQueryPool(queryPool,
+            res.index*2,    // firstQuery
+            2);             // queryCount
+        b.writeTimestamp(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            queryPool,
+            res.index*2); // query
+
         // Both shaders use the same Pipeline layout
         b.bindDescriptorSets(
             VK_PIPELINE_BIND_POINT_COMPUTE,
@@ -398,7 +422,7 @@ private:
 
         // acquire the image from graphics queue
         b.pipelineBarrier(
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             0,      // dependency flags
             null,   // memory barriers
@@ -421,7 +445,7 @@ private:
         // release the image
         b.pipelineBarrier(
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             0,      // dependency flags
             null,   // memory barriers
             null,   // buffer barriers
@@ -438,7 +462,9 @@ private:
             ]
         );
 
-        //b.writeTimestamp(VPipelineStage.BOTTOM_OF_PIPE, queryPool, index*2+1);
+        b.writeTimestamp(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            queryPool,
+            res.index*2+1); // query
 
         b.end();
 
