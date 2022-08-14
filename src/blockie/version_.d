@@ -34,8 +34,4 @@ const string version_ = "0.0.32";
 
        - Add 'useful_functions.comp' code to the project as these functions would not have been
          visible to anyone other than myself
-
-
-
-
 */

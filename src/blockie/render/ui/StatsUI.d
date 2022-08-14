@@ -34,30 +34,30 @@ public:
         this.chunksMonitor = new EventMonitorUI("Chunks");
 
         memMonitor
-            .addValue(EventID.MEM_USED, "Used ......... ", "%.0f", "")
-            .addValue(EventID.MEM_RESERVED, "Reserved .. ", "%.0f", "")
-            .addValue(EventID.MEM_TOTAL_COLLECTIONS, "# Collections .. ", "%.0f", "")
+            .addValue(EventID.MEM_USED,                  "Used ............. ", "%.0f", "")
+            .addValue(EventID.MEM_RESERVED,              "Reserved ......... ", "%.0f", "")
+            .addValue(EventID.MEM_TOTAL_COLLECTIONS,     "# Collections .... ", "%.0f", "")
             .addValue(EventID.MEM_TOTAL_COLLECTION_TIME, "Collection time .. ", "%.0f", " ms")
             .initialise();
 
         diskMonitor
-            .addValue(EventID.STORAGE_READ, "Read ... ", "%.2f", " MB")
+            .addValue(EventID.STORAGE_READ,  "Read ... ", "%.2f", " MB")
             .addValue(EventID.STORAGE_WRITE, "Write .. ", "%.2f", " MB")
             .initialise();
 
         gpuIoMonitor
-            .addValue(EventID.GPU_WRITES, "Writes ..... ", "%4.2f", " MB")
-            .addValue(EventID.GPU_VOXELS_USAGE, "Used (vx) .. ", "%4.2f", " MB")
-            .addValue(EventID.GPU_CHUNKS_USAGE, "Used (ch) .. ", "%4.2f", " K")
-            .addValue(EventID.CM_CAMERA_MOVE_UPDATE_TIME, "Cam updt ... ", "%4.2f", " ms")
-            .addValue(EventID.CM_CHUNK_UPDATE_TIME, "Chk updt ... ", "%4.2f", " ms")
+            .addValue(EventID.GPU_WRITES,                 "Writes ..... ", "%.2f", " MB")
+            .addValue(EventID.GPU_VOXELS_USAGE,           "Used (vx) .. ", "%.2f", " MB")
+            .addValue(EventID.GPU_CHUNKS_USAGE,           "Used (ch) .. ", "%.2f", " K")
+            .addValue(EventID.CM_CAMERA_MOVE_UPDATE_TIME, "Cam updt ... ", "%.2f", " ms")
+            .addValue(EventID.CM_CHUNK_UPDATE_TIME,       "Chk updt ... ", "%.2f", " ms")
             .initialise();
 
         chunksMonitor
-            .addValue(EventID.CHUNKS_TOTAL, "Total ...... ", "%6.0f", "")
-            .addValue(EventID.CHUNKS_ON_GPU, "On GPU ..... ", "%6.0f", "")
-            .addValue(EventID.CHUNKS_READY, "Ready ...... ", "%6.0f", "")
-            .addValue(EventID.CHUNKS_FLYWEIGHT, "Flyweight .. ", "%6.0f", "")
+            .addValue(EventID.CHUNKS_TOTAL,     "Total ...... ", "%.0f", "")
+            .addValue(EventID.CHUNKS_ON_GPU,    "On GPU ..... ", "%.0f", "")
+            .addValue(EventID.CHUNKS_READY,     "Ready ...... ", "%.0f", "")
+            .addValue(EventID.CHUNKS_FLYWEIGHT, "Flyweight .. ", "%.0f", "")
             .initialise();
     }
     void destroy() {
