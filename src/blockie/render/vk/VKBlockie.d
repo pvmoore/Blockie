@@ -203,28 +203,34 @@ private:
     void createContext() {
         auto mem = new MemoryAllocator(vk);
 
-        auto storageSize =
+        auto storageSize = 8*WIDTH*HEIGHT*NUM_FRAME_BUFFERS;
+
+        auto deviceLocalSize =
             Blockie.VOXEL_BUFFER_SIZE
             + Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS
-            + 8*NUM_FRAME_BUFFERS.MB
-            + 4.MB;
+            + storageSize
+            + 256.MB    // ?
+            + 4.MB;     // for target image
 
         auto stagingSize =
-            storageSize
-            + 256.MB
-            + 5.MB;
+            deviceLocalSize
+            + 256.MB    // ?
+            + 5.MB;     // ?
 
-        this.log("Storage size = %s", storageSize);
-        this.log("Staging size = %s", stagingSize);
+        this.log("Device local size ........ %.2f MB", deviceLocalSize / MB(1).as!float);
+        this.log("Storage buffer size ...... %.2f MB", storageSize / MB(1).as!float);
+        this.log("Voxel buffer size ........ %.2f MB", VOXEL_BUFFER_SIZE / MB(1).as!float);
+        this.log("Chunk index buffer size .. %.2f MB", CHUNK_BUFFER_SIZE / MB(1).as!float);
+        this.log("Staging buffer size ...... %.2f MB", stagingSize / MB(1).as!float);
 
         this.context = new VulkanContext(vk)
-            .withMemory(MemID.LOCAL, mem.allocStdDeviceLocal("Blockie_Local", storageSize + 256.MB))
+            .withMemory(MemID.LOCAL, mem.allocStdDeviceLocal("Blockie_Local", deviceLocalSize))
             .withMemory(MemID.STAGING, mem.allocStdStagingUpload("Blockie_Staging", stagingSize));
 
         context.withBuffer(MemID.LOCAL, BufID.VERTEX, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 16.MB)
                .withBuffer(MemID.LOCAL, BufID.INDEX, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 16.MB)
                .withBuffer(MemID.LOCAL, BufID.UNIFORM, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 1.MB)
-               .withBuffer(MemID.LOCAL, BufID.STORAGE, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 8*NUM_FRAME_BUFFERS.MB)
+               .withBuffer(MemID.LOCAL, BufID.STORAGE, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, storageSize)
 
                .withBuffer(MemID.LOCAL, MARCH_VOXEL_BUFFER, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, Blockie.VOXEL_BUFFER_SIZE)
                .withBuffer(MemID.LOCAL, MARCH_CHUNK_BUFFER, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, Blockie.CHUNK_BUFFER_SIZE*NUM_FRAME_BUFFERS)

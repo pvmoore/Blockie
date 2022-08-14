@@ -10,7 +10,7 @@ final class Generator {
 
         setEagerFlushing(true);
 
-        const auto num = "8"; // "6";
+        const auto num = "6"; // "6";
 
         float f = 0;
         if(f<1) {

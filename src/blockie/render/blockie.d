@@ -11,8 +11,10 @@ protected:
     RenderView renderView;
 public:
     enum {
-        WIDTH = 1200,
-        HEIGHT = 800,
+        // 1080p resolution
+        WIDTH  = 1920,
+        HEIGHT = 1080,
+
         VOXEL_BUFFER_SIZE = 1300.MB,
         CHUNK_BUFFER_SIZE = 4.MB
     }
@@ -41,7 +43,7 @@ protected:
         this.log("windowSize = %s", windowSize.to!int);
 
         try{
-            string w = "1";
+            string w = "6";
 
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;

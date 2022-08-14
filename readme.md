@@ -2,10 +2,10 @@
 
 Voxel renderer using Vulkan compute shaders
 
+![Scene7](screenshots/scene7-2.png)
 ![Scene4](screenshots/scene4.png)
 ![Scene4c](screenshots/scene4c.png)
 ![Scene6](screenshots/scene6.png)
-![Scene7](screenshots/scene7.png)
 
 ## Requirements
 - Windows
@@ -31,6 +31,9 @@ Voxel renderer using Vulkan compute shaders
 - Currently no secondary shadow rays are used
 
 ## Version History
+
+#### 0.0.32
+- Use Imgui for UI
 
 ##### 0.0.31
 - Remove OpenGL renderer
