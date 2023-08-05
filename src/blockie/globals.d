@@ -51,7 +51,8 @@ import common :
     IQueue, Implements, PDH, Set, Stack, Timing,
     as, bitfieldExtract, dbg, expect, flushConsole, insertAt, isZeroMem, isInteger, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, todo, toString,
-    containsKey, entriesSortedByValue;
+    containsKey, entriesSortedByValue,
+    throwIf, throwIfNot;
 
 import blockie.model;
 import blockie.util;

@@ -62,7 +62,7 @@ public:
         return this;
     }
     override void tick() {
-        vkassert(subscribed);
+        throwIfNot(subscribed);
 
         auto numMsgs = messages.drain(tempMessages);
         if(numMsgs==0) return;

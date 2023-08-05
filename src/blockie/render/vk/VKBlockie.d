@@ -12,8 +12,8 @@ private:
     VKRenderData renderData;
 public:
     enum : BufID {
-        MARCH_VOXEL_BUFFER     = "VOXELS".as!BufID,
-        MARCH_CHUNK_BUFFER     = "CHUNKS".as!BufID
+        MARCH_VOXEL_BUFFER = "VOXELS".as!BufID,
+        MARCH_CHUNK_BUFFER = "CHUNKS".as!BufID
     }
 
     this() {
@@ -50,12 +50,12 @@ public:
             showWindow:   false,
             frameBuffers: NUM_FRAME_BUFFERS
         };
+        // Vulkan 1.1
         VulkanProperties vprops = {
             appName: "Blockie",
+            apiVersion: vulkanVersion(1,1,0),
             imgui: imguiOptions
         };
-
-        vprops.features.samplerAnisotropy = VK_TRUE;
 
 		this.vk = new Vulkan(this, wprops, vprops);
 
@@ -127,6 +127,10 @@ public:
         });
 
         this.renderView = new VKRenderView(context);
+    }
+    @Implements("IVulkanApplication")
+    void selectFeatures(DeviceFeatures features) {
+
     }
     @Implements("IVulkanApplication")
     void selectQueueFamilies(QueueManager queueManager) {

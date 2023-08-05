@@ -12,6 +12,7 @@ bin/
 *.lib
 *.lnk
 *.xml
+*.pdb
 
 
 data/**/*.zip
