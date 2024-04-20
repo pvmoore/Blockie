@@ -16,7 +16,7 @@
             "label": "**** Run Vulkan ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=debug --config=blockie_vk --compiler=dmd --arch=x86_64 --parallel",
+                "command": "run_debug_build.bat blockie_vk",
             },
             "group": "build",
             "presentation": {
@@ -29,7 +29,7 @@
             "label": "**** Run Vulkan (Release) ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=blockie_vk --compiler=ldc2 --arch=x86_64 --parallel",
+                "command": "run_release_build.bat blockie_vk",
             },
             "group": "build",
             "presentation": {
@@ -42,7 +42,7 @@
             "label": "**** Generate ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=generate --compiler=ldc2 --arch=x86_64 --parallel",
+                 "command": "run_release_build.bat generate",
             },
             "group": "build",
             "presentation": {
@@ -55,7 +55,7 @@
             "label": "**** Generate DEBUG ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=debug --config=generate --compiler=dmd --arch=x86_64 --parallel",
+                "command": "run_debug_build.bat generate",
             },
             "group": "build",
             "presentation": {

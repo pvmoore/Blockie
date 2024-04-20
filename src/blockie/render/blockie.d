@@ -43,7 +43,7 @@ protected:
         this.log("windowSize = %s", windowSize.to!int);
 
         try{
-            string w = "6";
+            string w = "1";
 
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;
