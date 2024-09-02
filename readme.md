@@ -25,7 +25,7 @@ Voxel renderer using Vulkan compute shaders
 - Sparse voxel octrees
 - 1024³ voxel chunks
 - Asynchronous chunk loading
-- Opengl compute shader 2-pass renderer
+- Vulkan compute shader 2-pass renderer
     - 1st pass ... Ray caster that computes hit distances
     - 2nd pass ... Shader that calculates colour/texture/lighting
 - Currently no secondary shadow rays are used

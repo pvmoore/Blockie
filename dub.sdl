@@ -19,8 +19,8 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-versions "MODEL3" "GC_STATS" #"RELEASE_ASSERT"
-#versions "MODEL3" "MODEL_B" "GC_STATS" #"RELEASE_ASSERT"
+versions "MODEL1"  #"RELEASE_ASSERT"
+#versions "MODEL3" "MODEL_B"  #"RELEASE_ASSERT"
 
 targetType "executable"
 

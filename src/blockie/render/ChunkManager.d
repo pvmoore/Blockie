@@ -172,9 +172,9 @@ private:
         this.log("}");
     }
     ///
-    /// The camera has moved to a different chunk. Update
-    /// the visible window of voxelOffsets. Handle chunks
-    /// entering and leaving the window.
+    /// The camera has moved to a different chunk. 
+    /// Update the visible window of voxelOffsets. 
+    /// Handle chunks entering and leaving the window.
     ///
     /// Possible future optimisation:
     ///     Increase the window dimension by 1 and update

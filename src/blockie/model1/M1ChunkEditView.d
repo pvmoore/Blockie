@@ -14,10 +14,14 @@ import blockie.model;
  */
 align(1):
 
-struct OctreeRoot { static assert(OctreeRoot.sizeof==OctreeFlags.sizeof+512+OctreeIndex.sizeof*4096+
-                                  Distance3.sizeof*M1_CELLS_PER_CHUNK); align(1):
+struct OctreeRoot { static assert(OctreeRoot.sizeof ==
+                                    OctreeFlags.sizeof +
+                                    512 +
+                                    OctreeIndex.sizeof*4096 +
+                                    Distance3.sizeof*M1_CELLS_PER_CHUNK); 
+align(1):
     OctreeFlags flags;                              /// 8 bytes
-    ubyte[M1_CELLS_PER_CHUNK/8] bits;               /// 512 bytes
+    ubyte[M1_CELLS_PER_CHUNK/8] bits;               /// 512 bytes (4096/8)
     OctreeIndex[M1_CELLS_PER_CHUNK] indexes;        /// 4096 * 3 bytes
     Distance3[M1_CELLS_PER_CHUNK] cellDistances;    /// 4096 * 3 bytes
 

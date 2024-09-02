@@ -32,9 +32,20 @@ public:
         foreach(stat; getEvents().getSubscriberStats()) {
             this.log("  %s: 0x%x time: %s count: %s", stat[0], stat[1], stat[2]/1000000.0, stat[3]);
         }
-        this.log("==================");
 
         if(renderView) renderView.destroy();
+
+        auto stats = GC.stats();
+        auto profileStats = GC.profileStats();
+        this.log("#==========================================#");
+        this.log("| GC");
+        this.log("#==========================================#");
+        this.log("| Used .............. %s MB (%000,s)", stats.usedSize/(1024*1024), stats.usedSize);
+        this.log("| Free .............. %s MB (%000,s)", stats.freeSize/(1024*1024), stats.freeSize);
+        this.log("| Collections ....... %s", profileStats.numCollections);
+        this.log("| Collection time ... %.2f ms", profileStats.totalCollectionTime.total!"nsecs"/1000000.0);
+        this.log("| Pause time ........ %.2f ms", profileStats.totalPauseTime.total!"nsecs"/1000000.0);
+        this.log("#==========================================#");
     }
     abstract void run();
 protected:
@@ -43,7 +54,7 @@ protected:
         this.log("windowSize = %s", windowSize.to!int);
 
         try{
-            string w = "1";
+            string w = "8";
 
             switch(w) {
                 case "1" : world = World.load("Test Scene 1"); break;

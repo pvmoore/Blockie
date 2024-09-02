@@ -4,20 +4,20 @@ import blockie.model;
 /**
  * Optimised read-only voxels layout (assumes 10-bit chunk 4-bit root):
  *
- * Root:
- *      uint    flags
- *      uint    twigsOffset
- *      uint    l2TwigsOffset
- *      uint    leavesOffset
- *      uint    l2IndexOffset
- *      uint    leafIndexOffset
- *      uint    encodeBits (leafEncodeBits | (l2EncodeBits<<8))
+ * OptimisedRoot {
+ *      OctreeFlags flags       (8 bytes)
+ *      uint        twigsOffset
+ *      uint        l2TwigsOffset
+ *      uint        leavesOffset
+ *      uint        l2IndexOffset
+ *      uint        leafIndexOffset
+ *      uint        encodeBits (leafEncodeBits | (l2EncodeBits<<8))
  *
  *      uint[256] root bits and popcounts interleaved (4096/16)
  *
  *      ubyte[4096]  root voxels (solid or LOD estimated)
  *      ushort[4096] root air distance fields (3*5 bits + 1 spare)
- *
+ * }
  * Twigs: (12 bytes each)
  *      ubyte bits
  *      ubyte[3] index (into twigsOffset or if level=3 point to l2indexes)
@@ -368,6 +368,7 @@ private:
         }
         //===============================================================
 
+        // Estimate the destination voxels length. This will be changed later
         auto initialVoxelsLength = max(view.voxelsLength, OptimisedRoot.sizeof);
         auto voxels              = new ubyte[initialVoxelsLength];
         OptimisedRoot* root      = cast(OptimisedRoot*)voxels.ptr;
@@ -398,13 +399,13 @@ private:
         while((l2Indexes.data.length&3)!=0) l2IndexBitWriter.write(0, 8);
         while((leafIndexes.data.length&3)!=0) leafIndexBitWriter.write(0, 8);
 
-        writefln("l2IndexBitWriter.length   = %s", l2IndexBitWriter.bytesWritten); // 330272
+        writefln("l2IndexBitWriter.length   = %s", l2IndexBitWriter.bytesWritten);  // 330272
         writefln("leafIndexBitWriter.length = %s", leafIndexBitWriter.bitsWritten); // 1,041,536
 
-        //    writefln("num twigs = %s", twigIndex);
-        //    writefln("num l2twigs = %s", l2twigs.length);
-        //    writefln("l2Index bytes = %s", l2Indexes.data.length);
-        //    writefln("leafIndex bytes = %s", leafIndexes.data.length);
+        // writefln("num twigs = %s", twigIndex);
+        // writefln("num l2twigs = %s", l2twigs.length);
+        // writefln("l2Index bytes = %s", l2Indexes.data.length);
+        // writefln("leafIndex bytes = %s", leafIndexes.data.length);
 
         root.flags           = view.root.flags;
         root.twigsOffset     = OptimisedRoot.sizeof;
@@ -420,10 +421,10 @@ private:
         expect(root.l2IndexOffset%4==0);
         expect(root.leafIndexOffset%4==0);
 
-        // realloc to the real required length
+        // Realloc to the real required length
         voxels.length = root.leafIndexOffset + leafIndexes.data.length;
 
-        // make sure we are still pointing to the root
+        // Make sure we are still pointing to the root (after possible realloc)
         root = cast(OptimisedRoot*)voxels.ptr;
 
         // Copy bits and calculate popcnts
@@ -432,6 +433,7 @@ private:
         for(auto i=0; i<root.bitsAndPopcnts.length; i++) {
             uint bits = bitsPtr[i];
             uint pop  = bctotal;
+            
             root.bitsAndPopcnts[i] = bits | (pop<<16);
 
             bctotal += popcnt(bits);

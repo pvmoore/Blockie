@@ -21,7 +21,7 @@ public:
     this(chunkcoords coords) {
         this.version_ = 0;
         this.pos      = coords;
-        this.filename = "%s.%s.%s.dat".format(pos.x,pos.y,pos.z);
+        this.filename = "%s.%s.%s.dat".format(pos.x, pos.y, pos.z);
         this.mutex    = new Mutex;
     }
     /// Atomically update chunk state if ver == current chunk version.

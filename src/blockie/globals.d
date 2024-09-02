@@ -74,12 +74,3 @@ enum CHUNK_SIZE_SQUARED = CHUNK_SIZE*CHUNK_SIZE;
 
 alias worldcoords = int3;
 alias chunkcoords = int3;
-
-version(GC_STATS) {
-    ///
-    /// Show GC stats after program exits
-    ///
-    extern(C) __gshared string[] rt_options = [
-        "gcopt=profile:1"
-    ];
-}
