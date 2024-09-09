@@ -8,7 +8,6 @@ const string version_ = "0.0.32";
    ===============================================================
 
     - Add voxel de-optimiser code
-    - Use Imgui for the UI
     - Create a single solid chunk test scene
     - Create a single solid cell test scene
 

@@ -10,7 +10,7 @@ final class Generator {
 
         setEagerFlushing(true);
 
-        const auto num = "6"; // "6";
+        const auto num = "9"; // "6";
 
         float f = 0;
         if(f<1) {
@@ -30,7 +30,8 @@ final class Generator {
             case "6" : scene = new TestScene6_bunny; break;
             case "7" : scene = new TestScene7_hgt; break;
             case "8" : scene = new TestScene8; break;
-            default: expect(false);
+            case "9" : scene = new TestScene9; break;
+            default: throwIf(true); break;
         }
 
         auto world = scene.getWorld();
@@ -185,7 +186,4 @@ final class Generator {
 
         sceneGenerator.build(editor);
     }
-}
-void testing() {
-
 }

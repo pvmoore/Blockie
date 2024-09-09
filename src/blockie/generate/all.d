@@ -17,6 +17,9 @@ import blockie.generate.testscene5;
 import blockie.generate.testscene6_bunny;
 import blockie.generate.testscene7_hgt;
 import blockie.generate.testscene8;
+import blockie.generate.testscene9;
+
+import blockie.generate.magicavoxel;
 
 interface SceneGenerator {
     World getWorld();

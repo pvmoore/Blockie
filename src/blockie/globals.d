@@ -44,8 +44,8 @@ import logging : flushLog, log, setEagerFlushing, FileLogger;
 import events : initEvents, getEvents, EventMsg;
 
 import common :
-    Allocator, Allocator_t, Archive, Array, Async,
-    BitWriter, Borrowed, ArrayBitWriter, ArrayByteWriter,
+    Allocator, Allocator_t, Archive, Array, Async, ArrayBitWriter, ArrayByteWriter,
+    BitWriter, Borrowed, ByteReader,
     Comment, ContiguousCircularBuffer,
     From,
     IQueue, Implements, PDH, Set, Stack, Timing,

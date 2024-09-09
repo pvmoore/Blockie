@@ -27,10 +27,12 @@ public:
         initEvents(1.MB.as!int);
     }
     void destroy() {
-        this.log("Destroy called");
-        this.log("Events statistics:");
+        this.log("Destroying");
+        this.log("#==========================================#");
+        this.log("| Event Statistics");
+        this.log("#==========================================#");
         foreach(stat; getEvents().getSubscriberStats()) {
-            this.log("  %s: 0x%x time: %s count: %s", stat[0], stat[1], stat[2]/1000000.0, stat[3]);
+            this.log("| %s: 0x%x time: %s count: %s", stat[0], stat[1], stat[2]/1000000.0, stat[3]);
         }
 
         if(renderView) renderView.destroy();
@@ -38,7 +40,7 @@ public:
         auto stats = GC.stats();
         auto profileStats = GC.profileStats();
         this.log("#==========================================#");
-        this.log("| GC");
+        this.log("| GC Statistics");
         this.log("#==========================================#");
         this.log("| Used .............. %s MB (%000,s)", stats.usedSize/(1024*1024), stats.usedSize);
         this.log("| Free .............. %s MB (%000,s)", stats.freeSize/(1024*1024), stats.freeSize);
@@ -53,22 +55,26 @@ protected:
 
         this.log("windowSize = %s", windowSize.to!int);
 
-        try{
-            string w = "8";
+        string[string] scenes = [
+            "1" : "Test Scene 1",
+            "2" : "Test Scene 2",
+            "3" : "Test Scene 3",
+            "4" : "Test Scene 4",
+            "4b": "Test Scene 4b",
+            "4c": "Test Scene 4c",
+            "5" : "Test Scene 5",
+            "6" : "Test Scene 6 - Bunny",
+            "7" : "Test Scene 7 - HGT",
+            "8" : "Test Scene 8",
+            "9" : "Test Scene 9"
+        ];
 
-            switch(w) {
-                case "1" : world = World.load("Test Scene 1"); break;
-                case "2" : world = World.load("Test Scene 2"); break;
-                case "3" : world = World.load("Test Scene 3"); break;
-                case "4" : world = World.load("Test Scene 4"); break;
-                case "4b": world = World.load("Test Scene 4b"); break;
-                case "4c": world = World.load("Test Scene 4c"); break;
-                case "5" : world = World.load("Test Scene 5"); break;
-                case "6" : world = World.load("Test Scene 6 - Bunny"); break;
-                case "7" : world = World.load("Test Scene 7 - HGT"); break;
-                case "8" : world = World.load("Test Scene 8"); break;
-                default: break;
-            }
+        try{
+            string w = "9";
+
+            string scene = scenes[w];
+
+            world = World.load(scene);
 
             this.log("w = %s", w);
 

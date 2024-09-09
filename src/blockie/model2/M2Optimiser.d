@@ -2,6 +2,20 @@ module blockie.model2.M2Optimiser;
 
 import blockie.model;
 
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *  
+ */
 final class M2Optimiser : Optimiser {
 private:
     M2ChunkEditView view;
@@ -113,8 +127,9 @@ private:
             recurseCell(cellPtr++);
         }
 
-        //writefln("Num mixed L%s branches = %s", theLevel, numBranches);
-        //writefln("Num unique = %s", map.length);
+        writefln("mergeUniqueBranches(%s) :", theLevel);
+        writefln("  Num mixed L%s branches = %s", theLevel, numBranches);
+        writefln("  Num unique = %s", map.length);
     }
     void mergeUniqueLeaves() {
         // 11_1100_0000  6 M2Cell   --> point to 1..8 M2Branch
@@ -183,8 +198,9 @@ private:
             recurseCell(cellPtr++);
         }
 
-        //writefln("num mixed leaves = %s", numLeaves);
-        //writefln("num unique mixed = %s", map.length);
+        writefln("mergeUniqueLeaves:");
+        writefln("  num mixed leaves = %s", numLeaves);
+        writefln("  num unique mixed = %s", map.length);
         //foreach(k,v; map) {
         //    //writefln("%08x = %s", k, v);
         //}
@@ -225,6 +241,11 @@ private:
         void recurseLeaf(M2Leaf* oldLeaf, M2Leaf* newLeaf) {
             newLeaf.bits = oldLeaf.bits;
         }
+        // Branch :
+        // 
+        // bits   - 1 byte
+        // offset - 3 bytes (0xffffff if solid)
+        //
         void recurseBranch(M2Branch* oldBr, M2Branch* newBr, uint oct, int level) {
 
             newBr.bits = oldBr.bits;
@@ -277,6 +298,13 @@ private:
                 }
             }
         }
+        // M2Cell { // (4 bytes)
+        //   ubyte bits;
+        //   union {
+        //     Distance3 distance; 
+        //     Offset3 offset;
+        //   }    
+        // }
         void recurseCell(M2Cell* oldCell, M2Cell* newCell) {
             /// Cell contents have already been copied.
             /// We just need to adjust the base offsets
@@ -297,11 +325,20 @@ private:
             }
         }
 
-        //writefln("Rewriting voxels ...");
-        //writefln("Got %s branchTranslations", branchTranslations.length);
+        writefln("Rewriting voxels ...");
+        writefln("Got %s branchTranslations", branchTranslations.length);
+
+        // [0] M2Root { // 8 + 16384 bytes
+        //   M2Flag flag;
+        //   byte _reserved;
+        //   Distance6 distance;   
+        // } 
+        // [8] M2Cell[4096] cells; (4096*4 = 16384 bytes)
 
         /// Copy the root
         newVoxels[0..dest] = voxels[0..dest];
+
+        
 
         /// Recurse through the cells, updating the offsets
         auto oldCells = cast(M2Cell*)(voxels.ptr+8);
