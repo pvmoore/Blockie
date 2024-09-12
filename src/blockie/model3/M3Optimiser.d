@@ -17,37 +17,27 @@ public:
     }
     override ubyte[] optimise(ubyte[] voxels, uint voxelsLength) {
 
-        version(MODEL_B) {
-            auto opt = new M3bOptimiser(view);
-            auto optVoxels = opt.optimise(voxels, voxelsLength);
+        this.voxels       = voxels;
+        this.voxelsLength = voxelsLength;
 
-            //new M3bTest(view, optVoxels).test();
-
-            return optVoxels;
-        } else {
-
-            this.voxels       = voxels;
-            this.voxelsLength = voxelsLength;
-
-            if(view.isAir) {
-                return cast(ubyte[])[M3Flag.AIR, 0] ~ view.root().distance.toBytes();
-            }
-
-            branchTranslations.clear();
-
-            writefln("Optimising %s\n\tStart voxels length        = %s", view.getChunk.pos, voxelsLength);
-
-            mergeUniqueLeaves();
-            mergeUniqueBranches(3);
-            mergeUniqueBranches(4);
-
-            auto optVoxels = rewriteVoxels();
-
-            writefln("\toptimised %s --> %s (%.2f%%)",
-                voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
-
-            return optVoxels;
+        if(view.isAir) {
+            return cast(ubyte[])[M3Flag.AIR, 0] ~ view.root().distance.toBytes();
         }
+
+        branchTranslations.clear();
+
+        writefln("Optimising %s\n\tStart voxels length        = %s", view.getChunk.pos, voxelsLength);
+
+        mergeUniqueLeaves();
+        mergeUniqueBranches(3);
+        mergeUniqueBranches(4);
+
+        auto optVoxels = rewriteVoxels();
+
+        writefln("\toptimised %s --> %s (%.2f%%)",
+            voxelsLength, optVoxels.length, optVoxels.length*100.0 / voxelsLength);
+
+        return optVoxels;
     }
 private:
     M3Root* getRoot() { return cast(M3Root*)voxels.ptr; }

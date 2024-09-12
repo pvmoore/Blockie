@@ -2,20 +2,30 @@ module blockie.model.ChunkEditView;
 
 import blockie.model;
 
-interface ChunkEditView {
-    void beginTransaction(Chunk chunk);
-    void voxelEditsCompleted();
-    void commitTransaction();
-    void setVoxel(uint3 offset, ubyte value);
+abstract class ChunkEditView {
+public:
+    final Chunk getChunk() { return chunk; }
+    final chunkcoords pos() { return chunk.pos; }
 
-    Chunk getChunk();
-    chunkcoords pos();
+    void beginTransaction(Chunk chunk) {
+        throwIf(chunk is null);
+        this.chunk = chunk;
+    }
 
-    bool isAir();
-    bool isAirCell(uint cellIndex);
-    void setChunkDistance(DFieldsBi f);
-    void setCellDistance(uint cell, uint x, uint y, uint z);
-    void setCellDistance(uint cell, DFieldsBi f);
+    abstract void voxelEditsCompleted();
+    abstract void commitTransaction();
+    abstract void setVoxel(uint3 offset, ubyte value);
+
+    abstract bool isAir();
+    abstract bool isAirCell(uint cellIndex);
+
+    abstract void setChunkDistance(DFieldsBi f);
+
+    // These might need some refactoring
+    abstract void setCellDistance(uint cell, uint x, uint y, uint z);
+    abstract void setCellDistance(uint cell, DFieldsBi f);
+protected:
+    Chunk chunk;
 }
 
 ///
@@ -28,16 +38,14 @@ public:
     this(bool setToAir = true) {
         this.setToAir = setToAir;
     }
-    bool isAir()              { return setToAir; }
-    bool isAirCell(uint cell) { return true; }
-    chunkcoords pos()         { return chunkcoords(int.min); }
+    override bool isAir()              { return setToAir; }
+    override bool isAirCell(uint cell) { return true; }
 
-    Chunk getChunk() { throw new Error("Abstract"); }
-    void beginTransaction(Chunk chunk) { throw new Error("Abstract"); }
-    void voxelEditsCompleted() { throw new Error("Abstract"); }
-    void commitTransaction() { throw new Error("Abstract"); }
-    void setVoxel(uint3 offset, ubyte value) { throw new Error("Abstract"); }
-    void setChunkDistance(DFieldsBi f) { throw new Error("Abstract"); }
-    void setCellDistance(uint cell, uint x, uint y, uint z) { throw new Error("Abstract"); }
-    void setCellDistance(uint cell, DFieldsBi df) { throw new Error("Abstract"); }
+    override void beginTransaction(Chunk chunk) { throw new Error("Abstract"); }
+    override void voxelEditsCompleted() { throw new Error("Abstract"); }
+    override void commitTransaction() { throw new Error("Abstract"); }
+    override void setVoxel(uint3 offset, ubyte value) { throw new Error("Abstract"); }
+    override void setChunkDistance(DFieldsBi f) { throw new Error("Abstract"); }
+    override void setCellDistance(uint cell, uint x, uint y, uint z) { throw new Error("Abstract"); }
+    override void setCellDistance(uint cell, DFieldsBi df) { throw new Error("Abstract"); }
 }

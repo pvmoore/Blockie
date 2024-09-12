@@ -1,6 +1,6 @@
 module blockie.version_;
 
-const string version_ = "0.0.32";
+const string version_ = "0.0.33";
 
 /**===============================================================
 
@@ -19,11 +19,13 @@ const string version_ = "0.0.32";
     step-back factor can be used if this seems to be a problem. If this works, a one in nine square
     can be tried for more performance.
 
-
     Notes:
     ===============================================================
     - It might be necessary to reduce the size of a chunk if editing a 10^^3 chunk in real-time
       is too slow.
+
+
+0.0.33 - Refactor some Model code. Move some old model code into 'unused_src' directory.
 
 0.0.32 - Use Imgui for UI
 

@@ -10,27 +10,6 @@ import core.bitop : bsr;
 //    );
 //}
 
-uint bitsRequiredToEncode(ulong count) {
-    if(count==0) return 0;
-    if(count==1) return 0;  // implied
-    return bsr(count-1)+1;
-}
-
-uint bitsRequiredToEncode2(ulong count) {
-    return count<3 ? 1 : bsr(count-1)+1;
-}
-
-uint getImpliedIndex_32bit(uint bits, uint index) {
-    assert(index < 32);
-    uint and = 0x7fffffff >> (31-index);
-    return popcnt(bits & and);
-}
-uint getImpliedIndex_64bit(ulong bits, uint index) {
-    assert(index < 64);
-    ulong and = 0x7fffffff_ffffffff >> (63-index);
-    return popcnt(bits & and);
-}
-
 string toHexString(T)(T[] array) if(isInteger!T) {
     enum size = T.sizeof * 2;
     auto buf = appender!(string);
@@ -51,6 +30,25 @@ void alignToUint(ref ubyte[] bytes) {
     foreach(i; 0..4-rem) {
         bytes ~= 0.as!ubyte;
     }
+}
+
+uint bitsRequiredToEncode(ulong count) {
+    return count<2 ? 0 : bsr(count-1)+1;
+}
+
+uint bitsRequiredToEncode2(ulong count) {
+    return count<3 ? 1 : bsr(count-1)+1;
+}
+
+uint getImpliedIndex_32bit(uint bits, uint index) {
+    assert(index < 32);
+    uint and = 0x7fffffff >> (31-index);
+    return popcnt(bits & and);
+}
+uint getImpliedIndex_64bit(ulong bits, uint index) {
+    assert(index < 64);
+    ulong and = 0x7fffffff_ffffffff >> (63-index);
+    return popcnt(bits & and);
 }
 
 pragma(inline, true) void ASSERT(bool b, string file=__FILE__, int line=__LINE__) {

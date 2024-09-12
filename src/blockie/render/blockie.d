@@ -55,38 +55,27 @@ protected:
 
         this.log("windowSize = %s", windowSize.to!int);
 
-        string[string] scenes = [
-            "1" : "Test Scene 1",
-            "2" : "Test Scene 2",
-            "3" : "Test Scene 3",
-            "4" : "Test Scene 4",
-            "4b": "Test Scene 4b",
-            "4c": "Test Scene 4c",
-            "5" : "Test Scene 5",
-            "6" : "Test Scene 6 - Bunny",
-            "7" : "Test Scene 7 - HGT",
-            "8" : "Test Scene 8",
-            "9" : "Test Scene 9"
+        string[float] scenes = [
+            1   : "Test Scene 1",
+            2   : "Test Scene 2",
+            3   : "Test Scene 3",
+            4   : "Test Scene 4",
+            4.1 : "Test Scene 4b",
+            4.2 : "Test Scene 4c",
+            5   : "Test Scene 5",
+            6   : "Test Scene 6 - Bunny",
+            7   : "Test Scene 7 - HGT",
+            8   : "Test Scene 8",
+            9   : "Test Scene 9"
         ];
 
         try{
-            string w = "9";
 
-            string scene = scenes[w];
+            string scene = scenes[SCENE];
 
             world = World.load(scene);
 
-            this.log("w = %s", w);
-
-            version(MODEL1) pragma(msg, "MODEL1");
-            version(MODEL1a) pragma(msg, "MODEL1a");
-            version(MODEL2) pragma(msg, "MODEL2");
-            version(MODEL3) pragma(msg, "MODEL3");
-            version(MODEL4) pragma(msg, "MODEL4");
-            version(MODEL5) pragma(msg, "MODEL5");
-            version(MODEL6) pragma(msg, "MODEL6");
-
-            version(MODEL_B) pragma(msg, "[Submodel B]");
+            pragma(msg, "MODEL%s".format(MODEL));
 
             world.camera.resize(windowSize);
 

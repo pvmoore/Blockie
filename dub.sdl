@@ -19,15 +19,13 @@ buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck" "warningsAsErrors"
 }
 
-#versions "MODEL1"  #"RELEASE_ASSERT"
-versions "MODEL2"  #"RELEASE_ASSERT"
-#versions "MODEL3" "MODEL_B"  #"RELEASE_ASSERT"
+#versions "RELEASE_ASSERT"
 
 targetType "executable"
 
 configuration "blockie_vk" {
 	#mainSourceFile "src/main.d"
-	excludedSourceFiles "src/gen.d" "src/blockie/generate/*" "*/gl/*"
+	excludedSourceFiles "src/gen.d" "src/blockie/generate/*" "*/gl/*" "unused_src/**"
 	targetName "blockie"
     versions "RENDER"
 
@@ -35,7 +33,7 @@ configuration "blockie_vk" {
 }
 configuration "generate" {
 	#mainSourceFile "src/gen.d"
-	excludedSourceFiles "src/main.d" "src/blockie/render/*"
+	excludedSourceFiles "src/main.d" "src/blockie/render/*" "unused_src/**"
     exclude
 	targetName "generate"
     versions "GENERATE"

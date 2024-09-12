@@ -10,6 +10,9 @@ public:
     const string filename;
 
     uint version_;  // todo - make this readonly
+
+    // Note: Voxels here are always assumed to be optimised. Editing is performed on a
+    // copy which is then written back here atomically when the edit has completed.
     ubyte[] voxels; // todo - make this readonly
 
     // End of data

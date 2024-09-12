@@ -47,12 +47,8 @@ public:
     override void setWorld(World world) {
         super.setWorld(world);
 
-        version(MODEL_B) {
-            string b = "-B";
-        } else {
-            string b = "";
-        }
-        auto s = "%s (MODEL %s%s)".format(world.name, getModelName(), b);
+        string b = "";
+        auto s = "%s (MODEL %s%s)".format(world.name, MODEL, b);
         float x = world.camera.windowSize().width/2 - font.sdf.getDimension(s, FONT_SIZE).width/2;
         text.replace(1, s)
             .moveTo(1, cast(int)x, 1);

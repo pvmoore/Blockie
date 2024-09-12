@@ -192,7 +192,6 @@ struct OctreeLeaf { static assert(OctreeLeaf.sizeof==8); align(1):
 //==========================================================================================
 
 final class M1ChunkEditView : ChunkEditView {
-    M1Chunk chunk;
     OctreeRoot root;
     OctreeBranch[] branches;
     OctreeBranch[] l2Branches;
@@ -210,16 +209,9 @@ final class M1ChunkEditView : ChunkEditView {
         this.leaves.assumeSafeAppend();
         this.optimiser    = new M1Optimiser(this);
     }
-    override Chunk getChunk() {
-        return chunk;
-    }
-    override chunkcoords pos() {
-        return chunk.pos;
-    }
-    override void beginTransaction(Chunk chunk) {
-        ASSERT(chunk !is null);
 
-        this.chunk = cast(M1Chunk)chunk;
+    override void beginTransaction(Chunk chunk) {
+        super.beginTransaction(chunk);
 
         convertToEditable();
     }

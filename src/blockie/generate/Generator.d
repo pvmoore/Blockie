@@ -10,8 +10,6 @@ final class Generator {
 
         setEagerFlushing(true);
 
-        const auto num = "9"; // "6";
-
         float f = 0;
         if(f<1) {
             // testing();
@@ -19,18 +17,18 @@ final class Generator {
         }
 
         SceneGenerator scene;
-        switch(num) {
-            case "1" : scene = new TestScene1; break;
-            case "2" : scene = new TestScene2; break;
-            case "3" : scene = new TestScene3; break;
-            case "4" : scene = new TestScene4; break;
-            case "4b": scene = new TestScene4b; break;
-            case "4c": scene = new TestScene4c; break;
-            case "5" : scene = new TestScene5; break;
-            case "6" : scene = new TestScene6_bunny; break;
-            case "7" : scene = new TestScene7_hgt; break;
-            case "8" : scene = new TestScene8; break;
-            case "9" : scene = new TestScene9; break;
+        switch(cast(uint)(SCENE*10)) {
+            case 10  : scene = new TestScene1; break;
+            case 20  : scene = new TestScene2; break;
+            case 30  : scene = new TestScene3; break;
+            case 40  : scene = new TestScene4; break;
+            case 410 : scene = new TestScene4b; break;
+            case 420 : scene = new TestScene4c; break;
+            case 50  : scene = new TestScene5; break;
+            case 60  : scene = new TestScene6_bunny; break;
+            case 70  : scene = new TestScene7_hgt; break;
+            case 80  : scene = new TestScene8; break;
+            case 90  : scene = new TestScene9; break;
             default: throwIf(true); break;
         }
 
@@ -40,31 +38,15 @@ final class Generator {
 
         string dirName  = "data/" ~ world.name ~ "/";
 
-        version(MODEL1) {
+        static if(MODEL==1) {
             removeFile(dirName ~ "M1.chunks.zip");
             generateModel1(scene, world);
-        } else version(MODEL1A) {
-            removeFile(dirName ~ "M1A.chunks.zip");
-            generateModel1A(scene, world);
-        } else version(MODEL2) {
+        } else static if(MODEL==2) {
             removeFile(dirName ~ "M2.chunks.zip");
             generateModel2(scene, world);
-        } else version(MODEL3) {
-            version(MODEL_B) {
-                removeFile(dirName ~ "M3b.chunks.zip");
-            } else {
-                removeFile(dirName ~ "M3.chunks.zip");
-            }
+        } else static if(MODEL==3) {
+            removeFile(dirName ~ "M3.chunks.zip");
             generateModel3(scene, world);
-        } else version(MODEL4) {
-            removeFile(dirName ~ "M4.chunks.zip");
-            generateModel4(scene, world);
-        } else version(MODEL5) {
-            removeFile(dirName ~ "M5.chunks.zip");
-            generateModel5(scene, world);
-        } else version(MODEL6) {
-            removeFile(dirName ~ "M6.chunks.zip");
-            generateModel6(scene, world);
         } else assert(false);
 
         writefln("\nFinished OK");
@@ -82,24 +64,6 @@ final class Generator {
 
         sceneGenerator.build(editor);
     }
-    // void generateModel1A(SceneGenerator sceneGenerator, World world) {
-    //     writefln("\n=========================================");
-    //     writefln("Generating MODEL1A %s", world);
-    //     writefln("=========================================\n");
-
-    //     auto editor = new M1aWorldEditor(world, new Model1a);
-    //     scope(exit) editor.destroy();
-
-    //     // editor.startTransaction();
-    //     // editor.setVoxel(worldcoords(0,0,0), 1);
-    //     // editor.setVoxel(worldcoords(1,0,0), 1);
-    //     // editor.setVoxel(worldcoords(0,1,0), 1);
-    //     // editor.setVoxel(worldcoords(1,1,0), 1);
-    //     // editor.setVoxel(worldcoords(2,0,0), 1);
-    //     // editor.commitTransaction();
-
-    //     sceneGenerator.build(editor);
-    // }
     void generateModel2(SceneGenerator sceneGenerator, World world) {
         writefln("\nGenerating Model2 %s", world);
 
@@ -132,57 +96,6 @@ final class Generator {
 
         auto editor = new M3WorldEditor(world, new Model3);
         scope(exit) editor.destroy();
-
-        sceneGenerator.build(editor);
-    }
-    void generateModel4(SceneGenerator sceneGenerator, World world) {
-        writefln("\n=========================================");
-        writefln("Generating Model4 %s", world);
-        writefln("=========================================\n");
-
-        auto editor = new M4WorldEditor(world, new Model4);
-        scope(exit) editor.destroy();
-
-        sceneGenerator.build(editor);
-    }
-    void generateModel5(SceneGenerator sceneGenerator, World world) {
-        writefln("\n=========================================");
-        writefln("Generating Model5 %s", world);
-        writefln("=========================================\n");
-
-        auto editor = new M5WorldEditor(world, new Model5);
-        scope(exit) editor.destroy();
-
-        sceneGenerator.build(editor);
-
-        // editor.startTransaction();
-        // editor.setVoxel(worldcoords(0,0,0), 1);
-        // editor.setVoxel(worldcoords(7,7,7), 1);
-        // editor.commitTransaction();
-    }
-    void generateModel6(SceneGenerator sceneGenerator, World world) {
-        writefln("\n=========================================");
-        writefln("Generating Model6 %s", world);
-        writefln("=========================================\n");
-
-        auto editor = new M6WorldEditor(world, new Model6);
-        scope(exit) editor.destroy();
-
-        // editor.startTransaction();
-        // editor.setVoxel(worldcoords(0,0,0), 1);
-        // editor.setVoxel(worldcoords(31,0,0), 1);
-        // editor.setVoxel(worldcoords(32,0,0), 1);
-
-
-        //editor.setVoxel(worldcoords(0,1,0), 1);
-
-
-        //editor.setVoxel(worldcoords(0,0,1), 1);
-
-
-        //editor.setVoxel(worldcoords(31,31,31), 1);
-
-        //editor.commitTransaction();
 
         sceneGenerator.build(editor);
     }

@@ -510,16 +510,9 @@ private:
     }
     void createPipelines() {
         this.log("Creating pipelines");
-        auto marchShader = "pass1_marchM%s.comp".format(getModelName());
+        auto marchShader = "pass1_marchM%s.comp".format(MODEL);
 
-        version(MODEL_B) {
-            // todo - change me
-            marchShader = "pass1_marchM3b.comp";
-        }
-
-        version(MODEL1) {
-            auto shadeShader = "pass3_shade.comp";
-        } else version(MODEL1a) {
+        static if(MODEL==1) {
             auto shadeShader = "pass3_shade.comp";
         } else {
             auto shadeShader = "pass3_shadeM2.comp";

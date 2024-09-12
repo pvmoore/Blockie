@@ -1,4 +1,4 @@
-module blockie.generate.testscene1;
+module blockie.generate.scenes.testscene1;
 
 import blockie.generate.all;
 /**

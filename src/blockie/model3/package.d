@@ -11,9 +11,6 @@ import blockie.model3.M3DeOptimiser;
 import blockie.model3.M3Optimiser;
 import blockie.model3.M3WorldEditor;
 
-import blockie.model3.M3bOptimiser;
-import blockie.model3.M3bTest;
-
 ///
 /// Same as Model2 but using 5 bits for the root instead of 4
 ///
@@ -25,11 +22,7 @@ enum M3_CELLS_PER_CHUNK  = 32*32*32;   // 32768
 final class Model3 : Model {
 public:
     string name() {
-        version(MODEL_B) {
-            return "M3b";
-        } else {
-            return "M3";
-        }
+        return "M3";
     }
     Chunk           makeChunk(chunkcoords coords) { return new M3Chunk(coords); }
     ChunkEditView   makeEditView()                { return new M3ChunkEditView; }

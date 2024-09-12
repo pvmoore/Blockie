@@ -18,7 +18,6 @@ private:
     Allocator_t!uint allocator;
     M2Optimiser optimiser;
 
-    M2Chunk chunk;
     ubyte[] voxels;
     uint version_;
 
@@ -43,16 +42,8 @@ public:
     }
     ulong getNumEdits() const { return numEdits; }
 
-    override Chunk getChunk() {
-        return chunk;
-    }
-    override chunkcoords pos() {
-        return chunk.pos;
-    }
     override void beginTransaction(Chunk chunk) {
-        expect(chunk !is null);
-
-        this.chunk = cast(M2Chunk)chunk;
+        super.beginTransaction(chunk);
 
         convertToEditable();
     }

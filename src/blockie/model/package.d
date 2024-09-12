@@ -27,10 +27,6 @@ import blockie.model.WorldEditor;
 import blockie.model1;
 import blockie.model2;
 import blockie.model3;
-import blockie.model4;
-import blockie.model5;
-import blockie.model.model6;
-import blockie.model.model1a;
 
 interface Model {
     string          name();
@@ -41,24 +37,8 @@ interface Model {
 }
 
 Model createModel() {
-    version(MODEL1) return new Model1;
-    else version(MODEL1a) return new Model1a;
-    else version(MODEL2) return new Model2;
-    else version(MODEL3) return new Model3;
-    else version(MODEL4) return new Model4;
-    else version(MODEL5) return new Model5;
-    else version(MODEL6) return new Model6;
+    static if(MODEL==1) return new Model1;
+    else static if(MODEL==2) return new Model2;
+    else static if(MODEL==3) return new Model3;
     else static assert(false);
-}
-
-string getModelName() {
-    /// Display world name
-    version(MODEL1) return "1";
-    else version(MODEL1a) return "1a";
-    else version(MODEL2) return "2";
-    else version(MODEL3) return "3";
-    else version(MODEL4) return "4";
-    else version(MODEL5) return "5";
-    else version(MODEL6) return "6";
-    else return "Unknown Model";
 }

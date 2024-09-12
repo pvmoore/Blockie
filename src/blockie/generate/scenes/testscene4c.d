@@ -1,4 +1,4 @@
-module blockie.generate.testscene4b;
+module blockie.generate.scenes.testscene4c;
 
 import blockie.generate.all;
 /**
@@ -34,19 +34,19 @@ import blockie.generate.all;
  *          61,364,692      4.56ms  (8464750,133701,319339)
  *          62,026,092      5.93ms  (8546750,133397,319339)
  */
-final class TestScene4b : SceneGenerator {
+final class TestScene4c : SceneGenerator {
     ImprovedPerlin noise;
     const uint width   = 1024*8;    // x
     const uint height  = 1024*2;    // y
     const uint breadth = 1024*8;    // z
 
     this() {
-        this.noise = new ImprovedPerlin(4);
+        this.noise = new ImprovedPerlin(3);
     }
 
     @Implements("WorldGen")
     World getWorld() {
-        World w = new World("Test Scene 4b");
+        World w = new World("Test Scene 4c");
 
         w.sunPos = vec3(0, 10000, 0);
 
@@ -66,25 +66,25 @@ final class TestScene4b : SceneGenerator {
             for(auto z=0; z<breadth; z++) {
                 float hf =
                     1000 * noise.get(
-                        1.0*cast(float)x/width,
-                        1.0*cast(float)z/breadth
+                        0.8*cast(float)x/width,
+                        0.8*cast(float)z/breadth
                     )
                     + 500 * noise.get(
                         5.0*cast(float)x/width,
                         5.0*cast(float)z/breadth
                     )
                     + 250 * noise.get(
-                        12.0*cast(float)x/width,
-                        12.0*cast(float)z/breadth
+                        10.0*cast(float)x/width,
+                        10.0*cast(float)z/breadth
                     )
-//                    + 125 * noise.get(
-//                        40.0*cast(float)x/width,
-//                        40.0*cast(float)z/breadth
-//                    )
-//                    + 25 * noise.get(
-//                        60.0*cast(float)x/width,
-//                        60.0*cast(float)z/breadth
-//                    )
+                    + 125 * noise.get(
+                        40.0*cast(float)x/width,
+                        40.0*cast(float)z/breadth
+                    )
+                    + 25 * noise.get(
+                        60.0*cast(float)x/width,
+                        60.0*cast(float)z/breadth
+                    )
                     ;
                 uint h = cast(int)(hf + height/2);
                 uint hmin = h-5;

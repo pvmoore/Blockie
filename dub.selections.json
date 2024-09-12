@@ -7,6 +7,7 @@
 		"logging": "~master",
 		"maths": "~master",
 		"resources": "~master",
+		"voxellib": "~master",
 		"vulkan": "~master"
 	}
 }
