@@ -65,7 +65,7 @@ import common :
     containsKey, entriesSortedByValue, expect, flushConsole, 
     insertAt, isZeroMem, isInteger, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, 
-    todo, toString, throwIf, throwIfNot;
+    todo, toString, throwIf, throwIfNot, throwIfNull;
 
 import blockie.model;
 import blockie.util;

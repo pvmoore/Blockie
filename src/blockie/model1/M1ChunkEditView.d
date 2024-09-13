@@ -286,11 +286,12 @@ final class M1ChunkEditView : ChunkEditView {
     }
 private:
     void convertToEditable() {
+        
+        immutable(ubyte)[] originalVoxels;
+        chunk.atomicGet(this.version_, originalVoxels);
+
         // todo - make this work for chunks that are not solid air
-
-        this.version_ = chunk.getVersion();
-
-        ASSERT(chunk.isAir);
+        throwIfNot(chunk.isAir);
 
         root            = OctreeRoot();
         root.flags.flag = OctreeFlag.AIR;

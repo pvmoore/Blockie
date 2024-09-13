@@ -15,13 +15,11 @@ public:
     abstract void voxelEditsCompleted();
     abstract void commitTransaction();
     abstract void setVoxel(uint3 offset, ubyte value);
-
-    abstract bool isAir();
-    abstract bool isAirCell(uint cellIndex);
-
     abstract void setChunkDistance(DFieldsBi f);
+    abstract bool isAir();
 
-    // These might need some refactoring
+    // These probably shouldn't be here
+    abstract bool isAirCell(uint cellIndex);
     abstract void setCellDistance(uint cell, uint x, uint y, uint z);
     abstract void setCellDistance(uint cell, DFieldsBi f);
 protected:

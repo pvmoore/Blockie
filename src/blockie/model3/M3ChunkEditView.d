@@ -225,15 +225,18 @@ private:
     void convertToEditable() {
         /// Initially only allocate the exact number of voxels used
         /// in case we don't actually make any edits which is likely
-        this.voxels = new ubyte[chunk.getVoxelsLength];
-        this.allocator.resize(chunk.getVoxelsLength);
 
-        chunk.atomicCopyTo(version_, this.voxels);
+        immutable(ubyte)[] originalVoxels;
+        chunk.atomicGet(this.version_, originalVoxels);
+
+        this.voxels = originalVoxels.dup;
+        this.allocator.resize(voxels.length.as!uint);
+
         expect(version_!=0, "%s version_ is %s".format(chunk, version_));
 
-        alloc(chunk.getVoxelsLength);
+        alloc(voxels.length.as!uint);
 
-        expect(allocator.numBytesUsed==chunk.getVoxelsLength);
+        expect(allocator.numBytesUsed==voxels.length);
         expect(allocator.numBytesFree==0);
     }
     //void checkBranches() {

@@ -66,7 +66,7 @@ public:
         if(ptr) return *ptr;
 
         auto ch = model.makeChunk(coords);
-        assert(ch.version_==0);
+        throwIf(ch.getVersion()!=0);
         chunks[coords] = ch;
 
         getEvents().fire(EventMsg(EventID.CHUNK_ACTIVATED, ch));

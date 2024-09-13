@@ -48,7 +48,7 @@ public:
                 log("Loaded chunk data is stale version %s (Chunk version is %s)", version_, ver);
             }
 
-            assert(c.getVersion()>0);
+            throwIf(c.getVersion() == 0);
 
             return voxels.length;
         }
@@ -72,9 +72,13 @@ public:
             return 0;
         }
 
-        archive.add(c.filename, c.voxels, c.version_.to!string);
+        uint version_;
+        immutable(ubyte)[] voxels;
+        c.atomicGet(version_, voxels);
 
-        return c.voxels.length;
+        archive.add(c.filename, voxels.as!(ubyte[]), version_.to!string);
+
+        return voxels.length;
     }
     Chunk[] loadAirChunks() {
 

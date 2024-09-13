@@ -3,23 +3,13 @@ module blockie.model.Chunk;
 import blockie.model;
 
 abstract class Chunk {
-private:
-    Mutex mutex;
 public:
     const chunkcoords pos;
     const string filename;
 
-    uint version_;  // todo - make this readonly
+    abstract bool isAir();
 
-    // Note: Voxels here are always assumed to be optimised. Editing is performed on a
-    // copy which is then written back here atomically when the edit has completed.
-    ubyte[] voxels; // todo - make this readonly
-
-    // End of data
-
-    uint getVersion() const      { return version_; }
-    ubyte[] getVoxels()          { return voxels; }
-    uint getVoxelsLength() const { return cast(uint)voxels.length; }
+    uint getVersion() { return version_; }
 
     this(chunkcoords coords) {
         this.version_ = 0;
@@ -43,19 +33,22 @@ public:
         }
         return version_;
     }
-    /// Atomically copy voxels and version
-    void atomicCopyTo(ref uint ver, ubyte[] dest) {
+    void atomicGet(out uint ver, out immutable(ubyte)[] dest) {
         mutex.lock();
         scope(exit) mutex.unlock();
 
-        assert(dest.length >= voxels.length);
         ver = version_;
-        dest[0..voxels.length] = voxels[];
+        dest = voxels.as!(immutable(ubyte)[]);
     }
-
-    abstract bool isAir();
 
     override string toString() {
-        return "Chunk %s".format(pos.toString);
+        return "Chunk %s".format(pos.toString());
     }
+protected:
+    // Note: Voxels here are always assumed to be optimised. Editing is performed on a
+    // copy which is then written back here via 'atomicUpdate'.
+    ubyte[] voxels; 
+private:
+    Mutex mutex;
+    uint version_;      
 }
