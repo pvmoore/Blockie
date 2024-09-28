@@ -10,6 +10,7 @@ public:
     abstract bool isAir();
 
     uint getVersion() { return version_; }
+    immutable(ubyte)[] getVoxels() { return voxels.as!(immutable(ubyte)[]); }
 
     this(chunkcoords coords) {
         this.version_ = 0;

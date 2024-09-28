@@ -522,12 +522,12 @@ private:
 
         this.marchPipeline = new ComputePipeline(context)
             .withDSLayouts(descriptors.getAllLayouts())
-            .withShader(context.shaderCompiler().getModule(marchShader))
+            .withShader(context.shaders.getModule(marchShader))
             //.withPushConstantRange!PushConstants()
             .build();
         this.shadePipeline = new ComputePipeline(context)
             .withDSLayouts(descriptors.getAllLayouts())
-            .withShader(context.shaderCompiler().getModule(shadeShader))
+            .withShader(context.shaders.getModule(shadeShader))
             //.withPushConstantRange!PushConstants()
             .build();
 

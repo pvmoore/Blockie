@@ -20,10 +20,6 @@ enum CHUNK_SIZE_SQUARED = CHUNK_SIZE*CHUNK_SIZE;
 
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 
-// version(LDC) {
-//     import ldc.attributes : fastmath;
-// }
-
 import core.time                : dur;
 import core.memory	            : GC;
 import core.atomic		        : atomicStore, atomicLoad;

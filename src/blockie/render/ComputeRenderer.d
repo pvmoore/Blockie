@@ -55,4 +55,7 @@ public:
     void setWorld(World world) {
         this.world = world;
     }
+    void renderOptionsChanged() {
+        // Ignore render options
+    }
 }

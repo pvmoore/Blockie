@@ -2,6 +2,29 @@ module blockie.render.all;
 
 public:
 
+import blockie.globals;
+
+import blockie.render.Blockie;
+import blockie.render.ChunkManager;
+import blockie.render.ComputeRenderer;
+import blockie.render.RenderView;
+import blockie.render.stat_providers;
+
+import blockie.render.ui.StatsUI;
+import blockie.render.ui.BottomBar;
+import blockie.render.ui.HistogramUI;
+import blockie.render.ui.TopBar;
+
+import blockie.render.ui.EventMonitorUI;
+import blockie.render.ui.VKBottomBar;
+
+import blockie.render.vk.VKBlockie;
+import blockie.render.vk.VKComputeRenderer;
+import blockie.render.vk.VKGPUMemoryManager;
+import blockie.render.vk.VKRenderView;
+
+import vulkan;
+
 abstract class AbsRenderData {
     double perSecond;
 }
@@ -37,16 +60,6 @@ interface IGPUMemoryManager(T) {
     void free(ulong offset, ulong size);
 }
 
-import blockie.globals;
-
-import blockie.render.Blockie;
-import blockie.render.ChunkManager;
-import blockie.render.ComputeRenderer;
-import blockie.render.RenderView;
-import blockie.render.stat_providers;
-
-import vulkan;
-
 final class VKRenderData : AbsRenderData {
     Frame frame;
 
@@ -54,17 +67,3 @@ final class VKRenderData : AbsRenderData {
     VkSemaphore[] waitSemaphores;
     VkPipelineStageFlags[] waitStages;
 }
-
-import blockie.render.ui.StatsUI;
-import blockie.render.ui.BottomBar;
-import blockie.render.ui.HistogramUI;
-import blockie.render.ui.TopBar;
-
-import blockie.render.ui.EventMonitorUI;
-import blockie.render.ui.VKTopBar;
-import blockie.render.ui.VKBottomBar;
-
-import blockie.render.vk.VKBlockie;
-import blockie.render.vk.VKComputeRenderer;
-import blockie.render.vk.VKGPUMemoryManager;
-import blockie.render.vk.VKRenderView;

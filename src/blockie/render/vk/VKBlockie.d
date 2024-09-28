@@ -18,9 +18,6 @@ public:
 
     this() {
         this.renderData = new VKRenderData();
-        renderData.commandBuffers.reserve(8);
-        renderData.waitSemaphores.reserve(8);
-        renderData.waitStages.reserve(8);
     }
     @Implements("Blockie")
     override void initialise() {
@@ -54,7 +51,10 @@ public:
         VulkanProperties vprops = {
             appName: "Blockie",
             apiVersion: vulkanVersion(1,1,0),
-            imgui: imguiOptions
+            imgui: imguiOptions,
+            shaderSrcDirectories: ["shaders/", "/pvmoore/d/libs/vulkan/shaders/"],
+            shaderDestDirectory: "resources/shaders/",
+            shaderSpirvVersion: "1.0"
         };
 
 		this.vk = new Vulkan(this, wprops, vprops);
@@ -243,8 +243,7 @@ private:
 
         context.withRenderPass(renderPass)
                .withFonts("resources/fonts/")
-               .withImages("resources/images")
-               .withShaderCompiler("shaders/", "resources/shaders/");
+               .withImages("resources/images");
 
         this.log("%s", context);
     }

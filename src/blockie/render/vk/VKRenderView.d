@@ -3,16 +3,13 @@ module blockie.render.vk.VKRenderView;
 import blockie.render.all;
 
 final class VKRenderView : RenderView {
-private:
-    @Borrowed Vulkan vk;
-    @Borrowed VulkanContext context;
 public:
     this(VulkanContext context) {
         super(context.vk.windowSize().to!float);
 
         this.vk              = context.vk;
         this.context         = context;
-        this.topBar          = new VKTopBar(context, this, renderRect.y+1);
+        this.topBar          = new TopBar(context, this, renderRect.y+1);
 
         this.bottomBar       = new VKBottomBar(context, this);
         this.computeRenderer = new VKComputeRenderer(context, this, renderRect);
@@ -87,6 +84,9 @@ protected:
         return vk.getFPSSnapshot();
     }
 private:
+    @Borrowed Vulkan vk;
+    @Borrowed VulkanContext context;
+    
     void takeSnapshotPerSecond() {
         import core.memory : GC;
         uint free = (GC.stats.freeSize / (1024*1024)).to!uint;

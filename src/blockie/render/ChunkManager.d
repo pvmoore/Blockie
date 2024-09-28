@@ -1,24 +1,29 @@
 module blockie.render.ChunkManager;
 
 import blockie.render.all;
+
 /**
  *
  * Manage chunks in a scene and data transfer to GPU.
  */
 final class ChunkManager {
 private:
-    enum VIEW_WINDOW_X = 25;
-    enum VIEW_WINDOW_Y = 8;
-    enum VIEW_WINDOW_Z = 25;
+    enum VIEW_WINDOW_VOXELS_X = 25*1024;
+    enum VIEW_WINDOW_VOXELS_Y = 8*1024;
+    enum VIEW_WINDOW_VOXELS_Z = 25*1024;
+
+    enum VIEW_WINDOW_CHUNKS_X = VIEW_WINDOW_VOXELS_X / CHUNK_SIZE;
+    enum VIEW_WINDOW_CHUNKS_Y = VIEW_WINDOW_VOXELS_Y / CHUNK_SIZE;
+    enum VIEW_WINDOW_CHUNKS_Z = VIEW_WINDOW_VOXELS_Z / CHUNK_SIZE;
 
     // TODO - use these enums
     enum MAX_VOXELS_SIZE = 0;
     enum MAX_CHUNKS_SIZE = 0;
 
-    const uint3 VIEW_WINDOW     = uint3(VIEW_WINDOW_X,VIEW_WINDOW_Y,VIEW_WINDOW_Z);
-    const int3 HALF_VIEW_WINDOW = int3(VIEW_WINDOW_X/2,VIEW_WINDOW_Y/2,VIEW_WINDOW_Z/2);
-    const int3 VIEW_WINDOW_MUL  = int3(1,VIEW_WINDOW_X,VIEW_WINDOW_X*VIEW_WINDOW_Y);
-    const uint VIEW_WINDOW_HMUL = VIEW_WINDOW_X*VIEW_WINDOW_Y*VIEW_WINDOW_Z;
+    enum uint3 VIEW_WINDOW     = uint3(VIEW_WINDOW_CHUNKS_X, VIEW_WINDOW_CHUNKS_Y, VIEW_WINDOW_CHUNKS_Z);
+    enum int3 HALF_VIEW_WINDOW = int3(VIEW_WINDOW_CHUNKS_X/2, VIEW_WINDOW_CHUNKS_Y/2, VIEW_WINDOW_CHUNKS_Z/2);
+    enum int3 VIEW_WINDOW_MUL  = int3(1, VIEW_WINDOW_CHUNKS_X, VIEW_WINDOW_CHUNKS_X*VIEW_WINDOW_CHUNKS_Y);
+    enum uint VIEW_WINDOW_HMUL = VIEW_WINDOW_CHUNKS_X*VIEW_WINDOW_CHUNKS_Y*VIEW_WINDOW_CHUNKS_Z;
 
     static final class ChunkInfo {
         Chunk chunk;
@@ -69,14 +74,14 @@ public:
 
     this(SceneChangeListener listener,
          World world,
-         IGPUMemoryManager!ubyte voxelsVboMM,
-         IGPUMemoryManager!uint chunksVboMM)
+         IGPUMemoryManager!ubyte voxelsMM,
+         IGPUMemoryManager!uint chunksMM)
     {
         this.messages = makeSPSCQueue!EventMsg(1024*1024);
         this.listener = listener;
         this.world    = world;
-        this.voxelsMM = voxelsVboMM;
-        this.chunksMM = chunksVboMM;
+        this.voxelsMM = voxelsMM;
+        this.chunksMM = chunksMM;
 
         this.storage = new ChunkStorage(world, createModel());
 
@@ -156,8 +161,10 @@ private:
             ci.onGPU = true;
             numOnGPU++;
 
-            ci.offset = cast(uint)voxelsMM.write(ci.chunk.getVoxels());
-            ci.size   = cast(uint)ci.chunk.getVoxelsLength();
+            auto voxels = ci.chunk.getVoxels().as!(ubyte[]);
+
+            ci.offset = cast(uint)voxelsMM.write(voxels);
+            ci.size   = cast(uint)voxels.length;
 
             totalGPUWrites    += ci.size;
             currentGrid[index] = ci;
@@ -231,8 +238,11 @@ private:
                 ci.onGPU = true;
                 numOnGPU++;
 
-                ci.offset = cast(uint)voxelsMM.write(ci.chunk.getVoxels());
-                auto length = cast(uint)ci.chunk.getVoxelsLength();
+                auto voxels = ci.chunk.getVoxels().as!(ubyte[]);
+
+                ci.offset = cast(uint)voxelsMM.write(voxels);
+                auto length = cast(uint)voxels.length;
+
                 totalGPUWrites += length;
                 ci.size = length;
 
@@ -267,8 +277,10 @@ private:
 
                 voxelsMM.free(ci.offset, ci.size);
 
-                ci.offset = cast(uint)voxelsMM.write(c.voxels);
-                ci.size   = cast(uint)c.voxels.length;
+                auto voxels = c.getVoxels().as!(ubyte[]);
+
+                ci.offset = cast(uint)voxelsMM.write(voxels);
+                ci.size   = cast(uint)voxels.length;
                 totalGPUWrites += ci.size;
 
                 chunkDataChanged = true;

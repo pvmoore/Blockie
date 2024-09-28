@@ -10,6 +10,10 @@ a small cost in extra memory usage so should be preferred.
 
 Stores one byte per voxel
 
+### Model2
+
+Stores 1 bit per voxel so the voxel is either solid or air.
+
 ### Model3
 
 Stores 1 bit per voxel so the voxel is either solid or air.
@@ -17,18 +21,18 @@ Stores 1 bit per voxel so the voxel is either solid or air.
 
 ## GPU Memory Usage (MB)
 
-Scene |  M1  |  M2  |  M3  |  M4  |  M5  |  M6  |  M7
-------|------|------|------|------|------|------|------
-  1   |   2  |   0  |   0  |   2  |      |      |
-  2   |   5  |   0  |   2  |  14  |      |      |
-  3   |   8  |   1  |   5  |  28  |      |      |
-  4   | 242  | 256  | 286  | 425  |      |      |
-  4b  |  54  |  48  |  56  |  81  |      |      |
-  4c  |  79  |  62  |  68  |  87  |      |      |
-  5   |   2  |   1  |   1  |   1  |      |      |
-  6   |  53  |  41  |  42  |  36  |      |      |
-  7   |  32  |  30  |  31  | 243  |      |      |
-  8   |   1  |   1  |   1  |   1  |      |      |
+Scene |   M1  |  M2  |   M3  |  
+------|-------|------|-------|
+  1   |    2  |   0  |    0  |
+  2   |    5  |   0  |    2  |
+  3   |    8  |   1  |    5  |
+  4   |  242  | 256  |  286  |
+  4b  |   54  |  48  |   56  |
+  4c  |   79  |  62  |   68  |
+  5   |    2  |   1  |    1  |
+  6   |   53  |  41  |   42  |
+  7   |   32  |  30  |   31  |
+  8   |    1  |   1  |    1  |
 
 ## Frames Per Second (1920x1080)
 
