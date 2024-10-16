@@ -3,7 +3,7 @@ module blockie.globals;
 public:
 
 enum uint MODEL  = 3;
-enum float SCENE = 1;
+enum float SCENE = 8;
 
 /**
  * size 16   (4)  =         4,096 voxels
