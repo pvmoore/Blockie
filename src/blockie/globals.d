@@ -52,7 +52,7 @@ import logging : flushLog, log, setEagerFlushing, FileLogger;
 import events : initEvents, getEvents, EventMsg;
 
 import common :
-    Allocator, Allocator_t, Archive, Array, Async, ArrayBitWriter, ArrayByteWriter,
+    Allocator, Allocator_t, Archive, Async, ArrayBitWriter, ArrayByteWriter,
     BitWriter, Borrowed, ByteReader,
     Comment, ContiguousCircularBuffer,
     From,
