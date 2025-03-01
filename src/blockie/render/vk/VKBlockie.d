@@ -54,7 +54,7 @@ public:
             imgui: imguiOptions,
             shaderSrcDirectories: ["shaders/", "/pvmoore/d/libs/vulkan/shaders/"],
             shaderDestDirectory: "resources/shaders/",
-            shaderSpirvVersion: "1.0"
+            shaderSpirvVersion: "1.3"
         };
 
 		this.vk = new Vulkan(this, wprops, vprops);

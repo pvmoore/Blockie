@@ -22,7 +22,6 @@ private:
 
     FrameResource[] frameResources;
     ImageMeta[] materialImages;
-    ShaderPrintf shaderPrintf;
     VkQueryPool queryPool;
 
     final static class FrameResource {
@@ -75,7 +74,6 @@ public:
         createMaterials();
         createSkybox();
         createBuffers();
-        createShaderPrintf();
         createDescriptors();
         createPipelines();
         createFrameResources();
@@ -96,7 +94,6 @@ public:
         if(ubo) ubo.destroy();
 
         if(queryPool) device.destroyQueryPool(queryPool);
-        if(shaderPrintf) shaderPrintf.destroy();
         if(transferCP) device.destroyCommandPool(transferCP);
         if(computeCP) device.destroyCommandPool(computeCP);
         if(computeCPTransient) device.destroyCommandPool(computeCPTransient);
@@ -244,16 +241,6 @@ public:
                 )
             ]
         );
-
-        if(shaderPrintf) {
-            auto output =  shaderPrintf.getDebugString();
-            if(output) {
-                log("\nShader debug output:");
-                log("===========================");
-                log("%s", shaderPrintf.getDebugString());
-                log("\n===========================\n");
-            }
-        }
     }
     @Implements("SceneChangeListener")
     void boundsChanged(worldcoords minBB, worldcoords maxBB) {
@@ -320,11 +307,6 @@ private:
         ubo.write((it) {
             it.size = uint2(renderRect.width, renderRect.height);
         });
-    }
-    void createShaderPrintf() {
-        static if(ENABLE_SHADER_PRINTF) {
-            this.shaderPrintf = new ShaderPrintf(context);
-        }
     }
     void createFrameResources() {
         this.log("Creating frame resources");
@@ -395,15 +377,6 @@ private:
             [descriptors.getSet(0,res.index)],
             null
         );
-        if(shaderPrintf) {
-            b.bindDescriptorSets(
-                VK_PIPELINE_BIND_POINT_COMPUTE,
-                marchPipeline.layout,
-                1,
-                [descriptors.getSet(1,0)],  // layout 1, set 0
-                null
-            );
-        }
 
         //##########################################################################################
         // March shader
@@ -495,18 +468,8 @@ private:
                 //.storageBuffer(VK_SHADER_STAGE_COMPUTE_BIT)          // materials
                 .sets(vk.swapchain.numImages());
 
-        // Create another layout for shader printf
-        if(shaderPrintf) {
-            shaderPrintf.createLayout(descriptors, VK_SHADER_STAGE_COMPUTE_BIT);
-        }
-
         descriptors
             .build();
-
-        // Create a set from layout 1 for shader printf
-        if(shaderPrintf) {
-            shaderPrintf.createDescriptorSet(descriptors, 1);
-        }
     }
     void createPipelines() {
         this.log("Creating pipelines");

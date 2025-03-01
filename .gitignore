@@ -13,6 +13,7 @@ bin/
 *.lnk
 *.xml
 *.pdb
+*.spv
 
 
 data/**/*.zip
