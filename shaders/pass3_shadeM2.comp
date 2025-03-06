@@ -142,7 +142,7 @@ uint g_index = gl_GlobalInvocationID.x +
 
 void main() {
     if(pixel.x == 0 && pixel.y == 0) {
-        //debugPrintfEXT("SIZE = %v2d", ubo_SIZE);
+        //debugPrintfEXT("SIZE = %v2d", ubo_SIZE);  
     }
     
     uint voxelInfo = dataIn[g_index].voxel;
