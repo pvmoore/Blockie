@@ -1,8 +1,8 @@
 #version 450 core
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
-
 #extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_debug_printf : enable
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
@@ -141,10 +141,14 @@ uint g_index = gl_GlobalInvocationID.x +
 //}
 
 void main() {
+    if(pixel.x == 0 && pixel.y == 0) {
+        //debugPrintfEXT("SIZE = %v2d", ubo_SIZE);
+    }
+    
     uint voxelInfo = dataIn[g_index].voxel;
     //uint normalEst = (voxelInfo>>16)&0xffu;
     //uint voxelSize = (voxelInfo>>8)&0xffu;
-    uint voxel     = voxelInfo&0xffu;
+    uint voxel     = voxelInfo&0xffu;  
 
     if(voxel==0) {
         // Skybox

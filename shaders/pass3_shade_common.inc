@@ -1,6 +1,10 @@
 
 /// Calculate the hit pos given a screen pixel
 vec3 getHitPos(ivec2 pos) {
+
+    // handle out of bounds
+    pos = clamp(pos, ivec2(0), ivec2(ubo_SIZE)-ivec2(1));
+
     uint i     = pos.x + (pos.y*ubo_SIZE.x);
     vec3 dir   = getRayDirForPixel(pos);
     float dist = dataIn[i].distance;

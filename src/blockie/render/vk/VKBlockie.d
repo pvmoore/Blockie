@@ -59,6 +59,7 @@ public:
         };
 
         vprops.enableGpuValidation = false;
+        vprops.enableShaderPrintf = false;
 
 		this.vk = new Vulkan(this, wprops, vprops);
 
@@ -180,7 +181,7 @@ public:
             context.renderPass,
             res.frameBuffer,
             toVkRect2D(0,0, vk.windowSize.toVkExtent2D),
-            [ clearColour(0.5f,0,0,1) ],
+            [],         // no clear values required because loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE
             VK_SUBPASS_CONTENTS_INLINE
         );
 

@@ -501,12 +501,12 @@ private:
         this.log("  March program: %s", marchShader);
         this.log("  Shade program: %s", shadeShader);
 
-        this.marchPipeline = new ComputePipeline(context)
+        this.marchPipeline = new ComputePipeline(context, "March")
             .withDSLayouts(descriptors.getAllLayouts())
             .withShader(context.shaders.getModule(marchShader))
             //.withPushConstantRange!PushConstants()
             .build();
-        this.shadePipeline = new ComputePipeline(context)
+        this.shadePipeline = new ComputePipeline(context, "Shade")
             .withDSLayouts(descriptors.getAllLayouts())
             .withShader(context.shaders.getModule(shadeShader))
             //.withPushConstantRange!PushConstants()
