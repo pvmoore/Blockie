@@ -296,12 +296,30 @@ private:
         this.voxelData = new GPUData!ubyte(context, VKBlockie.MARCH_VOXEL_BUFFER, true, Blockie.VOXEL_BUFFER_SIZE)
             .withFrameStrategy(GPUDataFrameStrategy.ONLY_ONE)
             .withUploadStrategy(GPUDataUploadStrategy.RANGE)
+            .withAccessAndStageMasks(AccessAndStageMasks(
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+            ))
             .initialise();
         this.chunkData = new GPUData!uint(context, VKBlockie.MARCH_CHUNK_BUFFER, true, Blockie.CHUNK_BUFFER_SIZE / 4)
             .withFrameStrategy(GPUDataFrameStrategy.ONE_PER_FRAME)
+            .withAccessAndStageMasks(AccessAndStageMasks(
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+            ))
             .initialise();
         this.ubo = new GPUData!UBO(context, BufID.UNIFORM, true)
             .withFrameStrategy(GPUDataFrameStrategy.ONE_PER_FRAME)
+            .withAccessAndStageMasks(AccessAndStageMasks(
+                VK_ACCESS_UNIFORM_READ_BIT,
+                VK_ACCESS_UNIFORM_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+            ))
             .initialise();
 
         ubo.write((it) {

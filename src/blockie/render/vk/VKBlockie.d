@@ -45,17 +45,20 @@ public:
             title:        title,
             icon:         "resources/images/logo.png",
             showWindow:   false,
-            frameBuffers: NUM_FRAME_BUFFERS
+            frameBuffers: NUM_FRAME_BUFFERS,
+            titleBarFps:  true
         };
-        // Vulkan 1.1
+        // Vulkan 1.3
         VulkanProperties vprops = {
             appName: "Blockie",
-            apiVersion: vulkanVersion(1,1,0),
+            apiVersion: vulkanVersion(1,3,0),
             imgui: imguiOptions,
             shaderSrcDirectories: ["shaders/", "/pvmoore/d/libs/vulkan/shaders/"],
             shaderDestDirectory: "resources/shaders/",
-            shaderSpirvVersion: "1.3"
+            shaderSpirvVersion: "1.6"
         };
+
+        vprops.enableGpuValidation = false;
 
 		this.vk = new Vulkan(this, wprops, vprops);
 
