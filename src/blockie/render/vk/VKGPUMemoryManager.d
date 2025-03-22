@@ -5,11 +5,11 @@ import blockie.render.all;
 final class VKGPUMemoryManager(T) : IGPUMemoryManager!T {
 private:
     @Borrowed GPUData!T decorated;
-    Allocator allocs;
+    BasicAllocator!ulong allocs;
 public:
     this(GPUData!T decorated) {
         this.decorated = decorated;
-        this.allocs    = new Allocator(decorated.numBytes);
+        this.allocs    = new BasicAllocator!ulong(decorated.numBytes);
     }
     @Implements("IGPUMemoryManager")
     ulong getNumBytesUsed() {

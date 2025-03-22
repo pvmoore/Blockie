@@ -14,7 +14,7 @@ import blockie.model;
 final class M3ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*512;
-    Allocator_t!uint allocator;
+    BasicAllocator!uint allocator;
     Optimiser optimiser;
 
     ubyte[] voxels;
@@ -28,12 +28,12 @@ private:
     StopWatch watch;
 public:
     this() {
-        this.allocator = new Allocator_t!uint(0);
+        this.allocator = new BasicAllocator!uint(0);
         this.optimiser = new M3Optimiser(this);
     }
-    ubyte[] getVoxels()             { return voxels; }
-    Allocator_t!uint getAllocator() { return allocator; }
-    M3Root* root()                  { return cast(M3Root*)voxels.ptr; }
+    ubyte[] getVoxels()                { return voxels; }
+    BasicAllocator!uint getAllocator() { return allocator; }
+    M3Root* root()                     { return cast(M3Root*)voxels.ptr; }
 
     double megaEditsPerSecond() {
         auto p = (numEdits-tempNumEdits) / (watch.peek().total!"nsecs"*1e-03);

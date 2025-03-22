@@ -15,7 +15,7 @@ import blockie.model;
 final class M2ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*512;
-    Allocator_t!uint allocator;
+    BasicAllocator!uint allocator;
     M2Optimiser optimiser;
 
     ubyte[] voxels;
@@ -29,7 +29,7 @@ private:
     StopWatch watch;
 public:
     this() {
-        this.allocator = new Allocator_t!uint(0);
+        this.allocator = new BasicAllocator!uint(0);
         this.optimiser = new M2Optimiser(this);
     }
     M2Root* root() { return cast(M2Root*)voxels.ptr; }

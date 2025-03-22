@@ -52,7 +52,7 @@ import logging : flushLog, log, setEagerFlushing, FileLogger;
 import events : initEvents, getEvents, EventMsg;
 
 import common :
-    Allocator, Allocator_t, Archive, Async, ArrayBitWriter, ArrayByteWriter,
+    Archive, Async, ArrayBitWriter, ArrayByteWriter,
     BitWriter, Borrowed, ByteReader,
     Comment, ContiguousCircularBuffer,
     From,
@@ -62,6 +62,8 @@ import common :
     insertAt, isZeroMem, isInteger, onlyContains,
     makeSPSCQueue, nextHighestPowerOf2, repeat, 
     todo, toString, throwIf, throwIfNot, throwIfNull;
+
+import common.allocators;
 
 import blockie.model;
 import blockie.util;
