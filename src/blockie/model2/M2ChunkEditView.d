@@ -15,7 +15,7 @@ import blockie.model;
 final class M2ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*512;
-    BasicAllocator!uint allocator;
+    BasicAllocator allocator;
     M2Optimiser optimiser;
 
     ubyte[] voxels;
@@ -29,7 +29,7 @@ private:
     StopWatch watch;
 public:
     this() {
-        this.allocator = new BasicAllocator!uint(0);
+        this.allocator = new BasicAllocator(0);
         this.optimiser = new M2Optimiser(this);
     }
     M2Root* root() { return cast(M2Root*)voxels.ptr; }
@@ -52,9 +52,9 @@ public:
     }
     override void commitTransaction() {
 
-        auto optVoxels = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte+1);
+        auto optVoxels = optimiser.optimise(voxels, allocator.offsetOfLastAllocatedByte().as!uint+1);
 
-        allocator.freeAll();
+        allocator.reset();
 
         /// Write voxels back to chunk
         uint ver = chunk.atomicUpdate(version_, optVoxels);
@@ -236,17 +236,17 @@ private:
 
     uint alloc(uint numBytes) {
         chat("  alloc(%s)", numBytes);
-        int offset = allocator.alloc(numBytes, 4);
+        int offset = allocator.alloc(numBytes, 4).as!int;
         if(offset==-1) {
-            uint newSize = allocator.length + BUFFER_INCREMENT;
+            uint newSize = allocator.size().as!uint + BUFFER_INCREMENT;
             allocator.resize(newSize);
             voxels.length = newSize;
-            assert(allocator.length==newSize);
+            assert(allocator.size()==newSize);
             assert(voxels.length==newSize);
 
             chat("  resize to %s", newSize);
 
-            offset = allocator.alloc(numBytes, 4);
+            offset = allocator.alloc(numBytes, 4).as!int;
 
             expect(offset!=-1);
         }

@@ -14,7 +14,7 @@ import blockie.model;
 final class M3ChunkEditView : ChunkEditView {
 private:
     const uint BUFFER_INCREMENT = 1024*512;
-    BasicAllocator!uint allocator;
+    BasicAllocator allocator;
     Optimiser optimiser;
 
     ubyte[] voxels;
@@ -28,12 +28,12 @@ private:
     StopWatch watch;
 public:
     this() {
-        this.allocator = new BasicAllocator!uint(0);
+        this.allocator = new BasicAllocator(0);
         this.optimiser = new M3Optimiser(this);
     }
-    ubyte[] getVoxels()                { return voxels; }
-    BasicAllocator!uint getAllocator() { return allocator; }
-    M3Root* root()                     { return cast(M3Root*)voxels.ptr; }
+    ubyte[] getVoxels()           { return voxels; }
+    BasicAllocator getAllocator() { return allocator; }
+    M3Root* root()                { return cast(M3Root*)voxels.ptr; }
 
     double megaEditsPerSecond() {
         auto p = (numEdits-tempNumEdits) / (watch.peek().total!"nsecs"*1e-03);
@@ -53,10 +53,10 @@ public:
     }
     override void commitTransaction() {
 
-        auto length    = allocator.offsetOfLastAllocatedByte+1;
+        auto length    = allocator.offsetOfLastAllocatedByte().as!uint+1;
         auto optVoxels = optimiser.optimise(voxels, length);
 
-        allocator.freeAll();
+        allocator.reset();
 
         /// Write voxels back to chunk
         uint ver = chunk.atomicUpdate(version_, optVoxels);
@@ -310,17 +310,17 @@ private:
 
     uint alloc(uint numBytes) {
         chat("  alloc(%s)", numBytes);
-        int offset = allocator.alloc(numBytes, 4);
+        int offset = allocator.alloc(numBytes, 4).as!int;
         if(offset==-1) {
-            uint newSize = allocator.length + BUFFER_INCREMENT;
+            uint newSize = allocator.size().as!uint + BUFFER_INCREMENT;
             allocator.resize(newSize);
             voxels.length = newSize;
-            assert(allocator.length==newSize);
+            assert(allocator.size()==newSize);
             assert(voxels.length==newSize);
 
             chat("  resize to %s", newSize);
 
-            offset = allocator.alloc(numBytes, 4);
+            offset = allocator.alloc(numBytes, 4).as!int;
 
             expect(offset!=-1);
         }

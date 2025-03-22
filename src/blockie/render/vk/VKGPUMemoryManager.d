@@ -5,11 +5,11 @@ import blockie.render.all;
 final class VKGPUMemoryManager(T) : IGPUMemoryManager!T {
 private:
     @Borrowed GPUData!T decorated;
-    BasicAllocator!ulong allocs;
+    BasicAllocator allocs;
 public:
     this(GPUData!T decorated) {
         this.decorated = decorated;
-        this.allocs    = new BasicAllocator!ulong(decorated.numBytes);
+        this.allocs    = new BasicAllocator(decorated.numBytes);
     }
     @Implements("IGPUMemoryManager")
     ulong getNumBytesUsed() {
@@ -20,8 +20,8 @@ public:
         // Nothing to do
     }
     @Implements("IGPUMemoryManager")
-    long write(T[] data) {
-        auto o = allocs.alloc(data.length * T.sizeof, 4);
+    ulong write(T[] data) {
+        long o = allocs.alloc(data.length * T.sizeof, 4);
         if(o==-1) throw new Error("Out of buffer memory");
 
         // Write data starting at offset

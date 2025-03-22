@@ -56,7 +56,7 @@ interface IMonitor {
 interface IGPUMemoryManager(T) {
     ulong getNumBytesUsed();
     void bind();
-    long write(T[] data);
+    ulong write(T[] data);
     void free(ulong offset, ulong size);
 }
 
