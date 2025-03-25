@@ -53,8 +53,7 @@ public:
     }
     override void commitTransaction() {
 
-        auto length    = allocator.offsetOfLastAllocatedByte().as!uint+1;
-        auto optVoxels = optimiser.optimise(voxels, length);
+        auto optVoxels = optimiser.optimise(voxels, voxels.length.as!uint);
 
         allocator.reset();
 
