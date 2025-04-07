@@ -54,16 +54,17 @@ import events : initEvents, getEvents, EventMsg;
 import common :
     Archive, Async, ArrayBitWriter, ArrayByteWriter,
     BitWriter, Borrowed, ByteReader,
-    Comment, ContiguousCircularBuffer,
+    Comment,
     From,
-    IQueue, Implements, PDH, Set, Stack, Timing,
+    Implements, PDH, Timing,
     as, bitfieldExtract, 
     containsKey, entriesSortedByValue, expect, flushConsole, 
     insertAt, isZeroMem, isInteger, onlyContains,
-    makeSPSCQueue, nextHighestPowerOf2, repeat, 
+    nextHighestPowerOf2, repeat, 
     todo, toString, throwIf, throwIfNot, throwIfNull;
 
 import common.allocators;
+import common.containers : ContiguousCircularBuffer, IQueue, Set, Stack, makeSPSCQueue;
 
 import blockie.model;
 import blockie.util;
