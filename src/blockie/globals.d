@@ -51,14 +51,15 @@ import resources : DDS, PNG, HGT;
 import logging : flushLog, log, setEagerFlushing, FileLogger;
 import events : initEvents, getEvents, EventMsg;
 
-import common :
-    Archive, Async, ArrayBitWriter, ArrayByteWriter,
-    BitWriter, Borrowed, ByteReader,
-    Comment,
-    From,
-    Implements, PDH, Timing,
+import common : 
+    Archive, Async, Borrowed, PDH, Comment, Implements;
+import common.io :
+     ArrayBitWriter, ArrayByteWriter,
+    BitWriter, ByteReader, flushConsole;
+import common.utils :
+    From, Timing,
     as, bitfieldExtract, 
-    containsKey, entriesSortedByValue, expect, flushConsole, 
+    containsKey, entriesSortedByValue, expect, 
     insertAt, isZeroMem, isInteger, onlyContains,
     nextHighestPowerOf2, repeat, 
     todo, toString, throwIf, throwIfNot, throwIfNull;

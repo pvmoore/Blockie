@@ -30,7 +30,7 @@ public:
                 ImGuiConfigFlags_DockingEnable |
                 ImGuiConfigFlags_ViewportsEnable,
             fontPaths: [
-                "/pvmoore/_assets/fonts/JetBrainsMono-Bold.ttf"
+                "resources/fonts/Roboto-Regular.ttf"
             ],
             fontSizes: [
                 18
@@ -125,7 +125,7 @@ public:
         createContext();
 
         vk.addWindowEventListener(new class WindowEventListener {
-            override void keyPress(uint keyCode, uint scanCode, KeyAction action, uint mods) {
+            override void keyPress(uint keyCode, uint scanCode, KeyAction action, KeyMod mods) {
                 renderView.keyPress(keyCode, action==KeyAction.PRESS, mods);
             }
         });
@@ -179,7 +179,7 @@ public:
         // Inside render pass: initialLayout = VImageLayout.UNDEFINED
         b.beginRenderPass(
             context.renderPass,
-            res.frameBuffer,
+            frame.frameBuffer,
             toVkRect2D(0,0, vk.windowSize.toVkExtent2D),
             [],         // no clear values required because loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE
             VK_SUBPASS_CONTENTS_INLINE
