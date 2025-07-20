@@ -101,7 +101,7 @@ private:
             //| ImGuiWindowFlags_NoMove;
             ;
 
-        igPushFont(vk.getImguiFont(0));
+        igPushFont(vk.getImguiFont(0), 0);
         igPushStyleVar_Float(ImGuiStyleVar_FrameBorderSize, 1);
 
         if(igBegin("Stats", null, windowFlags)) {
