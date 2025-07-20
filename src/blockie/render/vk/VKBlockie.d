@@ -51,7 +51,7 @@ public:
         // Vulkan 1.3
         VulkanProperties vprops = {
             appName: "Blockie",
-            apiVersion: vulkanVersion(1,3,0),
+            apiVersion: VK_API_VERSION_1_3,
             imgui: imguiOptions,
             shaderSrcDirectories: ["shaders/", "/pvmoore/d/libs/vulkan/shaders/"],
             shaderDestDirectory: "resources/shaders/",
