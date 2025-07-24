@@ -118,7 +118,7 @@ public:
 
 
     @Implements("IVulkanApplication")
-    void deviceReady(VkDevice device, PerFrameResource[] frameResources) {
+    void deviceReady(VkDevice device) {
         this.log("deviceReady");
         this.device = device;
 

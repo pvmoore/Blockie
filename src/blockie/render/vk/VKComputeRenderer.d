@@ -328,13 +328,12 @@ private:
     }
     void createFrameResources() {
         this.log("Creating frame resources");
-        foreach(i; 0..vk.swapchain.numImages) {
-            auto res = vk.getFrameResource(i);
-            this.frameResources ~= setupFrame(res);
+        foreach(i; 0..vk.swapchain.numImages()) {
+            this.frameResources ~= setupFrame(i);
         }
     }
-    FrameResource setupFrame(PerFrameResource res) {
-        this.log("Setting up frame %s", res.index);
+    FrameResource setupFrame(uint index) {
+        this.log("Setting up frame %s", index);
         auto fr = new FrameResource;
         fr.computeCommands = device.allocFrom(computeCP);
         fr.transferCommands = device.allocFrom(transferCP);
@@ -343,7 +342,7 @@ private:
         fr.marchOutBuffer = context.buffer(BufID.STORAGE).alloc(renderRect.width * renderRect.height * 8);
 
         fr.computeTargetImage = context.memory(MemID.LOCAL).allocImage(
-            "computeTargetImage%s".format(res.index),
+            "computeTargetImage%s".format(index),
             [renderRect.width, renderRect.height],
             VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_FORMAT_R8G8B8A8_UNORM);
@@ -368,9 +367,9 @@ private:
          */
         descriptors.createSetFromLayout(0)
             .add(voxelData)
-            .add(chunkData, res.index)
+            .add(chunkData, index)
             .add(fr.marchOutBuffer.handle, fr.marchOutBuffer.offset, fr.marchOutBuffer.size)
-            .add(ubo, res.index)
+            .add(ubo, index)
             .add(fr.computeTargetImage.view, VK_IMAGE_LAYOUT_GENERAL)
             .add(materialSampler, materialImages[0].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .add(materialSampler, skyboxCubeMap.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -381,18 +380,18 @@ private:
         b.begin();
 
         b.resetQueryPool(queryPool,
-            res.index*2,    // firstQuery
+            index*2,    // firstQuery
             2);             // queryCount
         b.writeTimestamp(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             queryPool,
-            res.index*2); // query
+            index*2); // query
 
         // Both shaders use the same Pipeline layout
         b.bindDescriptorSets(
             VK_PIPELINE_BIND_POINT_COMPUTE,
             marchPipeline.layout,
             0,
-            [descriptors.getSet(0,res.index)],
+            [descriptors.getSet(0, index)],
             null
         );
 
@@ -455,7 +454,7 @@ private:
 
         b.writeTimestamp(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             queryPool,
-            res.index*2+1); // query
+            index*2+1); // query
 
         b.end();
 
