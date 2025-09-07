@@ -90,7 +90,7 @@ private:
     void renderFrame(Frame frame) {
 
         igSetNextWindowPos(ImVec2(12, 30), ImGuiCond_Once, ImVec2(0.0, 0.0));
-        //igSetNextWindowSize(ImVec2(200, 30), ImGuiCond_Once);
+        igSetNextWindowSize(ImVec2(320, 600), ImGuiCond_Always);
 
         auto windowFlags = ImGuiWindowFlags_None
             | ImGuiWindowFlags_NoSavedSettings

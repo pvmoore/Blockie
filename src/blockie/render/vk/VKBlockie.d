@@ -48,14 +48,18 @@ public:
             frameBuffers: NUM_FRAME_BUFFERS,
             titleBarFps:  true
         };
-        // Vulkan 1.3
         VulkanProperties vprops = {
             appName: "Blockie",
-            apiVersion: VK_API_VERSION_1_3,
+            apiVersion: VK_API_VERSION_1_4,
             imgui: imguiOptions,
             shaderSrcDirectories: ["shaders/", "/pvmoore/d/libs/vulkan/shaders/"],
             shaderDestDirectory: "resources/shaders/",
-            shaderSpirvVersion: "1.6"
+            shaderSpirvVersion: "1.6",
+            features: 
+                DeviceFeatures.Features.Vulkan11 |
+                DeviceFeatures.Features.Vulkan12 |
+                DeviceFeatures.Features.Vulkan13 |
+                DeviceFeatures.Features.Vulkan14
         };
 
         vprops.enableGpuValidation = false;
@@ -115,7 +119,10 @@ public:
     }
     @Implements("IVulkanApplication")
     void selectFeatures(DeviceFeatures features) {
-
+        // Disable this as it has a performance impact
+        features.apply((ref VkPhysicalDeviceFeatures f) {
+            f.robustBufferAccess = VK_FALSE;
+        });
     }
     @Implements("IVulkanApplication")
     void selectQueueFamilies(QueueManager queueManager) {

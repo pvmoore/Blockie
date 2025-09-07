@@ -8,15 +8,28 @@ a small cost in extra memory usage so should be preferred.
 
 ### Model 1
 
-Stores one byte per voxel
+Stores one byte per voxel (8 bits are used to store the voxel type)
+The top 4 bits of each chunk are stored as cells (4096 cells per chunk). 
+The bottom 6 bits are octrees if the cell is not air.
+
+Note that for some scenes the memory usage of this model is better than or similar to Model2 even though it
+stores 8 bits of voxel info rather than 1. This is because it takes advantage of the fact that a lot of
+octree nodes are duplicated and the optimised storage of this model allows to point to other octrees leading
+to a reduction in memory usage. This only works well for scenes that have a lot of repetition which is why it seems
+good some of the test scenes I am currently using which are simple. Other models do not have the ability to point to other
+octrees so this duplication is not removed.
 
 ### Model2
 
-Stores 1 bit per voxel so the voxel is either solid or air.
+Stores 1 bit per voxel so the voxel is either solid or air. 
+The top 4 bits of each chunk are stored as cells (4096 cells per chunk). 
+The bottom 6 bits are octrees if the cell is not air
 
 ### Model3
 
-Stores 1 bit per voxel so the voxel is either solid or air.
+The same as Model2 but uses 5 bits for the root rather than 4.
+The top 5 bits of each chunk are stored as cells (32768 cells per chunk). 
+The bottom 5 bits are octrees if the cell is not air
 
 
 ## GPU Memory Usage (MB)

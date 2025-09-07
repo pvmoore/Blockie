@@ -490,12 +490,15 @@ private:
     }
     void createPipelines() {
         this.log("Creating pipelines");
+
+        // Select a march shader based on the model
         auto marchShader = "pass1_marchM%s.comp".format(MODEL);
 
         static if(MODEL==1) {
-            auto shadeShader = "pass3_shade.comp";
+            auto shadeShader = "pass3_shadeM1.comp";
         } else {
-            auto shadeShader = "pass3_shadeM2.comp";
+            // Use the same shade shader for M2 and M3
+            auto shadeShader = "pass3_shadeM2-3.comp";
         }
         this.log("  March program: %s", marchShader);
         this.log("  Shade program: %s", shadeShader);

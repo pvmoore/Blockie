@@ -3,20 +3,6 @@ module blockie.render.ui.HistogramUI;
 import blockie.render.all;
 
 final class HistogramUI {
-private:
-    const int NUM_DATAPOINTS;
-    string title;
-    string fmt;
-    StatProvider statProvider;
-
-    ContiguousCircularBuffer!float buf;
-    ContiguousCircularBuffer!float avgBuf;
-
-    float value = 0;
-    float maximum = 1;
-    float average = 0;
-    float averageTotal = 0;
-    bool open;
 public:
     this(string title, int numDataPoints, string fmt, StatProvider statProvider) {
         this.title = title;
@@ -25,6 +11,7 @@ public:
         this.statProvider = statProvider;
         this.buf = new ContiguousCircularBuffer!float(NUM_DATAPOINTS);
         this.avgBuf = new ContiguousCircularBuffer!float(NUM_DATAPOINTS);
+        this.id = ids++;
 
         // pre-fill with zeroes
         foreach(i; 0..NUM_DATAPOINTS) {
@@ -65,8 +52,11 @@ public:
     void render() {
         if(igCollapsingHeader(title.ptr, open ? ImGuiTreeNodeFlags_DefaultOpen : 0)) {
 
+            // Prevent widget id clashes
+            igPushID_Int(id);
+
             igPlotHistogram_FloatPtr(
-                "",
+                "##Histogram",
                 buf.slice().ptr,
                 NUM_DATAPOINTS,
                 0,              // offset into values
@@ -80,7 +70,7 @@ public:
             igSameLine(-3, 0);
 
             igPlotLines_FloatPtr(
-                "",
+                "##Average",
                 avgBuf.slice().ptr,
                 NUM_DATAPOINTS,
                 0,
@@ -90,6 +80,26 @@ public:
                 ImVec2(300,80),
                 float.sizeof
             );
+            igPopID();
         }
     }
+//──────────────────────────────────────────────────────────────────────────────────────────────────
+private:
+    static int ids;
+
+    int id;
+    const int NUM_DATAPOINTS;
+    string title;
+    string fmt;
+    StatProvider statProvider;
+
+    ContiguousCircularBuffer!float buf;
+    ContiguousCircularBuffer!float avgBuf;
+
+    float value = 0;
+    float maximum = 1;
+    float average = 0;
+    float averageTotal = 0;
+    bool open;    
+
 }
