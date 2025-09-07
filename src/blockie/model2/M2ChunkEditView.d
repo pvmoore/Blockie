@@ -93,7 +93,7 @@ public:
     }
     override void setCellDistance(uint cell, DFieldsBi f) {
         // Max = 15
-        int convert(int v) { return min(v, 15); }
+        int convert(int v) { return minOf(v, 15); }
 
         setCellDistance(cell,
             (convert(f.x.up)<<4) | convert(f.x.down),

@@ -48,11 +48,11 @@ final class TestScene4b : SceneGenerator {
     World getWorld() {
         World w = new World("Test Scene 4b");
 
-        w.sunPos = vec3(0, 10000, 0);
+        w.sunPos = float3(0, 10000, 0);
 
         w.camera = new Camera3D(
-            vec3(4096.00, 2047.72, 7649.85),       // position
-            vec3(1024*4, 1024, 1024*4) // focal point
+            float3(4096.00, 2047.72, 7649.85),       // position
+            float3(1024*4, 1024, 1024*4) // focal point
         );
         w.camera.fovNearFar(60.degrees, 10, 100000);
         return w;

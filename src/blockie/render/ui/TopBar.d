@@ -17,7 +17,7 @@ public:
         text.setSize(FONT_SIZE);
         text.setColour(WHITE*1.1);
         text.setDropShadowColour(RGBA(0,0,0, 0.8));
-        text.setDropShadowOffset(vec2(-0.0025, 0.0025));
+        text.setDropShadowOffset(float2(-0.0025, 0.0025));
 
         text.add("[]", 2, 1);        /// 0
         text.add("World", 300, 1);   /// 1

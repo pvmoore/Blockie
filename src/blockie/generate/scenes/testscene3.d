@@ -50,11 +50,11 @@ final class TestScene3 : SceneGenerator {
     @Implements("WorldGen")
     World getWorld() {
         World w = new World("Test Scene 3");
-        w.sunPos = vec3(1000, 10000, -700);
+        w.sunPos = float3(1000, 10000, -700);
 
         w.camera = new Camera3D(
-            vec3(width/2,height/2,12700), // position
-            vec3(width/2,height/2,0)      // focal point
+            float3(width/2,height/2,12700), // position
+            float3(width/2,height/2,0)      // focal point
         );
         w.camera.fovNearFar(60.degrees, 10, 100000);
         return w;
@@ -65,8 +65,8 @@ final class TestScene3 : SceneGenerator {
         edit.startTransaction();
 
         edit.rectangle(
-            ivec3(0,       0, 0),
-            ivec3(width-1, 0, depth-1),
+            int3(0,       0, 0),
+            int3(width-1, 0, depth-1),
             1,
             V_ROCK1
         );

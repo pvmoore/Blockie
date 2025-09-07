@@ -13,13 +13,13 @@ final class TestScene7_hgt : SceneGenerator {
     World getWorld() {
         World w = new World("Test Scene 7 - HGT");
 
-        w.sunPos = vec3(1024, 1024*3, 1024);
+        w.sunPos = float3(1024, 1024*3, 1024);
 
-        auto cpos = vec3(1630.00, 1634.98, 4509.35);
+        auto cpos = float3(1630.00, 1634.98, 4509.35);
 
         w.camera = new Camera3D(
             cpos,                                // position
-            cpos+vec3(0.03, -0.40, -0.92)     // focal point
+            cpos+float3(0.03, -0.40, -0.92)     // focal point
         );
         w.camera.fovNearFar(60.degrees, 10, 100000);
         return w;

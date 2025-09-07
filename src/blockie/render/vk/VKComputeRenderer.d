@@ -351,8 +351,8 @@ private:
         fr.quad = new Quad(context, ImageMeta(fr.computeTargetImage, VK_FORMAT_R8G8B8A8_UNORM), quadSampler);
 
         auto camera = Camera2D.forVulkan(renderRect.dimension);
-        auto scale  = mat4.scale(vec3(renderRect.dimension.to!float, 0));
-        auto trans  = mat4.translate(vec3(renderRect.xy.to!float, 0));
+        auto scale  = mat4.scale(float3(renderRect.dimension.to!float, 0));
+        auto trans  = mat4.translate(float3(renderRect.xy.to!float, 0));
         fr.quad.setVP(trans*scale, camera.V(), camera.P());
 
         /**

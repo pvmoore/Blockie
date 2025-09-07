@@ -5,7 +5,7 @@ public:
 const string version_ = "0.0.33";
 
 enum uint MODEL  = 3;
-enum float SCENE = 9;
+enum float SCENE = 1;
 
 /**
  * size 16   (4)  =         4,096 voxels
@@ -47,24 +47,27 @@ import std.algorithm.iteration	: each, filter, map, sum, uniq;
 import std.algorithm.searching	: any, all, count;
 import std.algorithm.sorting    : sort;
 
-import maths;
-import fonts.sdf;
-import resources : DDS, PNG, HGT;
-import logging : flushLog, log, setEagerFlushing, FileLogger;
-import events : initEvents, getEvents, EventMsg;
+import maths        : float2, float3, float4, uint2, uint3, int2, int3, int4, mat4, 
+                      minOf, maxOf, degrees, 
+                      Camera2D, Camera3D, IntRect, ImprovedPerlin;
 
-import common : 
-    Archive, Async, Borrowed, PDH, Comment, Implements;
-import common.io :
-     ArrayBitWriter, ArrayByteWriter,
-    BitWriter, ByteReader, flushConsole;
-import common.utils :
-    From, Timing,
-    as, bitfieldExtract, 
-    containsKey, entriesSortedByValue, expect, 
-    insertAt, isZeroMem, isInteger, onlyContains,
-    nextHighestPowerOf2, repeat, 
-    todo, toString, throwIf, throwIfNot, throwIfNull;
+import resources    : DDS, PNG, HGT;
+
+import logging      : flushLog, log, setEagerFlushing, FileLogger;
+
+import events       : initEvents, getEvents, EventMsg;
+
+import common       : Archive, Async, Borrowed, PDH, Comment, Implements;
+
+import common.io    : ArrayBitWriter, ArrayByteWriter,
+                      BitWriter, ByteReader, flushConsole;
+
+import common.utils : From, Timing,
+                      as, bitfieldExtract, 
+                      containsKey, entriesSortedByValue, expect, 
+                      insertAt, isZeroMem, isInteger, onlyContains,
+                      nextHighestPowerOf2, repeat, 
+                      todo, toString, throwIf, throwIfNot, throwIfNull;
 
 import common.allocators;
 import common.containers : ContiguousCircularBuffer, IQueue, Set, Stack, makeSPSCQueue;

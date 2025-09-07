@@ -155,7 +155,7 @@ private:
         for(auto y=0; y<VIEW_WINDOW.y; y++)
         for(auto x=0; x<VIEW_WINDOW.x; x++) {
 
-            auto p  = base + ivec3(x,y,z);
+            auto p  = base + int3(x,y,z);
             auto ci = activateChunk(p);
 
             ci.onGPU = true;
@@ -221,7 +221,7 @@ private:
 
             if(to.anyGTE(VIEW_WINDOW)) {
                 /// This chunk is moving out of bounds
-                chunkcoords pos = oldBase+ivec3(x,y,z);
+                chunkcoords pos = oldBase+int3(x,y,z);
                 //this.log("going oob: %s %s", ivec3(x,y,z),pos);
 
                 auto ci = getChunkInfo(pos);
@@ -232,7 +232,7 @@ private:
 
             if(from.anyGTE(VIEW_WINDOW)) {
                 /// This offset needs a new chunk
-                chunkcoords pos = base+ivec3(x,y,z);
+                chunkcoords pos = base+int3(x,y,z);
                 //this.log("coming in: %s %s", ivec3(x,y,z),pos);
                 auto ci = activateChunk(pos);
                 ci.onGPU = true;

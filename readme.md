@@ -17,7 +17,6 @@ Voxel renderer using Vulkan compute shaders
 - https://github.com/pvmoore/dlang-common
 - https://github.com/pvmoore/dlang-logging
 - https://github.com/pvmoore/dlang-maths
-- https://github.com/pvmoore/dlang-fonts
 - https://github.com/pvmoore/dlang-events
 - https://github.com/pvmoore/dlang-resources
 

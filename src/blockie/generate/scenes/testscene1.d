@@ -40,11 +40,11 @@ final class TestScene1 : SceneGenerator {
     World getWorld() {
         World w = new World("Test Scene 1");
 
-        w.sunPos = vec3(512, 1024*10, 1024);
+        w.sunPos = float3(512, 1024*10, 1024);
 
         w.camera = new Camera3D(
-            vec3(900,1000,3000), // position
-            vec3(0,0,0)          // focal point
+            float3(900,1000,3000), // position
+            float3(0,0,0)          // focal point
         );
         w.camera.fovNearFar(60.degrees, 10, 100000);
         return w;
@@ -55,34 +55,34 @@ final class TestScene1 : SceneGenerator {
         edit.startTransaction();
 
         edit.rectangle(
-            ivec3(0,       0, zsize/2-1),
-            ivec3(xsize-1, 8, zsize-1),
+            int3(0,       0, zsize/2-1),
+            int3(xsize-1, 8, zsize-1),
             4,
             V_ROCK1);
 
         edit.rectangle(
-            ivec3(0,       9, zsize/2-1),
-            ivec3(xsize-1, 9, zsize-1),
+            int3(0,       9, zsize/2-1),
+            int3(xsize-1, 9, zsize-1),
             1,
             V_GRASS1);
 
         edit.rectangle(
-            ivec3(0, 0,       zsize/2-1),
-            ivec3(1, ysize-1, zsize-1),
+            int3(0, 0,       zsize/2-1),
+            int3(1, ysize-1, zsize-1),
             1,
             V_ROCK1
         );
 
         edit.rectangle(
-            ivec3(xsize-2, 0,       zsize/2-1),
-            ivec3(xsize-1, ysize-1, zsize-1),
+            int3(xsize-2, 0,       zsize/2-1),
+            int3(xsize-1, ysize-1, zsize-1),
             1,
             V_ROCK1
         );
 
         edit.rectangle(
-            ivec3(0,0,0),
-            ivec3(xsize-1,ysize-1,zsize/2-1),
+            int3(0,0,0),
+            int3(xsize-1,ysize-1,zsize/2-1),
             1,
             V_EARTH1);
 

@@ -170,7 +170,7 @@ private:
                         //w.stop();
                         //dbg("_process: %.2f ms (%s)", w.peek().total!"nsecs"*1e-06, map.length);
 
-                        xstart = DFieldBi(max(1, dist.x.up-1), max(1, dist.x.down));
+                        xstart = DFieldBi(maxOf(1, dist.x.up-1), maxOf(1, dist.x.down));
                     } else {
                         xstart = DFieldBi(1,1);
                     }

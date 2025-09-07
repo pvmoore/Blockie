@@ -193,13 +193,13 @@ private:
 
                             if(view.isAirCell(getOctree(p))) {
                                 dist   = _processCell(data, p, xstart, ystart[yoffset+x], 1);
-                                xstart = max(1, dist.x-1);
+                                xstart = maxOf(1, dist.x-1);
                             } else {
                                 dist   = int3(1,1,1);
                                 xstart = 1;
                             }
 
-                            ystart[yoffset+x] = max(1, dist.y-1);
+                            ystart[yoffset+x] = maxOf(1, dist.y-1);
                         }
                     }
                     yoffset += size;

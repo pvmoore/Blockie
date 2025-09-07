@@ -250,9 +250,9 @@ final class M1ChunkEditView : ChunkEditView {
         ASSERT(isAirCell(cell));
 
         /// We only have 5 bits per axis (uni-directional)
-        x = min(31, x);
-        y = min(31, y);
-        z = min(31, z);
+        x = minOf(31, x);
+        y = minOf(31, y);
+        z = minOf(31, z);
 
         root.cellDistances[cell].set(x.as!ubyte, y.as!ubyte, z.as!ubyte);
     }

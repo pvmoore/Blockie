@@ -369,7 +369,7 @@ private:
         //===============================================================
 
         // Estimate the destination voxels length. This will be changed later
-        auto initialVoxelsLength = max(view.voxelsLength, OptimisedRoot.sizeof);
+        auto initialVoxelsLength = maxOf(view.voxelsLength, OptimisedRoot.sizeof);
         auto voxels              = new ubyte[initialVoxelsLength];
         OptimisedRoot* root      = cast(OptimisedRoot*)voxels.ptr;
 

@@ -34,16 +34,16 @@ struct OptimisedRoot { static assert(OptimisedRoot.sizeof==13344);
     uint getOctree(uint x, uint y, uint z) {
         return x | (y<<M1_OCTREE_ROOT_BITS) | (z<<(M1_OCTREE_ROOT_BITS*2));
     }
-    uint getOctree(ivec3 i) {
+    uint getOctree(int3 i) {
         return getOctree(i.x, i.y, i.z);
     }
     void setDField(uint oct, uint x, uint y, uint z) {
         //expect(oct<OCTREE_ROOT_INDEXES_LENGTH);
 
         /// We only have 5 bits per axis
-        x = min(31, x);
-        y = min(31, y);
-        z = min(31, z);
+        x = minOf(31, x);
+        y = minOf(31, y);
+        z = minOf(31, z);
 
         dfields[oct] = cast(ushort)(x | (y<<5) | (z<<10));
     }

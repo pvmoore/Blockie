@@ -34,7 +34,7 @@ final class World {
         }
         float3 getFloat3(string s) {
             string[] tokens = s.split(",");
-            return vec3(
+            return float3(
                 tokens[0].to!float,
                 tokens[1].to!float,
                 tokens[2].to!float

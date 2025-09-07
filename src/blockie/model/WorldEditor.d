@@ -118,7 +118,7 @@ public:
             for(int y=centre.y-maxRadius; y<centre.y+maxRadius; y++)
                 for(int x=centre.x-maxRadius; x<centre.x+maxRadius; x++) {
 
-                    float dist = distance(c, vec3(x,y,z));
+                    float dist = c.distanceTo(float3(x,y,z));
                     if(dist>=minRadius && dist<=maxRadius) {
                         setVoxel(worldcoords(x,y,z), value);
                     }

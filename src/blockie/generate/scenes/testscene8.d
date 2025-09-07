@@ -16,11 +16,11 @@ final class TestScene8 : SceneGenerator {
     World getWorld() {
         World w = new World("Test Scene 8");
 
-        w.sunPos = vec3(512, 1024*10, 1024);
+        w.sunPos = float3(512, 1024*10, 1024);
 
         w.camera = new Camera3D(
-            vec3(1200,1100,1000), // position
-            vec3(0,0,0)          // focal point
+            float3(1200,1100,1000), // position
+            float3(0,0,0)          // focal point
         );
         w.camera.fovNearFar(60.degrees, 10, 100000);
         return w;

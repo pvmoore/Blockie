@@ -41,11 +41,11 @@ final class TestScene5 : SceneGenerator {
     World getWorld() {
         World w = new World("Test Scene 5");
 
-        w.sunPos = vec3(512, 10000, 512);
+        w.sunPos = float3(512, 10000, 512);
 
         w.camera = new Camera3D(
-            vec3(width*2-300,height/2,breadth*2-300), // position
-            vec3(0,height/2,0)      // focal point
+            float3(width*2-300,height/2,breadth*2-300), // position
+            float3(0,height/2,0)      // focal point
         );
         w.camera.fovNearFar(60.degrees, 10, 100000);
         return w;
@@ -63,23 +63,23 @@ final class TestScene5 : SceneGenerator {
 
         // main sphere
         edit.sphere(
-            ivec3(512,512,512), 290,300, V_EARTH1);
+            int3(512,512,512), 290,300, V_EARTH1);
 
         // left
         edit.sphere(
-            ivec3(512+300,512,512), 50,75, V_ROCK1);
+            int3(512+300,512,512), 50,75, V_ROCK1);
         // right
         edit.sphere(
-            ivec3(512-300,512,512), 50,75, V_ROCK1);
+            int3(512-300,512,512), 50,75, V_ROCK1);
         // front
         edit.sphere(
-            ivec3(512,512,512+300), 50,75, V_ROCK1);
+            int3(512,512,512+300), 50,75, V_ROCK1);
         // top
         edit.sphere(
-            ivec3(512,512+300,512), 50,75, V_ROCK1);
+            int3(512,512+300,512), 50,75, V_ROCK1);
         // bottom
         edit.sphere(
-            ivec3(512,512-300,512), 50,75, V_ROCK1);
+            int3(512,512-300,512), 50,75, V_ROCK1);
 
         edit.commitTransaction();
 

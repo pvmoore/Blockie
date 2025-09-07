@@ -19,9 +19,9 @@ struct DFieldsBi {
 
     DFieldsBi max(DFieldsBi f) {
         return DFieldsBi(
-            DFieldBi(.max(x.up, f.x.up), .max(x.down, f.x.down)),
-            DFieldBi(.max(y.up, f.y.up), .max(y.down, f.y.down)),
-            DFieldBi(.max(z.up, f.z.up), .max(z.down, f.z.down))
+            DFieldBi(.maxOf(x.up, f.x.up), .maxOf(x.down, f.x.down)),
+            DFieldBi(.maxOf(y.up, f.y.up), .maxOf(y.down, f.y.down)),
+            DFieldBi(.maxOf(z.up, f.z.up), .maxOf(z.down, f.z.down))
         );
     }
     uint volume() {

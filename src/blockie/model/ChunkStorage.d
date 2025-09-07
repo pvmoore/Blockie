@@ -23,8 +23,7 @@ public:
     this(World w, Model model) {
         this.world         = w;
         this.model         = model;
-        this.logger        = new FileLogger(".logs/storage.log")
-            .setEagerFlushing(true);
+        this.logger        = new FileLogger(".logs/storage.log").setEagerFlushing(true);
         this.serialiser    = model.makeChunkSerialiser(w);
         this.directory     = "data/" ~ w.name ~ "/";
         this.msgSemaphore  = new Semaphore;

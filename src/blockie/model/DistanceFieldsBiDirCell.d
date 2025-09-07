@@ -183,8 +183,8 @@ private:
 
                                 dist = processCell(v, p, xstart, ystart[yoffset+x]);
 
-                                xstart            = DFieldBi(max(1, dist.x.up-1), max(1, dist.x.down));
-                                ystart[yoffset+x] = DFieldBi(max(1, dist.y.up-1), max(1, dist.y.down));
+                                xstart            = DFieldBi(maxOf(1, dist.x.up-1), maxOf(1, dist.x.down));
+                                ystart[yoffset+x] = DFieldBi(maxOf(1, dist.y.up-1), maxOf(1, dist.y.down));
                             } else {
                                 xstart            = DFieldBi(1,1);
                                 ystart[yoffset+x] = DFieldBi(1,1);
