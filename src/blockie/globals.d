@@ -2,8 +2,10 @@ module blockie.globals;
 
 public:
 
+const string version_ = "0.0.33";
+
 enum uint MODEL  = 3;
-enum float SCENE = 8;
+enum float SCENE = 9;
 
 /**
  * size 16   (4)  =         4,096 voxels
@@ -69,7 +71,6 @@ import common.containers : ContiguousCircularBuffer, IQueue, Set, Stack, makeSPS
 
 import blockie.model;
 import blockie.util;
-import blockie.version_;
 
 alias worldcoords = int3;
 alias chunkcoords = int3;

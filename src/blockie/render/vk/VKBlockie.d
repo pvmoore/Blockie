@@ -4,7 +4,7 @@ import blockie.render.all;
 
 final class VKBlockie : Blockie, IVulkanApplication {
 private:
-    enum NUM_FRAME_BUFFERS = 3;
+    enum NUM_FRAME_BUFFERS = 3; 
     Vulkan vk;
     VkDevice device;
     VulkanContext context;
@@ -97,25 +97,6 @@ public:
     override void run() {
         vk.mainLoop();
     }
-
-
-    // @Implements("IVulkanApplication")
-    // void keyPress(uint keyCode, uint scanCode, KeyAction action, uint mods) {
-    //     renderView.keyPress(keyCode, KeyAction.PRESS, mods);
-    // }
-    // @Implements("IVulkanApplication")
-    // void mouseButton(MouseButton button, float x, float y, bool down, uint mods) {
-
-    // }
-    // @Implements("IVulkanApplication")
-    // void mouseMoved(float x, float y) {
-
-    // }
-    // @Implements("IVulkanApplication")
-    // void mouseWheel(float xdelta, float ydelta, float x, float y) {
-
-    // }
-
 
     @Implements("IVulkanApplication")
     void deviceReady(VkDevice device) {

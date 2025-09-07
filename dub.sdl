@@ -9,7 +9,7 @@ buildType "debug" {
 }
 buildType "release" {
     dflags "-O5"                            platform="ldc"
-    dflags "-mcpu=haswell"                  platform="ldc"
+    dflags "-mcpu=native"                   platform="ldc"
     dflags "-mattr=+fma,+avx2"              platform="ldc"
     #dflags "-expensive-combines"            platform="ldc"
     #dflags "-enable-cross-module-inlining"  platform="ldc"

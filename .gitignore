@@ -16,5 +16,6 @@ bin/
 *.pdb
 *.spv
 
+imgui.ini
 
 data/**/*.zip

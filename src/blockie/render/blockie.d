@@ -66,7 +66,7 @@ protected:
             6   : "Test Scene 6 - Bunny",
             7   : "Test Scene 7 - HGT",
             8   : "Test Scene 8",
-            9   : "Test Scene 9"
+            9   : "Test Scene 9", // magica voxel model
         ];
 
         try{
