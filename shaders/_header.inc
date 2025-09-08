@@ -1,18 +1,6 @@
 
 #line 1 2
 
-/*
-    Set by program:
-
-    CHUNK_SIZE      = 1024
-    CHUNK_SIZE_SHR  = 10
-
-    // MODEL1 only:
-    OctreeTwigSize  = 12
-    OctreeLeafSize  = 8
-    DFIELD_OFFSET   = 5152
-*/
-
 // All models
 #define CHUNK_SIZE      (1024)
 #define CHUNK_SIZE_SHR  (10)

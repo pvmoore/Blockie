@@ -55,12 +55,15 @@ public:
             shaderSrcDirectories: ["shaders/", "/pvmoore/d/libs/vulkan/shaders/"],
             shaderDestDirectory: "resources/shaders/",
             shaderSpirvVersion: "1.6",
+            shaderSpirvShelfLifeMinutes: 0, // always recompile
             features: 
                 DeviceFeatures.Features.Vulkan11 |
                 DeviceFeatures.Features.Vulkan12 |
                 DeviceFeatures.Features.Vulkan13 |
                 DeviceFeatures.Features.Vulkan14
         };
+
+        vprops.addDeviceExtension("VK_EXT_scalar_block_layout");
 
         vprops.enableGpuValidation = false;
         vprops.enableShaderPrintf = false;
@@ -122,6 +125,13 @@ public:
         // Disable this as it has a performance impact
         features.apply((ref VkPhysicalDeviceFeatures f) {
             f.robustBufferAccess = VK_FALSE;
+        });
+
+        features.apply((ref VkPhysicalDeviceVulkan12Features f) {
+            // Check for scalarBlockLayout
+            throwIfNot(f.scalarBlockLayout==VK_TRUE, "scalarBlockLayout is required but not supported");
+
+            // storageBuffer8BitAccess?
         });
     }
     @Implements("IVulkanApplication")

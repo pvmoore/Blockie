@@ -44,61 +44,61 @@ https://khronos.org/registry/OpenGL/index_gl.php
 /**
  * Gets a (possibly unaligned) byte from an int array.
  */
-#define GETBYTE(array,byteIndex) \
-    (((array[(byteIndex) >> 2]) >> (((byteIndex) & 3u) << 3)) & 0xffu)
+// #define GETBYTE(array,byteIndex) \
+//     (((array[(byteIndex) >> 2]) >> (((byteIndex) & 3u) << 3)) & 0xffu)
 
 /**
  * Gets 2 (possibly unaligned) bytes from an int array.
  */
-#define GET2BYTES(array,byteIndex) \
-    (GETBYTE(array,byteIndex) | (GETBYTE(array,(byteIndex)+1)<<8))
+// #define GET2BYTES(array,byteIndex) \
+//     (GETBYTE(array,byteIndex) | (GETBYTE(array,(byteIndex)+1)<<8))
 
  /**
  * Gets 3 (possibly unaligned) bytes from an int array.
  */
-#define GET3BYTES(array,byteIndex) \
-	(GETBYTE(array,(byteIndex)) |\
-    (GETBYTE(array,(byteIndex)+1)<<8) |\
-    (GETBYTE(array,(byteIndex)+2)<<16))
+// #define GET3BYTES(array,byteIndex) \
+// 	(GETBYTE(array,(byteIndex)) |\
+//     (GETBYTE(array,(byteIndex)+1)<<8) |\
+//     (GETBYTE(array,(byteIndex)+2)<<16))
 
 /// get a vec3 from a float buffer. index is assumed to point to the first float
-#define GETVEC3(array,index) \
-	vec3(array[index], array[(index)+1], array[(index)+2]);
+// #define GETVEC3(array,index) \
+// 	vec3(array[index], array[(index)+1], array[(index)+2]);
 
 /**
  *	Gets a ushort from array at specified word index.
  *	Assumes array is a uint[].
  */ 
-#define GETUSHORT(array,wordIndex) \
-	((array[wordIndex>>1]>>((wordIndex&1)*16)) & 0xffffu)
+// #define GETUSHORT(array,wordIndex) \
+// 	((array[wordIndex>>1]>>((wordIndex&1)*16)) & 0xffffu)
 
 	// GL_AMD_gcn_shader
 //uint64_t timeAMD(void);
 
-void synchronize() {
-	// Ensure that memory accesses to shared variables complete.
-	memoryBarrierShared();
-	// Every thread in work group must reach this barrier before any other thread can continue.
-	barrier();
-}
+// void synchronize() {
+// 	// Ensure that memory accesses to shared variables complete.
+// 	memoryBarrierShared();
+// 	// Every thread in work group must reach this barrier before any other thread can continue.
+// 	barrier();
+// }
 
-float random(vec2 co) {
-	float a  = 12.9898;
-	float b  = 78.233;
-	float c  = 43758.5453;
-	float dt = dot(co.xy, vec2(a,b));
-	float sn = mod(dt, 3.14);
-	return fract(sin(sn) * c);
-}
-float random(ivec2 v) {
-	return random(vec2(v));
-}
-float random2(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
-vec3 randomvec3(vec2 co) {
-	return vec3(random(co),random(co+13),random(co+17));
-}
+// float random(vec2 co) {
+// 	float a  = 12.9898;
+// 	float b  = 78.233;
+// 	float c  = 43758.5453;
+// 	float dt = dot(co.xy, vec2(a,b));
+// 	float sn = mod(dt, 3.14);
+// 	return fract(sin(sn) * c);
+// }
+// float random(ivec2 v) {
+// 	return random(vec2(v));
+// }
+// float random2(vec2 co){
+//     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+// }
+// vec3 randomvec3(vec2 co) {
+// 	return vec3(random(co),random(co+13),random(co+17));
+// }
 
 // Pack floats into an int:
 // uint a = packUnorm4x8(vec4(1,1,1,1))

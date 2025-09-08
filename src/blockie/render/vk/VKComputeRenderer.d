@@ -491,26 +491,57 @@ private:
     void createPipelines() {
         this.log("Creating pipelines");
 
-        // Select a march shader based on the model
-        auto marchShader = "pass1_marchM%s.comp".format(MODEL);
+        VkShaderModule marchShaderModule;
+        VkShaderModule shadeShaderModule;
 
-        static if(MODEL==1) {
-            auto shadeShader = "pass3_shadeM1.comp";
-        } else {
-            // Use the same shade shader for M2 and M3
-            auto shadeShader = "pass3_shadeM2-3.comp";
+        switch(MODEL) {
+            case 1:
+                static if(false) {
+                    // GLSL
+                    marchShaderModule = context.shaders.getModule("pass1_marchM1.comp");
+                    shadeShaderModule = context.shaders.getModule("pass3_shadeM1.comp");
+                } else {
+                    // Slang
+                    marchShaderModule = context.shaders.getModule("slang/marchM1.slang");
+                    shadeShaderModule = context.shaders.getModule("slang/shadeM1.slang");
+                }
+                break;
+            case 2:
+                static if(false) {
+                    // GLSL
+                    marchShaderModule = context.shaders.getModule("pass1_marchM2.comp");
+                    shadeShaderModule = context.shaders.getModule("pass3_shadeM2-3.comp");
+                } else {
+                    // Slang
+                    marchShaderModule = context.shaders.getModule("slang/marchM2.slang");
+                    shadeShaderModule = context.shaders.getModule("slang/shadeM3.slang");
+                }
+                break;
+            case 3:
+                static if(false) {
+                    // GLSL
+                    marchShaderModule = context.shaders.getModule("pass1_marchM3.comp");
+                    shadeShaderModule = context.shaders.getModule("pass3_shadeM2-3.comp");
+                } else {
+                    // Slang
+                    marchShaderModule = context.shaders.getModule("slang/marchM3.slang");
+                    shadeShaderModule = context.shaders.getModule("slang/shadeM3.slang");
+                }
+                break;
+            default: 
+                throwIf(true, "Unsupported model %s", MODEL);
+                break;
         }
-        this.log("  March program: %s", marchShader);
-        this.log("  Shade program: %s", shadeShader);
 
         this.marchPipeline = new ComputePipeline(context, "March")
             .withDSLayouts(descriptors.getAllLayouts())
-            .withShader(context.shaders.getModule(marchShader))
+            .withShader(marchShaderModule)
             //.withPushConstantRange!PushConstants()
             .build();
+
         this.shadePipeline = new ComputePipeline(context, "Shade")
             .withDSLayouts(descriptors.getAllLayouts())
-            .withShader(context.shaders.getModule(shadeShader))
+            .withShader(shadeShaderModule)
             //.withPushConstantRange!PushConstants()
             .build();
 

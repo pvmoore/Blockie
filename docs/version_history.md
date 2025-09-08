@@ -1,6 +1,9 @@
 
 # Version History
 
+#### 0.0.34
+- Create and use slang shaders 
+
 #### 0.0.33
 - Refactor some Model code. Move some old model code into 'unused_src' directory.
 

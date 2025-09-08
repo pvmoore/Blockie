@@ -2,10 +2,10 @@ module blockie.globals;
 
 public:
 
-const string version_ = "0.0.33";
+const string version_ = "0.0.34";
 
-enum uint MODEL  = 3;
-enum float SCENE = 1;
+enum uint MODEL  = 1;
+enum float SCENE = 8;
 
 /**
  * size 16   (4)  =         4,096 voxels
